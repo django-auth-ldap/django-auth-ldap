@@ -51,6 +51,7 @@ except NameError:
     from sets import Set as set     # Python 2.3 fallback
 
 import pprint
+import copy
 
 import django.db
 from django.contrib.auth.models import User, Group, SiteProfileNotAvailable
@@ -184,7 +185,20 @@ class _LDAPUser(object):
         
         if username is None and user is None:
             raise Exception("Internal error: _LDAPUser improperly initialized.")
-    
+
+    def __deepcopy__(self, memo):
+        obj = self.__class__(self.backend, self._username, copy.deepcopy(self._user, memo))
+
+        # This is all just cached immutable data. There's no point copying it.
+        obj._user_dn = self._user_dn
+        obj._user_attrs = self._user_attrs
+        obj._groups = self._groups
+        obj._group_permissions = self._group_permissions
+        obj._connection = self._connection
+        obj._connection_bound = self._connection_bound
+
+        return obj
+
     def _set_authenticated_user(self, user):
         self._user = user
         self._username = self.backend.django_to_ldap_username(user.username)

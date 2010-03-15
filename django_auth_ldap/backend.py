@@ -187,13 +187,19 @@ class _LDAPUser(object):
             raise Exception("Internal error: _LDAPUser improperly initialized.")
 
     def __deepcopy__(self, memo):
-        obj = self.__class__(self.backend, self._username, copy.deepcopy(self._user, memo))
+        obj = object.__new__(self.__class__)
+        obj.backend = self.backend
+        obj.ldap = self.ldap
+        obj._user = copy.deepcopy(self._user, memo)
 
         # This is all just cached immutable data. There's no point copying it.
+        obj._username = self._username
         obj._user_dn = self._user_dn
         obj._user_attrs = self._user_attrs
         obj._groups = self._groups
         obj._group_permissions = self._group_permissions
+        
+        # The connection couldn't be copied even if we wanted to
         obj._connection = self._connection
         obj._connection_bound = self._connection_bound
 

@@ -132,6 +132,16 @@ class LDAPBackend(object):
             return user.ldap_user.get_group_permissions()
         else:
             return set()
+
+    #
+    # Bonus API: populate the Django user from LDAP without authenticating.
+    #
+
+    def populate_user(self, username):
+        ldap_user = _LDAPUser(self, username=username)
+        user = ldap_user.populate_user()
+        
+        return user
     
     #
     # Hooks for subclasses
@@ -258,6 +268,26 @@ class _LDAPUser(object):
         
         return self._group_permissions
 
+    def populate_user(self):
+        """
+        Populates the Django user object using the default bind credentials.
+        """
+        user = None
+        
+        try:
+            self._get_or_create_user(force_populate=True)
+            
+            user = self._user
+        except self.ldap.LDAPError, e:
+            logger.warning(u"Caught LDAPError while authenticating %s: %s",
+                self._username, pprint.pformat(e))
+        except Exception, e:
+            logger.warning(u"Caught Exception while authenticating %s: %s",
+                self._username, pprint.pformat(e))
+            raise
+        
+        return user
+
     #
     # Public properties (callbacks). These are all lazy for performance reasons.
     #
@@ -363,7 +393,7 @@ class _LDAPUser(object):
     # User management
     #
 
-    def _get_or_create_user(self):
+    def _get_or_create_user(self, force_populate=False):
         """
         Loads the User model object from the database or creates it if it
         doesn't exist. Also populates the fields, subject to
@@ -380,7 +410,7 @@ class _LDAPUser(object):
             self._user.set_unusable_password()
             save_user = True
 
-        if(ldap_settings.AUTH_LDAP_ALWAYS_UPDATE_USER or created):
+        if(force_populate or ldap_settings.AUTH_LDAP_ALWAYS_UPDATE_USER or created):
             logger.debug("Populating Django user %s", username)
             self._populate_user()
             self._populate_and_save_user_profile()

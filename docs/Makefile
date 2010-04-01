@@ -89,4 +89,4 @@ doctest:
 
 zip:
 	rm _build/html.zip || true
-	cd _build/html && zip -R ../html.zip '*' -x .buildinfo
+	cd _build/html && zip -R ../html.zip '*' -x .buildinfo -x '_sources/*'

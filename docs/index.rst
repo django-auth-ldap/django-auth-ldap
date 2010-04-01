@@ -1,4 +1,4 @@
-================================
+﻿================================
 Django authentication using LDAP
 ================================
 
@@ -177,7 +177,12 @@ group membership::
     }
 
 By default, all mapped user fields will be updated each time the user logs in.
-To disable this, set :ref:`AUTH_LDAP_ALWAYS_UPDATE_USER` to ``False``.
+To disable this, set :ref:`AUTH_LDAP_ALWAYS_UPDATE_USER` to ``False``. If you
+need to populate a user outside of the authentication process—for example, to
+create associated model objects before the user logs in for the first time—you
+can call :meth:`django_auth_ldap.backend.LDAPBackend.populate_user`. You'll
+need an instance of :class:`~django_auth_ldap.backend.LDAPBackend`, which you
+can create yourself if necessary.
 
 If you need to access multi-value attributes or there is some other reason that
 the above is inadequate, you can also access the user's raw LDAP attributes.
@@ -276,6 +281,7 @@ to map externally authenticated users to Django users. By setting
 users in the normal way in order to provide authorization information. Note that
 this does *not* work with :ref:`AUTH_LDAP_MIRROR_GROUPS`; group mirroring is a
 feature of authentication, not authorization.
+
 
 Logging
 =======
@@ -754,6 +760,13 @@ Backend
 .. module:: django_auth_ldap.backend
 
 .. class:: LDAPBackend
+
+    .. method:: populate_user(username)
+        
+        Populates the Django user for the given username. This connects to the
+        LDAP directory with the default credentials and attempts to populate the
+        indicated Django user as if they had just logged in.
+        :ref:`AUTH_LDAP_ALWAYS_UPDATE_USER` is ignored (assumed ``True``).
 
     .. method:: ldap_to_django_username(username)
     

@@ -77,7 +77,7 @@ class _LDAPConfig(object):
             class NullHandler(logging.Handler):
                 def emit(self, record):
                     pass
-    
+
             cls.logger = logging.getLogger('django_auth_ldap')
             cls.logger.addHandler(NullHandler())
             cls.logger.setLevel(logging.DEBUG)
@@ -339,7 +339,7 @@ class NestedMemberDNGroupType(LDAPGroupType):
         member DNs.
         """
         self.member_attr = member_attr
-        
+
         super(NestedMemberDNGroupType, self).__init__(name_attr)
         
     def user_groups(self, ldap_user, group_search):

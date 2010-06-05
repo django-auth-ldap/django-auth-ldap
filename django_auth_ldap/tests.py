@@ -132,6 +132,7 @@ class MockLDAP(object):
         self.calls = []
         self.return_value_maps = {}
         self.options = {}
+        self.tls_enabled = False
     
     def set_return_value(self, api_name, arguments, value):
         """
@@ -208,6 +209,9 @@ class MockLDAP(object):
             value = self._search_s(base, scope, filterstr, attrlist, attrsonly)
         
         return value
+
+    def start_tls_s(self):
+        self.tls_enabled = True
     
     def compare_s(self, dn, attr, value):
         self._record_call('compare_s', {
@@ -977,6 +981,25 @@ class LDAPTest(TestCase):
         self.assert_(not bob.is_staff)
         self.assert_(not bob.is_superuser)
 
+    def test_start_tls_missing(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            AUTH_LDAP_START_TLS=False,
+            )
+
+        self.assert_(not self.mock_ldap.tls_enabled)
+        self.backend.authenticate(username='alice', password='password')
+        self.assert_(not self.mock_ldap.tls_enabled)
+
+    def test_start_tls(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            AUTH_LDAP_START_TLS=True,
+            )
+
+        self.assert_(not self.mock_ldap.tls_enabled)
+        self.backend.authenticate(username='alice', password='password')
+        self.assert_(self.mock_ldap.tls_enabled)
 
     def _init_settings(self, **kwargs):
         backend.ldap_settings = TestSettings(**kwargs)

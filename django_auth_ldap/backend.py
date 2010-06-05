@@ -88,8 +88,8 @@ class LDAPBackend(object):
         
         return cls.ldap
     ldap_module = classmethod(ldap_module)
-        
-    
+
+
     #
     # The Django auth backend API
     #
@@ -557,7 +557,11 @@ class _LDAPUser(object):
             
             for opt, value in ldap_settings.AUTH_LDAP_CONNECTION_OPTIONS.iteritems():
                 self._connection.set_option(opt, value)
-        
+
+            if ldap_settings.AUTH_LDAP_START_TLS:
+                logger.debug("Initiating TLS")
+                self._connection.start_tls_s()
+
         return self._connection
 
 
@@ -683,6 +687,7 @@ class LDAPSettings(object):
         'AUTH_LDAP_PROFILE_ATTR_MAP': {},
         'AUTH_LDAP_REQUIRE_GROUP': None,
         'AUTH_LDAP_SERVER_URI': 'ldap://localhost',
+        'AUTH_LDAP_START_TLS': False,
         'AUTH_LDAP_USER_ATTR_MAP': {},
         'AUTH_LDAP_USER_DN_TEMPLATE': None,
         'AUTH_LDAP_USER_FLAGS_BY_GROUP': {},

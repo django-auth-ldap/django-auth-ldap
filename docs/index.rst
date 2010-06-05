@@ -75,6 +75,15 @@ efficient) equivalent::
 
     AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
 
+By default, LDAP connections are unencrypted and make no attempt to protect
+sensitive information, such as passwords. When communicating with an LDAP server
+on localhost or on a local network, this might be fine. If you need a secure
+connection to the LDAP server, you can either use an ``ldaps://`` URL or enable
+the StartTLS extension. The latter is generally the preferred mechanism. To
+enable StartTLS, set :ref:`AUTH_LDAP_START_TLS` to ``True``::
+
+	AUTH_LDAP_START_TLS = True
+
 
 Working with groups
 ===================
@@ -588,6 +597,21 @@ Default: ``ldap://localhost``
 
 The URI of the LDAP server. This can be any URI that is supported by your
 underlying LDAP libraries.
+
+
+.. _AUTH_LDAP_START_TLS:
+
+AUTH_LDAP_START_TLS
+~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+If ``True``, each connection to the LDAP server will call start_tls to enable
+TLS encryption over the standard LDAP port. There are a number of configuration
+options that can be given to :ref:`AUTH_LDAP_GLOBAL_OPTIONS` that affect the
+TLS connection. For example, ``ldap.OPT_X_TLS_REQUIRE_CERT`` can be set to
+``ldap.OPT_X_TLS_NEVER`` to disable certificate verification, perhaps to allow
+self-signed certificates.
 
 
 .. _AUTH_LDAP_USER_ATTR_MAP:

@@ -146,7 +146,15 @@ class LDAPBackend(object):
     #
     # Hooks for subclasses
     #
-    
+
+    def get_or_create_user(self, username, ldap_user):
+        """
+        This must return a (User, created) 2-tuple for the given LDAP user.
+        username is the Django-friendly username of the user. ldap_user.dn is
+        the user's DN and ldap_user.attrs contains all of their LDAP attributes.
+        """
+        return User.objects.get_or_create(username=username)
+
     def ldap_to_django_username(self, username):
         return username
 
@@ -294,14 +302,20 @@ class _LDAPUser(object):
 
     def _get_user_dn(self):
         if self._user_dn is None:
-            self._load_user_dn()
-        
+            try:
+                self._load_user_dn()
+            except self.AuthenticationFailed
+                pass
+
         return self._user_dn
     dn = property(_get_user_dn)
 
     def _get_user_attrs(self):
         if self._user_attrs is None:
-            self._load_user_attrs()
+            try:
+                self._load_user_attrs()
+            except self.AuthenticationFailed
+                pass
         
         return self._user_attrs
     attrs = property(_get_user_attrs)
@@ -403,7 +417,7 @@ class _LDAPUser(object):
         
         username = self.backend.ldap_to_django_username(self._username)
 
-        (self._user, created) = User.objects.get_or_create(username=username)
+        (self._user, created) = self.backend.get_or_create_user(username, self)
 
         if created:
             logger.debug("Created Django user %s", username)

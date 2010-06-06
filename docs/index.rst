@@ -82,7 +82,7 @@ connection to the LDAP server, you can either use an ``ldaps://`` URL or enable
 the StartTLS extension. The latter is generally the preferred mechanism. To
 enable StartTLS, set :ref:`AUTH_LDAP_START_TLS` to ``True``::
 
-	AUTH_LDAP_START_TLS = True
+    AUTH_LDAP_START_TLS = True
 
 
 Working with groups
@@ -785,12 +785,29 @@ Backend
 
 .. class:: LDAPBackend
 
+    :class:`~django_auth_ldap.backend.LDAPBackend` has one method that may be
+    called directly and several that may be overridden in subclasses.
+
     .. method:: populate_user(username)
-        
-        Populates the Django user for the given username. This connects to the
-        LDAP directory with the default credentials and attempts to populate the
-        indicated Django user as if they had just logged in.
+
+        Populates the Django user for the given LDAP username. This connects to
+        the LDAP directory with the default credentials and attempts to populate
+        the indicated Django user as if they had just logged in.
         :ref:`AUTH_LDAP_ALWAYS_UPDATE_USER` is ignored (assumed ``True``).
+
+    .. method:: get_or_create_user(self, username, ldap_user)
+
+        Given a username and an LDAP user object, this must return the
+        associated Django User object. The ``username`` argument has already
+        been passed through
+        :meth:`~django_auth_ldap.backend.LDAPBackend.ldap_to_django_username`.
+        You can get information about the LDAP user via ``ldap_user.dn`` and
+        ``ldap_user.attrs``. The return value must be the same as
+        ``User.objects.get_or_create()``: a (User, created) two-tuple.
+
+        The default implementation simply calls ``User.objects.get_or_create()``
+        with the username. Subclasses are welcome to associate LDAP users to
+        Django users any way they like.
 
     .. method:: ldap_to_django_username(username)
     

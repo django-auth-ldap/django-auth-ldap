@@ -304,7 +304,7 @@ class _LDAPUser(object):
         if self._user_dn is None:
             try:
                 self._load_user_dn()
-            except self.AuthenticationFailed
+            except self.AuthenticationFailed:
                 pass
 
         return self._user_dn
@@ -314,7 +314,7 @@ class _LDAPUser(object):
         if self._user_attrs is None:
             try:
                 self._load_user_attrs()
-            except self.AuthenticationFailed
+            except self.AuthenticationFailed:
                 pass
         
         return self._user_attrs

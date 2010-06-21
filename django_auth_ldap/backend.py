@@ -50,6 +50,8 @@ try:
 except NameError:
     from sets import Set as set     # Python 2.3 fallback
 
+import sys
+import traceback
 import pprint
 import copy
 
@@ -253,12 +255,13 @@ class _LDAPUser(object):
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
                 self._username, pprint.pformat(e))
         except Exception, e:
-            logger.warning(u"Caught Exception while authenticating %s: %s",
+            logger.error(u"Caught Exception while authenticating %s: %s",
                 self._username, pprint.pformat(e))
+            logger.error(''.join(traceback.format_tb(sys.exc_info()[2])))
             raise
-        
+
         return user
-    
+
     def get_group_permissions(self):
         """
         If allowed by the configuration, this returns the set of permissions
@@ -290,8 +293,9 @@ class _LDAPUser(object):
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
                 self._username, pprint.pformat(e))
         except Exception, e:
-            logger.warning(u"Caught Exception while authenticating %s: %s",
+            logger.error(u"Caught Exception while authenticating %s: %s",
                 self._username, pprint.pformat(e))
+            logger.error(''.join(traceback.format_tb(sys.exc_info()[2])))
             raise
         
         return user
@@ -302,20 +306,14 @@ class _LDAPUser(object):
 
     def _get_user_dn(self):
         if self._user_dn is None:
-            try:
-                self._load_user_dn()
-            except self.AuthenticationFailed:
-                pass
+            self._load_user_dn()
 
         return self._user_dn
     dn = property(_get_user_dn)
 
     def _get_user_attrs(self):
         if self._user_attrs is None:
-            try:
-                self._load_user_attrs()
-            except self.AuthenticationFailed:
-                pass
+            self._load_user_attrs()
         
         return self._user_attrs
     attrs = property(_get_user_attrs)
@@ -336,16 +334,21 @@ class _LDAPUser(object):
         Binds to the LDAP server with the user's DN and password. Raises
         AuthenticationFailed on failure.
         """
+        if self.dn is None:
+            raise self.AuthenticationFailed("Failed to map the username to a DN.")
+
         try:
             self._bind_as(self.dn, password)
         except self.ldap.INVALID_CREDENTIALS:
             raise self.AuthenticationFailed("User DN/password rejected by LDAP server.")
     
     def _load_user_attrs(self):
-        search = LDAPSearch(self.dn, self.ldap.SCOPE_BASE)
-        results = search.execute(self.connection)
-        
-        self._user_attrs = results[0][1]
+        if self.dn is not None:
+            search = LDAPSearch(self.dn, self.ldap.SCOPE_BASE)
+            results = search.execute(self.connection)
+
+            if results is not None and len(results) > 0:
+                self._user_attrs = results[0][1]
     
     def _load_user_dn(self):
         """
@@ -379,10 +382,8 @@ class _LDAPUser(object):
             raise ImproperlyConfigured('AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance.')
         
         results = search.execute(self.connection, {'user': self._username})
-        if results is None or len(results) != 1:
-            raise self.AuthenticationFailed("AUTH_LDAP_USER_SEARCH failed to return exactly one result.")
-
-        (self._user_dn, self._user_attrs) = results[0]
+        if results is not None and len(results) == 1:
+            (self._user_dn, self._user_attrs) = results[0]
 
     def _check_requirements(self):
         """

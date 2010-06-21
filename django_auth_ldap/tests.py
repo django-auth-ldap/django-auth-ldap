@@ -594,6 +594,9 @@ class LDAPTest(TestCase):
         user = self.backend.authenticate(username='alice', password='password')
 
         self.assert_(user is not None)
+        self.assert_(user.ldap_user is not None)
+        self.assertEqual(user.ldap_user.dn, self.alice[0])
+        self.assertEqual(user.ldap_user.attrs, self.alice[1])
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
             ['initialize', 'simple_bind_s', 'search_s', 'simple_bind_s'])
 

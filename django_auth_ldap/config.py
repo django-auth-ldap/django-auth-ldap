@@ -80,7 +80,6 @@ class _LDAPConfig(object):
 
             cls.logger = logging.getLogger('django_auth_ldap')
             cls.logger.addHandler(NullHandler())
-            cls.logger.setLevel(logging.DEBUG)
 
         return cls.logger
     get_logger = classmethod(get_logger)

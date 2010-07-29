@@ -146,6 +146,11 @@ class LDAPSearch(object):
             filterstr = self.filterstr % filterargs
             results = connection.search_s(self.base_dn.encode('utf-8'),
                 self.scope, filterstr.encode('utf-8'))
+
+            # There's been a report of an LDAP server returning extraneous
+            # entries with DNs of None. This will filter them out.
+            results = filter(lambda r: r[0] is not None, results)
+
             results = _DeepStringCoder('utf-8').decode(results)
 
             result_dns = [result[0] for result in results]

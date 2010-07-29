@@ -988,7 +988,7 @@ class LDAPTest(TestCase):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
             AUTH_LDAP_START_TLS=False,
-            )
+        )
 
         self.assert_(not self.mock_ldap.tls_enabled)
         self.backend.authenticate(username='alice', password='password')
@@ -998,11 +998,28 @@ class LDAPTest(TestCase):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
             AUTH_LDAP_START_TLS=True,
-            )
+        )
 
         self.assert_(not self.mock_ldap.tls_enabled)
         self.backend.authenticate(username='alice', password='password')
         self.assert_(self.mock_ldap.tls_enabled)
+
+    def test_null_search_results(self):
+        """
+        Reportedly, some servers under some circumstances can return search
+        results of the form (None, '<some ldap url>'). We're not sure what they
+        are, but we filter those out so we don't trip over them.
+        """
+        self._init_settings(
+            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
+                )
+            )
+        self.mock_ldap.set_return_value('search_s',
+            ("ou=people,o=test", 2, "(uid=alice)", None, 0), [self.alice, (None, '')])
+
+        self.backend.authenticate(username='alice', password='password')
+
 
     def _init_settings(self, **kwargs):
         backend.ldap_settings = TestSettings(**kwargs)

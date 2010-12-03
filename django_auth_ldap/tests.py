@@ -669,7 +669,7 @@ class LDAPTest(TestCase):
         self.assert_(alice is not None)
         self.assert_(bob is None)
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
-            ['initialize', 'simple_bind_s', 'compare_s', 'initialize', 'simple_bind_s', 'compare_s'])
+            ['initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s', 'initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s'])
 
     def test_dn_group_membership(self):
         self._init_settings(

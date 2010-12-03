@@ -241,16 +241,6 @@ groups that a user belongs to, map them to Django groups, and load the
 permissions for those groups. You will need to create the Django groups
 yourself, generally through the admin interface.
 
-.. note::
-
-    After the user logs in, subsequent requests will have to determine group
-    membership based solely on the :class:`~django.contrib.auth.models.User`
-    object of the logged-in user. We will not have the user's password at this
-    point. This means that if :ref:`AUTH_LDAP_FIND_GROUP_PERMS` is ``True``, we
-    must have access to the LDAP directory through :ref:`AUTH_LDAP_BIND_DN` and
-    :ref:`AUTH_LDAP_BIND_PASSWORD`, even if you're using
-    :ref:`AUTH_LDAP_USER_DN_TEMPLATE` to authenticate the user.
-
 To minimize traffic to the LDAP server,
 :class:`~django_auth_ldap.backend.LDAPBackend` can make use of Django's cache
 framework to keep a copy of a user's LDAP group memberships. To enable this
@@ -464,11 +454,13 @@ AUTH_LDAP_BIND_DN
 
 Default: ``''`` (Empty string)
 
-The distinguished name to use for general access to the LDAP server. Use the
-empty string (the default) for an anonymous bind. If
-:ref:`AUTH_LDAP_USER_DN_TEMPLATE` is not set, we'll need this to search for the
-user. If :ref:`AUTH_LDAP_FIND_GROUP_PERMS` is ``True``, we'll also need it to
-determine group membership on subsequent requests.
+The distinguished name to use when binding to the LDAP server (with
+:ref:`AUTH_LDAP_BIND_PASSWORD`). Use the empty string (the default) for an
+anonymous bind. To authenticate a user, we will bind with that user's DN and
+password, but for all other LDAP operations, we will be bound as the DN in this
+setting. For example, if :ref:`AUTH_LDAP_USER_DN_TEMPLATE` is not set, we'll use
+this to search for the user. If :ref:`AUTH_LDAP_FIND_GROUP_PERMS` is ``True``,
+we'll also use it to determine group membership on subsequent requests.
 
 
 .. _AUTH_LDAP_BIND_PASSWORD:

@@ -198,7 +198,7 @@ class _LDAPUser(object):
         self._groups = None
         self._group_permissions = None
         self._connection = None
-        self._connection_bound = False
+        self._connection_bound = False  # True if we're bound as AUTH_LDAP_BIND_*
         
         if user is not None:
             self._set_authenticated_user(user)
@@ -352,11 +352,9 @@ class _LDAPUser(object):
     
     def _load_user_dn(self):
         """
-        Returns the (cached) distinguished name of our user. This will
-        ultimately either construct the DN from a template in
+        Populates self._user_dn with the distinguished name of our user. This
+        will either construct the DN from a template in
         AUTH_LDAP_USER_DN_TEMPLATE or connect to the server and search for it.
-        This may result in an AuthenticationFailed exception if we do not get
-        satisfactory results searching for the user's DN.
         """
         if self._using_simple_bind_mode():
             self._construct_simple_user_dn()
@@ -553,15 +551,22 @@ class _LDAPUser(object):
         """
         self._bind_as(ldap_settings.AUTH_LDAP_BIND_DN,
             ldap_settings.AUTH_LDAP_BIND_PASSWORD)
-    
+
+        self._connection_bound = True
+
     def _bind_as(self, bind_dn, bind_password):
         """
         Binds to the LDAP server with the given credentials. This does not trap
         exceptions.
+
+        If successful, we set self._connection_bound to False under the
+        assumption that we're not binding as the default user. Callers can set
+        it to True as appropriate.
         """
         self._get_connection().simple_bind_s(bind_dn.encode('utf-8'),
             bind_password.encode('utf-8'))
-        self._connection_bound = True
+
+        self._connection_bound = False
 
     def _get_connection(self):
         """

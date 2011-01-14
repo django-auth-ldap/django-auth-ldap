@@ -75,6 +75,12 @@ efficient) equivalent::
 
     AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
 
+Note that you should still set :ref:`AUTH_LDAP_BIND_DN` and
+:ref:`AUTH_LDAP_BIND_PASSWORD` if you need anything other than simple
+authentication, as all LDAP operations will be performed with these credentials.
+This is for consistency and also because we would otherwise have to store the
+user's password in the session.
+
 By default, LDAP connections are unencrypted and make no attempt to protect
 sensitive information, such as passwords. When communicating with an LDAP server
 on localhost or on a local network, this might be fine. If you need a secure
@@ -460,7 +466,7 @@ anonymous bind. To authenticate a user, we will bind with that user's DN and
 password, but for all other LDAP operations, we will be bound as the DN in this
 setting. For example, if :ref:`AUTH_LDAP_USER_DN_TEMPLATE` is not set, we'll use
 this to search for the user. If :ref:`AUTH_LDAP_FIND_GROUP_PERMS` is ``True``,
-we'll also use it to determine group membership on subsequent requests.
+we'll also use it to determine group membership.
 
 
 .. _AUTH_LDAP_BIND_PASSWORD:

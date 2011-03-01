@@ -71,6 +71,9 @@ class LDAPBackend(object):
     The main backend class. This implements the auth backend API, although it
     actually delegates most of its work to _LDAPUser, which is defined next.
     """
+    supports_anonymous_user = False
+    supports_object_permissions = False
+
     ldap = None # The cached ldap module (or mock object)
     
     def __init__(self):

@@ -237,7 +237,7 @@ class MockLDAP(object):
         
         if(who == '' and cred == ''):
             success = True 
-        elif self._compare_s(who, 'userPassword', cred):
+        elif self._compare_s(who.lower(), 'userPassword', cred):
             success = True
 
         if success:
@@ -455,6 +455,20 @@ class LDAPTest(TestCase):
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
             ['initialize', 'simple_bind_s'])
 
+    def test_new_user_lowercase(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+        user_count = User.objects.count()
+        
+        user = self.backend.authenticate(username='Alice', password='password')
+        
+        self.assert_(not user.has_usable_password())
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(User.objects.count(), user_count + 1)
+        self.assertEqual(self.mock_ldap.ldap_methods_called(),
+            ['initialize', 'simple_bind_s'])
+
     def test_simple_bind_bad_user(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
@@ -493,6 +507,22 @@ class LDAPTest(TestCase):
         # Make sure we only created one user
         self.assert_(user is not None)
         self.assertEqual(User.objects.count(), user_count)
+
+    def test_existing_user_insensitive(self):
+        self._init_settings(
+            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
+                )
+            )
+        self.mock_ldap.set_return_value('search_s',
+            ("ou=people,o=test", 2, "(uid=Alice)", None, 0), [self.alice])
+        User.objects.create(username='alice')
+        
+        user = self.backend.authenticate(username='Alice', password='password')
+
+        self.assert_(user is not None)
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(User.objects.count(), 1)
 
     def test_convert_username(self):
         class MyBackend(backend.LDAPBackend):
@@ -626,7 +656,7 @@ class LDAPTest(TestCase):
         self.assert_(user is not None)
         self.assertEqual(user.username, u'dreßler')
         self.assertEqual(user.last_name, u'Dreßler')
-    
+
     def test_populate_user(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',

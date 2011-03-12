@@ -158,7 +158,7 @@ class LDAPBackend(object):
         username is the Django-friendly username of the user. ldap_user.dn is
         the user's DN and ldap_user.attrs contains all of their LDAP attributes.
         """
-        return User.objects.get_or_create(username=username)
+        return User.objects.get_or_create(username__iexact=username, defaults={'username': username.lower()})
 
     def ldap_to_django_username(self, username):
         return username

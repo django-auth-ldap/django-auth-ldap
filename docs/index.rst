@@ -154,7 +154,11 @@ User objects
 Authenticating against an external source is swell, but Django's auth module is
 tightly bound to the :class:`django.contrib.auth.models.User` model. Thus, when
 a user logs in, we have to create a :class:`~django.contrib.auth.models.User`
-object to represent him in the database.
+object to represent him in the database. Because the LDAP search is
+case-insenstive, the default implementation also searches for existing Django
+users with an iexact query and new users are created with lowercase usernames.
+See :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_create_user` if you'd
+like to override this behavior.
 
 The only required field for a user is the username, which we obviously have. The
 :class:`~django.contrib.auth.models.User` model is picky about the characters
@@ -812,9 +816,10 @@ Backend
         ``ldap_user.attrs``. The return value must be the same as
         ``User.objects.get_or_create()``: a (User, created) two-tuple.
 
-        The default implementation simply calls ``User.objects.get_or_create()``
-        with the username. Subclasses are welcome to associate LDAP users to
-        Django users any way they like.
+        The default implementation calls ``User.objects.get_or_create()``, using
+        a case-insensitive query and creating new users with lowercase
+        usernames. Subclasses are welcome to associate LDAP users to Django
+        users any way they like.
 
     .. method:: ldap_to_django_username(username)
     

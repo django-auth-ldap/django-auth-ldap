@@ -457,7 +457,6 @@ class _LDAPUser(object):
         # We populate the profile after the user model is saved to give the
         # client a chance to create the profile.
         if should_populate:
-            logger.debug("Populating Django user profile for %s", username)
             self._populate_and_save_user_profile()
 
     def _populate_user(self):
@@ -472,7 +471,7 @@ class _LDAPUser(object):
             try:
                 setattr(self._user, field, self.attrs[attr][0])
             except (KeyError, IndexError):
-                pass
+                logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
     
     def _populate_user_from_group_memberships(self):
         for field, group_dn in ldap_settings.AUTH_LDAP_USER_FLAGS_BY_GROUP.iteritems():
@@ -487,13 +486,15 @@ class _LDAPUser(object):
             profile = self._user.get_profile()
             save_profile = False
 
+            logger.debug("Populating Django user profile for %s", self._user.username)
+
             for field, attr in ldap_settings.AUTH_LDAP_PROFILE_ATTR_MAP.iteritems():
                 try:
                     # user_attrs is a hash of lists of attribute values
                     setattr(profile, field, self.attrs[attr][0])
                     save_profile = True
                 except (KeyError, IndexError):
-                    pass
+                    logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
 
             signal_responses = populate_user_profile.send(self.backend.__class__, profile=profile, ldap_user=self)
             if len(signal_responses) > 0:
@@ -502,7 +503,7 @@ class _LDAPUser(object):
             if save_profile:
                 profile.save()
         except (SiteProfileNotAvailable, ObjectDoesNotExist):
-            pass
+            logger.debug("Django user %s does not have a profile to populate", self._user.username)
 
     def _mirror_groups(self):
         """

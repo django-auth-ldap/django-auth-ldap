@@ -59,11 +59,17 @@ import django.db
 from django.contrib.auth.models import User, Group, SiteProfileNotAvailable
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
+import django.dispatch
 
 from django_auth_ldap.config import _LDAPConfig, LDAPSearch, LDAPGroupType
 
 
 logger = _LDAPConfig.get_logger()
+
+
+# Signals for populating user objects.
+populate_user = django.dispatch.Signal(providing_args=["user", "ldap_user"])
+populate_user_profile = django.dispatch.Signal(providing_args=["profile", "ldap_user"])
 
 
 class LDAPBackend(object):
@@ -419,27 +425,40 @@ class _LDAPUser(object):
         
         username = self.backend.ldap_to_django_username(self._username)
 
-        (self._user, created) = self.backend.get_or_create_user(username, self)
+        self._user, created = self.backend.get_or_create_user(username, self)
+        self._user.ldap_user = self
+        self._user.ldap_username = self._username
+
+        should_populate = force_populate or ldap_settings.AUTH_LDAP_ALWAYS_UPDATE_USER or created
 
         if created:
             logger.debug("Created Django user %s", username)
             self._user.set_unusable_password()
             save_user = True
 
-        if(force_populate or ldap_settings.AUTH_LDAP_ALWAYS_UPDATE_USER or created):
+        if should_populate:
             logger.debug("Populating Django user %s", username)
             self._populate_user()
-            self._populate_and_save_user_profile()
             save_user = True
 
         if ldap_settings.AUTH_LDAP_MIRROR_GROUPS:
             self._mirror_groups()
 
+        # Give the client a chance to finish populating the user just before
+        # saving.
+        if should_populate:
+            signal_responses = populate_user.send(self.backend.__class__, user=self._user, ldap_user=self)
+            if len(signal_responses) > 0:
+                save_user = True
+
         if save_user:
             self._user.save()
 
-        self._user.ldap_user = self
-        self._user.ldap_username = self._username
+        # We populate the profile after the user model is saved to give the
+        # client a chance to create the profile.
+        if should_populate:
+            logger.debug("Populating Django user profile for %s", username)
+            self._populate_and_save_user_profile()
 
     def _populate_user(self):
         """
@@ -466,19 +485,25 @@ class _LDAPUser(object):
         """
         try:
             profile = self._user.get_profile()
+            save_profile = False
 
             for field, attr in ldap_settings.AUTH_LDAP_PROFILE_ATTR_MAP.iteritems():
                 try:
                     # user_attrs is a hash of lists of attribute values
                     setattr(profile, field, self.attrs[attr][0])
+                    save_profile = True
                 except (KeyError, IndexError):
                     pass
 
-            if len(ldap_settings.AUTH_LDAP_PROFILE_ATTR_MAP) > 0:
+            signal_responses = populate_user_profile.send(self.backend.__class__, profile=profile, ldap_user=self)
+            if len(signal_responses) > 0:
+                save_profile = True
+
+            if save_profile:
                 profile.save()
         except (SiteProfileNotAvailable, ObjectDoesNotExist):
             pass
-    
+
     def _mirror_groups(self):
         """
         Mirrors the user's LDAP groups in the Django database and updates the

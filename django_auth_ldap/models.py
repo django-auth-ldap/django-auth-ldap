@@ -1,2 +1,10 @@
-# This is only here so that this looks like an app for the purpose of unit
-# testing.
+from django.db import models
+
+
+class TestProfile(models.Model):
+    """
+    A user profile model for use by unit tests. This has nothing to do with the
+    authentication backend itself.
+    """
+    user = models.OneToOneField('auth.User')
+    populated = models.BooleanField(default=False)

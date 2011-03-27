@@ -216,6 +216,14 @@ convenience, this module will try to decode all values into Unicode strings. Any
 string that can not be successfully decoded will be left as-is; this may apply
 to binary values such as Active Directory's objectSid.
 
+If you would like to perform any additional population of user or profile
+objects, django_auth_ldap exposes two custom signals to help:
+:data:`~django_auth_ldap.backend.populate_user` and
+:data:`~django_auth_ldap.backend.populate_user_profile`. These are sent after
+the backend has finished populating the respective objects and before they are
+saved to the database. You can use this to propagate additional information from
+the LDAP directory to the user and profile objects any way you like.
+
 .. note::
 
     Users created by :class:`~django_auth_ldap.backend.LDAPBackend` will have an
@@ -793,6 +801,28 @@ Backend
 -------
 
 .. module:: django_auth_ldap.backend
+
+.. data:: populate_user
+
+    This is a Django signal that is sent when clients should perform additional
+    customization of a :class:`~django.contrib.auth.models.User` object. It is
+    sent after a user has been authenticated and the backend has finished
+    populating it, and just before it is saved. The client may take this
+    opportunity to populate additional model fields, perhaps based on
+    ``ldap_user.attrs``. This signal has two keyword arguments: ``user`` is the
+    :class:`~django.contrib.auth.models.User` object and ``ldap_user`` is the
+    same as ``user.ldap_user``. The sender is the
+    :class:`~django_auth_ldap.backend.LDAPBackend` class.
+
+.. data:: populate_user_profile
+
+    Like :data:`~django_auth_ldap.backend.populate_user`, but sent for the user
+    profile object. This will only be sent if the user has an existing profile.
+    As with :data:`~django_auth_ldap.backend.populate_user`, it is sent after the
+    backend has finished setting properties and before the object is saved. This
+    signal has two keyword arguments: ``profile`` is the user profile object and
+    ``ldap_user`` is the same as ``user.ldap_user``. The sender is the
+    :class:`~django_auth_ldap.backend.LDAPBackend` class.
 
 .. class:: LDAPBackend
 

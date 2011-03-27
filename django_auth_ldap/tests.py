@@ -32,9 +32,12 @@ except NameError:
 import sys
 import logging
 
+from django.conf import settings
+import django.db.models.signals
 from django.contrib.auth.models import User, Permission, Group
 from django.test import TestCase
 
+import django_auth_ldap.models
 from django_auth_ldap import backend
 from django_auth_ldap.config import _LDAPConfig, LDAPSearch
 from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType
@@ -668,6 +671,41 @@ class LDAPTest(TestCase):
         self.assertEqual(user.username, 'alice')
         self.assertEqual(user.first_name, 'Alice')
         self.assertEqual(user.last_name, 'Adams')
+
+    def test_signal_populate_user(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+        def handle_populate_user(sender, **kwargs):
+            self.assert_('user' in kwargs and 'ldap_user' in kwargs)
+            kwargs['user'].populate_user_handled = True
+        backend.populate_user.connect(handle_populate_user)
+
+        user = self.backend.authenticate(username='alice', password='password')
+
+        self.assert_(user.populate_user_handled)
+
+    def test_signal_populate_user_profile(self):
+        settings.AUTH_PROFILE_MODULE = 'django_auth_ldap.TestProfile'
+
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+
+        def handle_user_saved(sender, **kwargs):
+            if kwargs['created']:
+                django_auth_ldap.models.TestProfile.objects.create(user=kwargs['instance'])
+
+        def handle_populate_user_profile(sender, **kwargs):
+            self.assert_('profile' in kwargs and 'ldap_user' in kwargs)
+            kwargs['profile'].populated = True
+
+        django.db.models.signals.post_save.connect(handle_user_saved, sender=User)
+        backend.populate_user_profile.connect(handle_populate_user_profile)
+
+        user = self.backend.authenticate(username='alice', password='password')
+
+        self.assert_(user.get_profile().populated)
 
     def test_no_update_existing(self):
         self._init_settings(

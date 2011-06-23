@@ -852,12 +852,33 @@ class LDAPTest(TestCase):
         
         alice = User.objects.create(username='alice')
         alice = self.backend.get_user(alice.pk)
-        
+
         self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
         self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
         self.assert_(self.backend.has_perm(alice, "auth.add_user"))
         self.assert_(self.backend.has_module_perms(alice, "auth"))
-    
+
+    def test_empty_group_permissions(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            AUTH_LDAP_FIND_GROUP_PERMS=True
+        )
+        self._init_groups()
+        self.mock_ldap.set_return_value('search_s',
+            ("ou=groups,o=test", 2, "(&(objectClass=*)(member=uid=bob,ou=people,o=test))", None, 0),
+            []
+        )
+        
+        bob = User.objects.create(username='bob')
+        bob = self.backend.get_user(bob.pk)
+        
+        self.assertEqual(self.backend.get_group_permissions(bob), set())
+        self.assertEqual(self.backend.get_all_permissions(bob), set())
+        self.assert_(not self.backend.has_perm(bob, "auth.add_user"))
+        self.assert_(not self.backend.has_module_perms(bob, "auth"))
+
     def test_posix_group_permissions(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',

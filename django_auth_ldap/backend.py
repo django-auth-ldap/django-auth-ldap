@@ -56,7 +56,7 @@ import pprint
 import copy
 
 import django.db
-from django.contrib.auth.models import User, Group, SiteProfileNotAvailable
+from django.contrib.auth.models import User, Group, Permission, SiteProfileNotAvailable
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
@@ -524,40 +524,14 @@ class _LDAPUser(object):
         """
         Populates self._group_permissions based on LDAP group membership and
         Django group permissions.
-        
-        The SQL is lifted from ModelBackend, with modifications.
         """
         group_names = self._get_groups().get_group_names()
-        placeholders = ', '.join(['%s'] * len(group_names))
-        
-        cursor = django.db.connection.cursor()
-        # The SQL below works out to the following, after DB quoting:
-        # cursor.execute("""
-        #     SELECT ct."app_label", p."codename"
-        #     FROM "auth_permission" p, "auth_group_permissions" gp, "auth_group" g, "django_content_type" ct
-        #     WHERE p."id" = gp."permission_id"
-        #         AND gp."group_id" = g."id"
-        #         AND ct."id" = p."content_type_id"
-        #         AND g."name" IN (%s, %s, ...)""", ['group1', 'group2', ...])
-        qn = django.db.connection.ops.quote_name
-        sql = u"""
-            SELECT ct.%s, p.%s
-            FROM %s p, %s gp, %s g, %s ct
-            WHERE p.%s = gp.%s
-                AND gp.%s = g.%s
-                AND ct.%s = p.%s
-                AND g.%s IN (%s)""" % (
-            qn('app_label'), qn('codename'),
-            qn('auth_permission'), qn('auth_group_permissions'),
-            qn('auth_group'), qn('django_content_type'),
-            qn('id'), qn('permission_id'),
-            qn('group_id'), qn('id'),
-            qn('id'), qn('content_type_id'),
-            qn('name'), placeholders)
-        
-        cursor.execute(sql, group_names)
-        self._group_permissions = \
-            set([u"%s.%s" % (row[0], row[1]) for row in cursor.fetchall()])
+
+        perms = Permission.objects.filter(group__name__in=group_names
+            ).values_list('content_type__app_label', 'codename'
+            ).order_by()
+
+        self._group_permissions = set(["%s.%s" % (ct, name) for ct, name in perms])
 
     def _get_groups(self):
         """

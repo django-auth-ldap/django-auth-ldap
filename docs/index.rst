@@ -195,6 +195,10 @@ group membership::
         "is_superuser": "cn=superuser,ou=groups,dc=example,dc=com"
     }
 
+    AUTH_LDAP_PROFILE_FLAGS_BY_GROUP = {
+        "is_awesome": "cn=awesome,ou=django,ou=groups,dc=example,dc=com"
+    }
+
 By default, all mapped user fields will be updated each time the user logs in.
 To disable this, set :ref:`AUTH_LDAP_ALWAYS_UPDATE_USER` to ``False``. If you
 need to populate a user outside of the authentication process—for example, to
@@ -202,14 +206,22 @@ create associated model objects before the user logs in for the first time—you
 can call :meth:`django_auth_ldap.backend.LDAPBackend.populate_user`. You'll
 need an instance of :class:`~django_auth_ldap.backend.LDAPBackend`, which you
 can create yourself if necessary.
+:meth:`~django_auth_ldap.backend.LDAPBackend.populate_user` returns the new
+:class:`~django.contrib.auth.models.User` or `None` if the user could not be
+found in LDAP.
 
 If you need to access multi-value attributes or there is some other reason that
 the above is inadequate, you can also access the user's raw LDAP attributes.
-``user.ldap_user`` is an object with two public properties:
+``user.ldap_user`` is an object with four public properties. The group
+properties are, of course, only valid if groups are configured.
 
     * ``dn``: The user's distinguished name.
     * ``attrs``: The user's LDAP attributes as a dictionary of lists of string
       values.
+    * ``group_dns``: The set of groups that this user belongs to, as DNs.
+    * ``group_names``: The set of groups that this user belongs to, as simple
+      names. These are the names that will be used if
+      :ref:`AUTH_LDAP_MIRROR_GROUPS` is used.
 
 Python-ldap returns all attribute values as utf8-encoded strings. For
 convenience, this module will try to decode all values into Unicode strings. Any
@@ -416,6 +428,10 @@ and arguments are included for completeness.
         "is_superuser": "cn=superuser,ou=django,ou=groups,dc=example,dc=com"
     }
     
+    AUTH_LDAP_PROFILE_FLAGS_BY_GROUP = {
+        "is_awesome": "cn=awesome,ou=django,ou=groups,dc=example,dc=com",
+    }
+    
     # This is the default, but I like to be explicit.
     AUTH_LDAP_ALWAYS_UPDATE_USER = True
     
@@ -596,6 +612,18 @@ A mapping from user profile field names to LDAP attribute names. A user's
 profile will be populated from his LDAP attributes at login.
 
 
+.. _AUTH_LDAP_PROFILE_FLAGS_BY_GROUP:
+
+AUTH_LDAP_PROFILE_FLAGS_BY_GROUP
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}``
+
+A mapping from boolean profile field names to distinguished names of LDAP
+groups. The corresponding field in a user's profile is set to ``True`` or
+``False`` according to whether the user is a member of the group.
+
+
 .. _AUTH_LDAP_REQUIRE_GROUP:
 
 AUTH_LDAP_REQUIRE_GROUP
@@ -679,6 +707,20 @@ An :class:`~django_auth_ldap.config.LDAPSearch` object that will locate a user
 in the directory. The filter parameter should contain the placeholder
 ``%(user)s`` for the username. It must return exactly one result for
 authentication to succeed.
+
+
+Module Properties
+-----------------
+
+.. module:: django_auth_ldap
+
+.. data:: version
+
+    The library's current version number as a 3-tuple.
+
+.. data:: version_string
+
+    The library's current version number as a string.
 
 
 Configuration

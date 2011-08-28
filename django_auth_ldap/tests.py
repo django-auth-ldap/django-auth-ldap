@@ -31,6 +31,7 @@ except NameError:
 
 import sys
 import logging
+from collections import defaultdict
 
 from django.conf import settings
 import django.db.models.signals
@@ -133,7 +134,7 @@ class MockLDAP(object):
         miscellaneous configuration options.
         """
         self.calls = []
-        self.return_value_maps = {}
+        self.return_value_maps = defaultdict(lambda: {})
         self.options = {}
         self.tls_enabled = False
     
@@ -142,7 +143,7 @@ class MockLDAP(object):
         Stores a preset return value for a given API with a given set of
         arguments.
         """
-        self.return_value_maps.setdefault(api_name, {})[arguments] = value
+        self.return_value_maps[api_name][arguments] = value
     
     def ldap_methods_called_with_arguments(self):
         """
@@ -739,6 +740,36 @@ class LDAPTest(TestCase):
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
             ['initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s', 'initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s'])
 
+    def test_group_dns(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+        )
+        self.mock_ldap.set_return_value('search_s',
+            ("ou=groups,o=test", 2, "(&(objectClass=*)(member=uid=alice,ou=people,o=test))", None, 0),
+            [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon]
+        )
+
+        alice = self.backend.authenticate(username='alice', password='password')
+
+        self.assertEqual(alice.ldap_user.group_dns, set((g[0] for g in [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon])))
+
+    def test_group_names(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+        )
+        self.mock_ldap.set_return_value('search_s',
+            ("ou=groups,o=test", 2, "(&(objectClass=*)(member=uid=alice,ou=people,o=test))", None, 0),
+            [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon]
+        )
+
+        alice = self.backend.authenticate(username='alice', password='password')
+
+        self.assertEqual(alice.ldap_user.group_names, set(['active_gon', 'staff_gon', 'superuser_gon', 'nested_gon']))
+
     def test_dn_group_membership(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -822,7 +853,7 @@ class LDAPTest(TestCase):
         self.assert_(alice.is_staff)
         self.assert_(not bob.is_active)
         self.assert_(not bob.is_staff)
-    
+
     def test_posix_missing_attributes(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -837,6 +868,31 @@ class LDAPTest(TestCase):
 
         self.assert_(not nobody.is_active)
     
+    def test_profile_flags(self):
+        settings.AUTH_PROFILE_MODULE = 'django_auth_ldap.TestProfile'
+
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            AUTH_LDAP_PROFILE_FLAGS_BY_GROUP={
+                'is_special': "cn=superuser_gon,ou=groups,o=test"
+            }
+        )
+
+        def handle_user_saved(sender, **kwargs):
+            if kwargs['created']:
+                django_auth_ldap.models.TestProfile.objects.create(user=kwargs['instance'])
+
+        django.db.models.signals.post_save.connect(handle_user_saved, sender=User)
+
+        alice = self.backend.authenticate(username='alice', password='password')
+        bob = self.backend.authenticate(username='bob', password='password')
+
+        self.assert_(alice.get_profile().is_special)
+        self.assert_(not bob.get_profile().is_special)
+
+
     def test_dn_group_permissions(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -1072,6 +1128,15 @@ class LDAPTest(TestCase):
         self.assert_(not bob.is_active)
         self.assert_(not bob.is_staff)
         self.assert_(not bob.is_superuser)
+
+    def test_populate_bogus_user(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+        )
+        
+        bogus = self.backend.populate_user('bogus')
+
+        self.assertEqual(bogus, None)
 
     def test_start_tls_missing(self):
         self._init_settings(

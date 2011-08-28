@@ -7,4 +7,5 @@ class TestProfile(models.Model):
     authentication backend itself.
     """
     user = models.OneToOneField('auth.User')
+    is_special = models.BooleanField(default=False)
     populated = models.BooleanField(default=False)

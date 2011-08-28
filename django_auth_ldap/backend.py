@@ -295,8 +295,11 @@ class _LDAPUser(object):
         user = None
         
         try:
-            self._get_or_create_user(force_populate=True)
-            
+            # self.attrs will only be non-None if we were able to load this user
+            # from the LDAP directory, so this filters out nonexistent users.
+            if self.attrs is not None:
+                self._get_or_create_user(force_populate=True)
+
             user = self._user
         except self.ldap.LDAPError, e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
@@ -326,6 +329,14 @@ class _LDAPUser(object):
         
         return self._user_attrs
     attrs = property(_get_user_attrs)
+
+    def _get_group_dns(self):
+        return self._get_groups().get_group_dns()
+    group_dns = property(_get_group_dns)
+
+    def _get_group_names(self):
+        return self._get_groups().get_group_names()
+    group_names = property(_get_group_names)
 
     def _get_bound_connection(self):
         if not self._connection_bound:
@@ -470,7 +481,7 @@ class _LDAPUser(object):
         for field, attr in ldap_settings.AUTH_LDAP_USER_ATTR_MAP.iteritems():
             try:
                 setattr(self._user, field, self.attrs[attr][0])
-            except (KeyError, IndexError):
+            except StandardError:
                 logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
     
     def _populate_user_from_group_memberships(self):
@@ -488,13 +499,8 @@ class _LDAPUser(object):
 
             logger.debug("Populating Django user profile for %s", self._user.username)
 
-            for field, attr in ldap_settings.AUTH_LDAP_PROFILE_ATTR_MAP.iteritems():
-                try:
-                    # user_attrs is a hash of lists of attribute values
-                    setattr(profile, field, self.attrs[attr][0])
-                    save_profile = True
-                except (KeyError, IndexError):
-                    logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
+            save_profile = self._populate_profile_from_attributes(profile) or save_profile
+            save_profile = self._populate_profile_from_group_memberships(profile) or save_profile
 
             signal_responses = populate_user_profile.send(self.backend.__class__, profile=profile, ldap_user=self)
             if len(signal_responses) > 0:
@@ -504,6 +510,37 @@ class _LDAPUser(object):
                 profile.save()
         except (SiteProfileNotAvailable, ObjectDoesNotExist):
             logger.debug("Django user %s does not have a profile to populate", self._user.username)
+
+    def _populate_profile_from_attributes(self, profile):
+        """
+        Populate the given profile object from AUTH_LDAP_PROFILE_ATTR_MAP.
+        Returns True if the profile was modified.
+        """
+        save_profile = False
+
+        for field, attr in ldap_settings.AUTH_LDAP_PROFILE_ATTR_MAP.iteritems():
+            try:
+                # user_attrs is a hash of lists of attribute values
+                setattr(profile, field, self.attrs[attr][0])
+                save_profile = True
+            except StandardError:
+                logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
+
+        return save_profile
+
+    def _populate_profile_from_group_memberships(self, profile):
+        """
+        Populate the given profile object from AUTH_LDAP_PROFILE_FLAGS_BY_GROUP.
+        Returns True if the profile was modified.
+        """
+        save_profile = False
+
+        for field, group_dn in ldap_settings.AUTH_LDAP_PROFILE_FLAGS_BY_GROUP.iteritems():
+            value = self._get_groups().is_member_of(group_dn)
+            setattr(profile, field, value)
+            save_profile = True
+
+        return save_profile
 
     def _mirror_groups(self):
         """
@@ -618,7 +655,7 @@ class _LDAPUserGroups(object):
     
     def get_group_names(self):
         """
-        Returns the list of Django group names that this user belongs to by
+        Returns the set of Django group names that this user belongs to by
         virtue of LDAP group memberships.
         """
         if self._group_names is None:
@@ -626,8 +663,8 @@ class _LDAPUserGroups(object):
         
         if self._group_names is None:
             group_infos = self._get_group_infos()
-            self._group_names = [self._group_type.group_name_from_info(group_info)
-                for group_info in group_infos]
+            self._group_names = set([self._group_type.group_name_from_info(group_info)
+                for group_info in group_infos])
             self._cache_attr("_group_names")
         
         return self._group_names
@@ -644,14 +681,14 @@ class _LDAPUserGroups(object):
             is_member = self._group_type.is_member(self._ldap_user, group_dn)
         
         if is_member is None:
-            is_member = (group_dn in self._get_group_dns())
+            is_member = (group_dn in self.get_group_dns())
         
         logger.debug("%s is%sa member of %s", self._ldap_user.dn,
                      is_member and " " or " not ", group_dn)
 
         return is_member
     
-    def _get_group_dns(self):
+    def get_group_dns(self):
         """
         Returns a (cached) set of the distinguished names in self._group_infos.
         """
@@ -708,6 +745,7 @@ class LDAPSettings(object):
         'AUTH_LDAP_GROUP_TYPE': None,
         'AUTH_LDAP_MIRROR_GROUPS': False,
         'AUTH_LDAP_PROFILE_ATTR_MAP': {},
+        'AUTH_LDAP_PROFILE_FLAGS_BY_GROUP': {},
         'AUTH_LDAP_REQUIRE_GROUP': None,
         'AUTH_LDAP_SERVER_URI': 'ldap://localhost',
         'AUTH_LDAP_START_TLS': False,

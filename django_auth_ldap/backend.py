@@ -61,7 +61,7 @@ from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 
-from django_auth_ldap.config import _LDAPConfig, LDAPSearch, LDAPGroupType
+from django_auth_ldap.config import _LDAPConfig, LDAPSearch
 
 
 logger = _LDAPConfig.get_logger()
@@ -722,7 +722,14 @@ class _LDAPUserGroups(object):
             cache.set(key, value, ldap_settings.AUTH_LDAP_GROUP_CACHE_TIMEOUT)
     
     def _cache_key(self, attr_name):
-        return u'auth_ldap.%s.%s.%s' % (self.__class__.__name__, attr_name, self._ldap_user.dn)
+        """
+        Memcache keys can't have spaces in them, so we'll remove them from the
+        DN for maximum compatibility.
+        """
+        dn = self._ldap_user.dn.replace(' ', '%20')
+        key = u'auth_ldap.%s.%s.%s' % (self.__class__.__name__, attr_name, dn)
+
+        return key
 
 
 class LDAPSettings(object):

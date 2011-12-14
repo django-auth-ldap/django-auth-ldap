@@ -691,6 +691,27 @@ class LDAPTest(TestCase):
         self.assertEqual(user.first_name, 'Alice')
         self.assertEqual(user.last_name, 'Adams')
 
+        # init, bind as user, bind anonymous, lookup user attrs
+        self.assertEqual(self.mock_ldap.ldap_methods_called(),
+            ['initialize', 'simple_bind_s', 'simple_bind_s', 'search_s'])
+
+    def test_bind_as_user(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            AUTH_LDAP_USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
+            AUTH_LDAP_BIND_AS_AUTHENTICATING_USER=True,
+        )
+
+        user = self.backend.authenticate(username='alice', password='password')
+
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(user.first_name, 'Alice')
+        self.assertEqual(user.last_name, 'Adams')
+
+        # init, bind as user, lookup user attrs
+        self.assertEqual(self.mock_ldap.ldap_methods_called(),
+            ['initialize', 'simple_bind_s', 'search_s'])
+
     def test_signal_populate_user(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'

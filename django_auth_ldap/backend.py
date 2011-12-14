@@ -358,7 +358,9 @@ class _LDAPUser(object):
             raise self.AuthenticationFailed("Failed to map the username to a DN.")
 
         try:
-            self._bind_as(self.dn, password)
+            sticky = ldap_settings.AUTH_LDAP_BIND_AS_AUTHENTICATING_USER
+
+            self._bind_as(self.dn, password, sticky=sticky)
         except self.ldap.INVALID_CREDENTIALS:
             raise self.AuthenticationFailed("User DN/password rejected by LDAP server.")
     
@@ -590,23 +592,22 @@ class _LDAPUser(object):
         AUTH_LDAP_BIND_PASSWORD.
         """
         self._bind_as(ldap_settings.AUTH_LDAP_BIND_DN,
-            ldap_settings.AUTH_LDAP_BIND_PASSWORD)
+            ldap_settings.AUTH_LDAP_BIND_PASSWORD,
+            sticky=True)
 
-        self._connection_bound = True
-
-    def _bind_as(self, bind_dn, bind_password):
+    def _bind_as(self, bind_dn, bind_password, sticky=False):
         """
         Binds to the LDAP server with the given credentials. This does not trap
         exceptions.
 
-        If successful, we set self._connection_bound to False under the
-        assumption that we're not binding as the default user. Callers can set
-        it to True as appropriate.
+        If sticky is True, then we will consider the connection to be bound for
+        the life of this object. If False, then the caller only wishes to test
+        the credentials, after which the connection will be considered unbound.
         """
         self._get_connection().simple_bind_s(bind_dn.encode('utf-8'),
             bind_password.encode('utf-8'))
 
-        self._connection_bound = False
+        self._connection_bound = sticky
 
     def _get_connection(self):
         """
@@ -741,6 +742,7 @@ class LDAPSettings(object):
     defaults = {
         'AUTH_LDAP_ALWAYS_UPDATE_USER': True,
         'AUTH_LDAP_AUTHORIZE_ALL_USERS': False,
+        'AUTH_LDAP_BIND_AS_AUTHENTICATING_USER': False,
         'AUTH_LDAP_BIND_DN': '',
         'AUTH_LDAP_BIND_PASSWORD': '',
         'AUTH_LDAP_CACHE_GROUPS': False,

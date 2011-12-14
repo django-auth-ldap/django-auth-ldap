@@ -75,11 +75,14 @@ efficient) equivalent::
 
     AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
 
-Note that you should still set :ref:`AUTH_LDAP_BIND_DN` and
-:ref:`AUTH_LDAP_BIND_PASSWORD` if you need anything other than simple
-authentication, as all LDAP operations will be performed with these credentials.
-This is for consistency and also because we would otherwise have to store the
-user's password in the session.
+By default, all LDAP operations are performed with the :ref:`AUTH_LDAP_BIND_DN`
+and :ref:`AUTH_LDAP_BIND_PASSWORD` credentials, not with the user's. Otherwise,
+the LDAP connection would be bound as the authenticating user during login
+requests and as the default credentials during other requests, so you would see
+inconsistent LDAP attributes depending on the nature of the Django view. If
+you're willing to accept the inconsistency in order to retrieve attributes
+while bound as the authenticating user. see
+:ref:`AUTH_LDAP_BIND_AS_AUTHENTICATING_USER`.
 
 By default, LDAP connections are unencrypted and make no attempt to protect
 sensitive information, such as passwords. When communicating with an LDAP server
@@ -205,7 +208,7 @@ need to populate a user outside of the authentication process—for example, to
 create associated model objects before the user logs in for the first time—you
 can call :meth:`django_auth_ldap.backend.LDAPBackend.populate_user`. You'll
 need an instance of :class:`~django_auth_ldap.backend.LDAPBackend`, which you
-can create yourself if necessary.
+should feel free to create yourself.
 :meth:`~django_auth_ldap.backend.LDAPBackend.populate_user` returns the new
 :class:`~django.contrib.auth.models.User` or `None` if the user could not be
 found in LDAP.
@@ -222,6 +225,9 @@ properties are, of course, only valid if groups are configured.
     * ``group_names``: The set of groups that this user belongs to, as simple
       names. These are the names that will be used if
       :ref:`AUTH_LDAP_MIRROR_GROUPS` is used.
+    * ``connection``: Our bound connection for direct LDAP access. Normally,
+      this will be bound as :ref:`AUTH_LDAP_BIND_DN`, but see
+      :ref:`AUTH_LDAP_BIND_AS_AUTHENTICATING_USER` for an exception.
 
 Python-ldap returns all attribute values as utf8-encoded strings. For
 convenience, this module will try to decode all values into Unicode strings. Any
@@ -479,6 +485,24 @@ Default: ``False``
 
 If ``True``, :class:`~django_auth_ldap.backend.LDAPBackend` will be able furnish
 permissions for any Django user, regardless of which backend authenticated it.
+
+
+.. _AUTH_LDAP_BIND_AS_AUTHENTICATING_USER:
+
+AUTH_LDAP_BIND_AS_AUTHENTICATING_USER
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+If ``True``, authentication will leave the LDAP connection bound as the
+authenticating user, rather than forcing it to re-bind with the default
+credentials after authentication succeeds. This may be desirable if you do not
+have global credentials that are able to access the user's attributes.
+django-auth-ldap never stores the user's password, so this only applies to
+requests where the user is authenticated. Thus, the downside to this setting is
+that LDAP results may vary based on whether the user was authenticated earlier
+in the Django view, which could be surprising to code not directly concerned
+with authentication.
 
 
 .. _AUTH_LDAP_BIND_DN:

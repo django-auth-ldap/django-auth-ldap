@@ -192,7 +192,14 @@ class _DeepStringCoder(object):
         return [self.decode(v) for v in value]
     
     def _decode_dict(self, value):
-        return dict([(self.decode(k), self.decode(v)) for k,v in value.iteritems()])
+        # python-ldap has a special case-insensitive dictionary class, so we
+        # need to respect that.
+        decoded = value.__class__()
+
+        for k, v in value.iteritems():
+            decoded[self.decode(k)] = self.decode(v)
+
+        return decoded
 
 
 class LDAPGroupType(object):

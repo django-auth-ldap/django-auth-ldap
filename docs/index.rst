@@ -136,7 +136,7 @@ configuration must be of this type and part of the search results.
 
     import ldap
     from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
-    
+
     AUTH_LDAP_GROUP_SEARCH = LDAPSearch("ou=groups,dc=example,dc=com",
         ldap.SCOPE_SUBTREE, "(objectClass=groupOfNames)"
     )
@@ -433,14 +433,14 @@ and arguments are included for completeness.
         "is_staff": "cn=staff,ou=django,ou=groups,dc=example,dc=com",
         "is_superuser": "cn=superuser,ou=django,ou=groups,dc=example,dc=com"
     }
-    
+
     AUTH_LDAP_PROFILE_FLAGS_BY_GROUP = {
         "is_awesome": "cn=awesome,ou=django,ou=groups,dc=example,dc=com",
     }
-    
+
     # This is the default, but I like to be explicit.
     AUTH_LDAP_ALWAYS_UPDATE_USER = True
-    
+
     # Use LDAP group membership to calculate group permissions.
     AUTH_LDAP_FIND_GROUP_PERMS = True
 
@@ -767,9 +767,9 @@ Configuration
     The base class for objects that will determine group membership for various
     LDAP grouping mechanisms. Implementations are provided for common group
     types or you can write your own. See the source code for subclassing notes.
-    
+
     .. method:: __init__(name_attr='cn')
-        
+
         By default, LDAP groups will be mapped to Django groups by taking the
         first value of the cn attribute. You can specify a different attribute
         with ``name_attr``.
@@ -788,9 +788,9 @@ Configuration
     A concrete subclass of
     :class:`~django_auth_ldap.config.LDAPGroupType` that handles grouping
     mechanisms wherein the group object contains a list of its member DNs.
-    
+
     .. method:: __init__(member_attr, name_attr='cn')
-    
+
         * ``member_attr``: The attribute on the group object that contains a
           list of member DNs. 'member' and 'uniqueMember' are common examples.
 
@@ -802,7 +802,7 @@ Configuration
     traversed to determine membership.
 
     .. method:: __init__(member_attr, name_attr='cn')
-    
+
         As above.
 
 
@@ -918,7 +918,7 @@ Backend
         users any way they like.
 
     .. method:: ldap_to_django_username(username)
-    
+
         Returns a valid Django username based on the given LDAP username (which
         is what the user enters). By default, ``username`` is returned
         unchanged. This can be overriden by subclasses.

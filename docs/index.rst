@@ -225,9 +225,6 @@ properties are, of course, only valid if groups are configured.
     * ``group_names``: The set of groups that this user belongs to, as simple
       names. These are the names that will be used if
       :ref:`AUTH_LDAP_MIRROR_GROUPS` is used.
-    * ``connection``: Our bound connection for direct LDAP access. Normally,
-      this will be bound as :ref:`AUTH_LDAP_BIND_DN`, but see
-      :ref:`AUTH_LDAP_BIND_AS_AUTHENTICATING_USER` for an exception.
 
 Python-ldap returns all attribute values as utf8-encoded strings. For
 convenience, this module will try to decode all values into Unicode strings. Any

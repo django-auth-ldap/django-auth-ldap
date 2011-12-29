@@ -1,2 +1,2 @@
-version = (1, 0, 13)
-version_string = "1.0.13"
+version = (1, 0, 14)
+version_string = "1.0.14"

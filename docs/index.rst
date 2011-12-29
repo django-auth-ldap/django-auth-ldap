@@ -183,8 +183,8 @@ LDAP directories tend to contain much more information about users that you may
 wish to propagate. A pair of settings, :ref:`AUTH_LDAP_USER_ATTR_MAP` and
 :ref:`AUTH_LDAP_PROFILE_ATTR_MAP`, serve to copy directory information into
 :class:`~django.contrib.auth.models.User` and profile objects. These are
-dictionaries that map user and profile model keys, respectively, to LDAP
-attribute names::
+dictionaries that map user and profile model keys, respectively, to
+(case-insensitive) LDAP attribute names::
 
     AUTH_LDAP_USER_ATTR_MAP = {"first_name": "givenName", "last_name": "sn"}
     AUTH_LDAP_PROFILE_ATTR_MAP = {"home_directory": "homeDirectory"}
@@ -220,7 +220,7 @@ properties are, of course, only valid if groups are configured.
 
     * ``dn``: The user's distinguished name.
     * ``attrs``: The user's LDAP attributes as a dictionary of lists of string
-      values.
+      values. The dictionaries are modified to use case-insensitive keys.
     * ``group_dns``: The set of groups that this user belongs to, as DNs.
     * ``group_names``: The set of groups that this user belongs to, as simple
       names. These are the names that will be used if

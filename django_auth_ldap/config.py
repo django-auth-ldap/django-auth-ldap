@@ -172,6 +172,7 @@ class _DeepStringCoder(object):
     """
     def __init__(self, encoding):
         self.encoding = encoding
+        self.ldap = _LDAPConfig.get_ldap()
 
     def decode(self, value):
         try:
@@ -192,9 +193,10 @@ class _DeepStringCoder(object):
         return [self.decode(v) for v in value]
 
     def _decode_dict(self, value):
-        # python-ldap has a special case-insensitive dictionary class, so we
-        # need to respect that.
-        decoded = value.__class__()
+        # Attribute dictionaries should be case-insensitive. python-ldap
+        # defines this, although for some reason, it doesn't appear to use it
+        # for search results.
+        decoded = self.ldap.cidict.cidict()
 
         for k, v in value.iteritems():
             decoded[self.decode(k)] = self.decode(v)

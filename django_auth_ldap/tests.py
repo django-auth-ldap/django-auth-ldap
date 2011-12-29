@@ -42,18 +42,7 @@ import django_auth_ldap.models
 from django_auth_ldap import backend
 from django_auth_ldap.config import _LDAPConfig, LDAPSearch
 from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType
-from django_auth_ldap.config import GroupOfNamesType, NestedGroupOfNamesType
-from django_auth_ldap.config import GroupOfUniqueNamesType, NestedGroupOfUniqueNamesType
-from django_auth_ldap.config import ActiveDirectoryGroupType, NestedActiveDirectoryGroupType
-
-
-class ldapdict(dict):
-    """
-    python-ldap uses a case-insensitive dict class, which we need to honor when
-    we build our Unicode version of the attribute structures. This allows us to
-    test the dictionary class propagation.
-    """
-    pass
+from django_auth_ldap.config import GroupOfNamesType
 
 
 class TestSettings(backend.LDAPSettings):
@@ -116,6 +105,10 @@ class MockLDAP(object):
         def escape_filter_chars(s):
             return s
         escape_filter_chars = staticmethod(escape_filter_chars)
+
+    class cidict(object):
+        class cidict(dict):
+            pass
 
 
     def __init__(self, directory):
@@ -307,7 +300,7 @@ class MockLDAP(object):
 class LDAPTest(TestCase):
 
     # Following are the objecgs in our mock LDAP directory
-    alice = ("uid=alice,ou=people,o=test", ldapdict({
+    alice = ("uid=alice,ou=people,o=test", {
         "uid": ["alice"],
         "objectClass": ["person", "organizationalPerson", "inetOrgPerson", "posixAccount"],
         "userPassword": ["password"],
@@ -315,8 +308,8 @@ class LDAPTest(TestCase):
         "gidNumber": ["1000"],
         "givenName": ["Alice"],
         "sn": ["Adams"]
-    }))
-    bob = ("uid=bob,ou=people,o=test", ldapdict({
+    })
+    bob = ("uid=bob,ou=people,o=test", {
         "uid": ["bob"],
         "objectClass": ["person", "organizationalPerson", "inetOrgPerson", "posixAccount"],
         "userPassword": ["password"],
@@ -324,8 +317,8 @@ class LDAPTest(TestCase):
         "gidNumber": ["50"],
         "givenName": ["Robert"],
         "sn": ["Barker"]
-    }))
-    dressler = (u"uid=dreßler,ou=people,o=test".encode('utf-8'), ldapdict({
+    })
+    dressler = (u"uid=dreßler,ou=people,o=test".encode('utf-8'), {
         "uid": [u"dreßler".encode('utf-8')],
         "objectClass": ["person", "organizationalPerson", "inetOrgPerson", "posixAccount"],
         "userPassword": ["password"],
@@ -333,69 +326,69 @@ class LDAPTest(TestCase):
         "gidNumber": ["50"],
         "givenName": ["Wolfgang"],
         "sn": [u"Dreßler".encode('utf-8')]
-    }))
-    nobody = ("uid=nobody,ou=people,o=test", ldapdict({
+    })
+    nobody = ("uid=nobody,ou=people,o=test", {
         "uid": ["nobody"],
         "objectClass": ["person", "organizationalPerson", "inetOrgPerson", "posixAccount"],
         "userPassword": ["password"],
         "binaryAttr": ["\xb2"]  # Invalid UTF-8
-    }))
+    })
 
     # posixGroup objects
-    active_px = ("cn=active_px,ou=groups,o=test", ldapdict({
+    active_px = ("cn=active_px,ou=groups,o=test", {
         "cn": ["active_px"],
         "objectClass": ["posixGroup"],
         "gidNumber": ["1000"],
-    }))
-    staff_px = ("cn=staff_px,ou=groups,o=test", ldapdict({
+    })
+    staff_px = ("cn=staff_px,ou=groups,o=test", {
         "cn": ["staff_px"],
         "objectClass": ["posixGroup"],
         "gidNumber": ["1001"],
         "memberUid": ["alice"],
-    }))
-    superuser_px = ("cn=superuser_px,ou=groups,o=test", ldapdict({
+    })
+    superuser_px = ("cn=superuser_px,ou=groups,o=test", {
         "cn": ["superuser_px"],
         "objectClass": ["posixGroup"],
         "gidNumber": ["1002"],
         "memberUid": ["alice"],
-    }))
+    })
 
     # groupOfUniqueName groups
-    active_gon = ("cn=active_gon,ou=groups,o=test", ldapdict({
+    active_gon = ("cn=active_gon,ou=groups,o=test", {
         "cn": ["active_gon"],
         "objectClass": ["groupOfNames"],
         "member": ["uid=alice,ou=people,o=test"]
-    }))
-    staff_gon = ("cn=staff_gon,ou=groups,o=test", ldapdict({
+    })
+    staff_gon = ("cn=staff_gon,ou=groups,o=test", {
         "cn": ["staff_gon"],
         "objectClass": ["groupOfNames"],
         "member": ["uid=alice,ou=people,o=test"]
-    }))
-    superuser_gon = ("cn=superuser_gon,ou=groups,o=test", ldapdict({
+    })
+    superuser_gon = ("cn=superuser_gon,ou=groups,o=test", {
         "cn": ["superuser_gon"],
         "objectClass": ["groupOfNames"],
         "member": ["uid=alice,ou=people,o=test"]
-    }))
+    })
 
     # Nested groups with a circular reference
-    parent_gon = ("cn=parent_gon,ou=groups,o=test", ldapdict({
+    parent_gon = ("cn=parent_gon,ou=groups,o=test", {
         "cn": ["parent_gon"],
         "objectClass": ["groupOfNames"],
         "member": ["cn=nested_gon,ou=groups,o=test"]
-    }))
-    nested_gon = ("cn=nested_gon,ou=groups,o=test", ldapdict({
+    })
+    nested_gon = ("cn=nested_gon,ou=groups,o=test", {
         "cn": ["nested_gon"],
         "objectClass": ["groupOfNames"],
         "member": [
             "uid=alice,ou=people,o=test",
             "cn=circular_gon,ou=groups,o=test"
         ]
-    }))
-    circular_gon = ("cn=circular_gon,ou=groups,o=test", ldapdict({
+    })
+    circular_gon = ("cn=circular_gon,ou=groups,o=test", {
         "cn": ["circular_gon"],
         "objectClass": ["groupOfNames"],
         "member": ["cn=parent_gon,ou=groups,o=test"]
-    }))
+    })
 
 
     mock_ldap = MockLDAP({
@@ -436,7 +429,7 @@ class LDAPTest(TestCase):
         self.configure_logger()
         self.mock_ldap.reset()
 
-        _LDAPConfig.ldap = self.mock_ldap
+        self.ldap = _LDAPConfig.ldap = self.mock_ldap
         self.backend = backend.LDAPBackend()
 
 
@@ -450,7 +443,7 @@ class LDAPTest(TestCase):
             AUTH_LDAP_CONNECTION_OPTIONS={'opt1': 'value1'}
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        self.backend.authenticate(username='alice', password='password')
 
         self.assertEqual(self.mock_ldap.options, {'opt1': 'value1'})
 
@@ -670,14 +663,14 @@ class LDAPTest(TestCase):
         self.assertEqual(user.username, u'dreßler')
         self.assertEqual(user.last_name, u'Dreßler')
 
-    def test_ldapdict(self):
+    def test_cidict(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
         )
 
         user = self.backend.authenticate(username="alice", password="password")
 
-        self.assert_(isinstance(user.ldap_user.attrs, ldapdict))
+        self.assert_(isinstance(user.ldap_user.attrs, self.ldap.cidict.cidict))
 
     def test_populate_user(self):
         self._init_settings(

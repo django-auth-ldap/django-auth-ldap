@@ -411,6 +411,7 @@ class _LDAPUser(object):
         AuthenticationFailed on failure.
         """
         self._check_required_group()
+        self._check_denied_group()
 
     def _check_required_group(self):
         """
@@ -423,6 +424,22 @@ class _LDAPUser(object):
             is_member = self._get_groups().is_member_of(required_group_dn)
             if not is_member:
                 raise self.AuthenticationFailed("User is not a member of AUTH_LDAP_REQUIRE_GROUP")
+
+        return True
+
+    def _check_denied_group(self):
+        """
+        Returns True if denied group (AUTH_LDAP_DENY_GROUP) isn't
+        met. Always returns True if AUTH_LDAP_DENY_GROUP is None.
+        """
+        denied_group_dn = ldap_settings.AUTH_LDAP_DENY_GROUP
+
+        if denied_group_dn is not None:
+            is_member = self._get_groups().is_member_of(denied_group_dn)
+            if is_member:
+                raise self.AuthenticationFailed("User is a member of AUTH_LDAP_DENY_GROUP")
+
+        return True
 
     #
     # User management
@@ -756,6 +773,7 @@ class LDAPSettings(object):
         'AUTH_LDAP_PROFILE_ATTR_MAP': {},
         'AUTH_LDAP_PROFILE_FLAGS_BY_GROUP': {},
         'AUTH_LDAP_REQUIRE_GROUP': None,
+        'AUTH_LDAP_DENY_GROUP': None,
         'AUTH_LDAP_SERVER_URI': 'ldap://localhost',
         'AUTH_LDAP_START_TLS': False,
         'AUTH_LDAP_USER_ATTR_MAP': {},

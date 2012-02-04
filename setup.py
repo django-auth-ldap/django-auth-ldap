@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name="django-auth-ldap",
-    version="1.0.14",
+    version="1.0.15",
     description="Django LDAP authentication backend",
     long_description="""This is a Django authentication backend that authenticates against an LDAP service. Configuration can be as simple as a single distinguished name template, but there are many rich configuration options for working with users, groups, and permissions.
 

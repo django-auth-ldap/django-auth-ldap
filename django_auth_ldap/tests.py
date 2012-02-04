@@ -772,6 +772,22 @@ class LDAPTest(TestCase):
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
             ['initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s', 'initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s'])
 
+    def test_denied_group(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            AUTH_LDAP_DENY_GROUP="cn=active_gon,ou=groups,o=test"
+        )
+
+        alice = self.backend.authenticate(username='alice', password='password')
+        bob = self.backend.authenticate(username='bob', password='password')
+
+        self.assert_(alice is None)
+        self.assert_(bob is not None)
+        self.assertEqual(self.mock_ldap.ldap_methods_called(),
+            ['initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s', 'initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s'])
+
     def test_group_dns(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',

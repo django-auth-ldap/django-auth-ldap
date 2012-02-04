@@ -429,8 +429,8 @@ class _LDAPUser(object):
 
     def _check_denied_group(self):
         """
-        Returns True if denied group (AUTH_LDAP_DENY_GROUP) isn't
-        met. Always returns True if AUTH_LDAP_DENY_GROUP is None.
+        Returns True if the negative group requirement (AUTH_LDAP_DENY_GROUP)
+        is met. Always returns True if AUTH_LDAP_DENY_GROUP is None.
         """
         denied_group_dn = ldap_settings.AUTH_LDAP_DENY_GROUP
 
@@ -764,6 +764,7 @@ class LDAPSettings(object):
         'AUTH_LDAP_BIND_PASSWORD': '',
         'AUTH_LDAP_CACHE_GROUPS': False,
         'AUTH_LDAP_CONNECTION_OPTIONS': {},
+        'AUTH_LDAP_DENY_GROUP': None,
         'AUTH_LDAP_FIND_GROUP_PERMS': False,
         'AUTH_LDAP_GLOBAL_OPTIONS': {},
         'AUTH_LDAP_GROUP_CACHE_TIMEOUT': None,
@@ -773,7 +774,6 @@ class LDAPSettings(object):
         'AUTH_LDAP_PROFILE_ATTR_MAP': {},
         'AUTH_LDAP_PROFILE_FLAGS_BY_GROUP': {},
         'AUTH_LDAP_REQUIRE_GROUP': None,
-        'AUTH_LDAP_DENY_GROUP': None,
         'AUTH_LDAP_SERVER_URI': 'ldap://localhost',
         'AUTH_LDAP_START_TLS': False,
         'AUTH_LDAP_USER_ATTR_MAP': {},

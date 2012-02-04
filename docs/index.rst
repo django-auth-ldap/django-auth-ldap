@@ -144,9 +144,13 @@ configuration must be of this type and part of the search results.
 
 The simplest use of groups is to limit the users who are allowed to log in. If
 :ref:`AUTH_LDAP_REQUIRE_GROUP` is set, then only users who are members of that
-group will successfully authenticate::
+group will successfully authenticate. :ref:`AUTH_LDAP_DENY_GROUP` is the
+reverse: if given, members of this group will be rejected.
+
+.. code-block:: python
 
     AUTH_LDAP_REQUIRE_GROUP = "cn=enabled,ou=groups,dc=example,dc=com"
+    AUTH_LDAP_DENY_GROUP = "cn=disabled,ou=groups,dc=example,dc=com"
 
 More advanced uses of groups are covered in the next two sections.
 
@@ -411,8 +415,9 @@ and arguments are included for completeness.
     )
     AUTH_LDAP_GROUP_TYPE = GroupOfNamesType(name_attr="cn")
 
-    # Only users in this group can log in.
+    # Simple group restrictions
     AUTH_LDAP_REQUIRE_GROUP = "cn=enabled,ou=django,ou=groups,dc=example,dc=com"
+    AUTH_LDAP_DENY_GROUP = "cn=disabled,ou=django,ou=groups,dc=example,dc=com"
 
     # Populate the Django user from the LDAP directory.
     AUTH_LDAP_USER_ATTR_MAP = {
@@ -551,15 +556,15 @@ A dictionary of options to pass to each connection to the LDAP server via
 ``LDAPObject.set_option()``. Keys are ``ldap.OPT_*`` constants.
 
 
-.. _AUTH_LDAP_GROUP_CACHE_TIMEOUT:
+.. _AUTH_LDAP_DENY_GROUP:
 
-AUTH_LDAP_GROUP_CACHE_TIMEOUT
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+AUTH_LDAP_DENY_GROUP
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: ``None``
 
-If :ref:`AUTH_LDAP_CACHE_GROUPS` is ``True``, this is the cache timeout for
-group memberships. If ``None``, the global cache timeout will be used.
+The distinguished name of a group; authentication will fail for any user
+that belongs to this group.
 
 
 .. _AUTH_LDAP_FIND_GROUP_PERMS:
@@ -583,6 +588,17 @@ Default: ``{}``
 
 A dictionary of options to pass to ``ldap.set_option()``. Keys are
 ``ldap.OPT_*`` constants.
+
+
+.. _AUTH_LDAP_GROUP_CACHE_TIMEOUT:
+
+AUTH_LDAP_GROUP_CACHE_TIMEOUT
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+If :ref:`AUTH_LDAP_CACHE_GROUPS` is ``True``, this is the cache timeout for
+group memberships. If ``None``, the global cache timeout will be used.
 
 
 .. _AUTH_LDAP_GROUP_SEARCH:
@@ -652,8 +668,8 @@ AUTH_LDAP_REQUIRE_GROUP
 
 Default: ``None``
 
-The distinguished name of a group that a user must belong to in order to
-successfully authenticate.
+The distinguished name of a group; authentication will fail for any user that
+does not belong to this group.
 
 
 .. _AUTH_LDAP_SERVER_URI:

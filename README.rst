@@ -5,8 +5,8 @@ groups, and permissions.
 
 This package requires at least Python 2.3, Django 1.0, and python-ldap 2.0.
 Full documentation can be found at
-`http://packages.python.org/django-auth-ldap/`_;
-the following is an example configuration, just to whet your appetite::
+http://packages.python.org/django-auth-ldap/; following is an example
+configuration, just to whet your appetite::
 
     import ldap
     from django_auth_ldap.config import LDAPSearch, GroupOfNamesType

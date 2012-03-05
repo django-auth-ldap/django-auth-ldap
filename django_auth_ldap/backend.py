@@ -106,7 +106,7 @@ class LDAPBackend(object):
     #
 
     def authenticate(self, username, password):
-        ldap_user = _LDAPUser(self, username=username)
+        ldap_user = _LDAPUser(self, username=username.strip())
         user = ldap_user.authenticate(password)
 
         return user

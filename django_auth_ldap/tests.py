@@ -477,6 +477,20 @@ class LDAPTest(TestCase):
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
             ['initialize', 'simple_bind_s'])
 
+    def test_new_user_whitespace(self):
+        self._init_settings(
+            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+        user_count = User.objects.count()
+
+        user = self.backend.authenticate(username=' alice', password='password')
+        user = self.backend.authenticate(username='alice ', password='password')
+
+        self.assert_(not user.has_usable_password())
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(User.objects.count(), user_count + 1)
+
+
     def test_simple_bind_bad_user(self):
         self._init_settings(
             AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'

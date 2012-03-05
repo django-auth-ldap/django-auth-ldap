@@ -75,6 +75,11 @@ efficient) equivalent::
 
     AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
 
+LDAP is fairly flexible when it comes to matching DNs.
+:ref:`~django_auth_ldap.backend.LDAPBackend` make an effort to accommodate
+this, for example by forcing usernames to lower case when creating Django users
+and trimming whitespace when authenticating.
+
 By default, all LDAP operations are performed with the :ref:`AUTH_LDAP_BIND_DN`
 and :ref:`AUTH_LDAP_BIND_PASSWORD` credentials, not with the user's. Otherwise,
 the LDAP connection would be bound as the authenticating user during login

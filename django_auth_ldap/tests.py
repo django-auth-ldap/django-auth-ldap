@@ -92,6 +92,7 @@ class MockLDAP(object):
     class LDAPError(Exception): pass
     class INVALID_CREDENTIALS(LDAPError): pass
     class NO_SUCH_OBJECT(LDAPError): pass
+    class NO_SUCH_ATTRIBUTE(LDAPError): pass
 
     #
     # Submodules
@@ -252,12 +253,13 @@ class MockLDAP(object):
             raise self.INVALID_CREDENTIALS('%s:%s' % (who, cred))
 
     def _compare_s(self, dn, attr, value):
-        try:
-            found = (value in self.directory[dn][attr])
-        except KeyError:
-            found = False
+        if dn not in self.directory:
+            raise self.NO_SUCH_OBJECT
 
-        return found and 1 or 0
+        if attr not in self.directory[dn]:
+            raise self.NO_SUCH_ATTRIBUTE
+
+        return (value in self.directory[dn][attr]) and 1 or 0
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
         """

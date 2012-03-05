@@ -306,9 +306,16 @@ class PosixGroupType(LDAPGroupType):
             user_uid = ldap_user.attrs['uid'][0]
             user_gid = ldap_user.attrs['gidNumber'][0]
 
-            is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'memberUid', user_uid.encode('utf-8'))
+            try:
+                is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'memberUid', user_uid.encode('utf-8'))
+            except self.ldap.NO_SUCH_ATTRIBUTE:
+                is_member = False
+
             if not is_member:
-                is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'gidNumber', user_gid.encode('utf-8'))
+                try:
+                    is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'gidNumber', user_gid.encode('utf-8'))
+                except self.ldap.NO_SUCH_ATTRIBUTE:
+                    is_member = False
         except (KeyError, IndexError):
             is_member = False
 
@@ -329,15 +336,22 @@ class MemberDNGroupType(LDAPGroupType):
         super(MemberDNGroupType, self).__init__(name_attr)
 
     def user_groups(self, ldap_user, group_search):
-        search = group_search.search_with_additional_terms(
-            {self.member_attr: ldap_user.dn})
+        search = group_search.search_with_additional_terms({self.member_attr: ldap_user.dn})
         groups = search.execute(ldap_user.connection)
 
         return groups
 
     def is_member(self, ldap_user, group_dn):
-        return ldap_user.connection.compare_s(group_dn.encode('utf-8'),
-            self.member_attr.encode('utf-8'), ldap_user.dn.encode('utf-8'))
+        try:
+            result = ldap_user.connection.compare_s(
+                group_dn.encode('utf-8'),
+                self.member_attr.encode('utf-8'),
+                ldap_user.dn.encode('utf-8')
+            )
+        except self.ldap.NO_SUCH_ATTRIBUTE:
+            result = 0
+
+        return result
 
 
 class NestedMemberDNGroupType(LDAPGroupType):

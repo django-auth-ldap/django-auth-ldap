@@ -78,7 +78,7 @@ class LDAPBackend(object):
     actually delegates most of its work to _LDAPUser, which is defined next.
     """
     supports_anonymous_user = False
-    supports_object_permissions = False
+    supports_object_permissions = True
 
     ldap = None # The cached ldap module (or mock object)
 
@@ -122,8 +122,8 @@ class LDAPBackend(object):
 
         return user
 
-    def has_perm(self, user, perm):
-        return perm in self.get_all_permissions(user)
+    def has_perm(self, user, perm, obj=None):
+        return perm in self.get_all_permissions(user, obj)
 
     def has_module_perms(self, user, app_label):
         for perm in self.get_all_permissions(user):
@@ -132,10 +132,10 @@ class LDAPBackend(object):
 
         return False
 
-    def get_all_permissions(self, user):
-        return self.get_group_permissions(user)
+    def get_all_permissions(self, user, obj=None):
+        return self.get_group_permissions(user, obj)
 
-    def get_group_permissions(self, user):
+    def get_group_permissions(self, user, obj=None):
         if not hasattr(user, 'ldap_user') and ldap_settings.AUTH_LDAP_AUTHORIZE_ALL_USERS:
             _LDAPUser(self, user=user) # This sets user.ldap_user
 

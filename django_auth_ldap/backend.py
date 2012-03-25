@@ -79,6 +79,7 @@ class LDAPBackend(object):
     """
     supports_anonymous_user = False
     supports_object_permissions = True
+    supports_inactive_user = False
 
     ldap = None # The cached ldap module (or mock object)
 

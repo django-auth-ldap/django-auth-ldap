@@ -1295,8 +1295,8 @@ class LDAPTest(TestCase):
         self.assert_(alice is not None)
 
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
-            ['set_option', 'initialize', 'simple_bind_s', 'search', 'search',
-                'result', 'result', 'simple_bind_s'])
+            ['initialize', 'simple_bind_s', 'search', 'search', 'result',
+                'result', 'simple_bind_s'])
 
     def _init_settings(self, **kwargs):
         self.backend.settings = TestSettings(**kwargs)

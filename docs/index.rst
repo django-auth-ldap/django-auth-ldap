@@ -67,6 +67,21 @@ return exactly one result or authentication will fail. If you can't search
 anonymously, you can set :ref:`AUTH_LDAP_BIND_DN` to the distinguished name of
 an authorized user and :ref:`AUTH_LDAP_BIND_PASSWORD` to the password.
 
+If you need to search in more than one place for a user, you can use
+:class:`~django_auth_ldap.config.LDAPSearchUnion`.  This takes multiple
+LDAPSearch objects and returns the union of the results. The precedence of the
+underlying searches is unspecified.
+
+.. code-block:: python
+
+    import ldap
+    from django_auth_ldap.config import LDAPSearch, LDAPSearchUnion
+
+    AUTH_LDAP_USER_SEARCH = LDAPSearchUnion(
+        LDAPSearch("ou=users,dc=example,dc=com", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"),
+        LDAPSearch("ou=otherusers,dc=example,dc=com", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"),
+    )
+
 To skip the search phase, set :ref:`AUTH_LDAP_USER_DN_TEMPLATE` to a template
 that will produce the authenticating user's DN directly. This template should
 have one placeholder, ``%(user)s``. If the previous example had used
@@ -76,7 +91,7 @@ efficient) equivalent::
     AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
 
 LDAP is fairly flexible when it comes to matching DNs.
-:class:`~django_auth_ldap.backend.LDAPBackend` make an effort to accommodate
+:class:`~django_auth_ldap.backend.LDAPBackend` makes an effort to accommodate
 this by forcing usernames to lower case when creating Django users and trimming
 whitespace when authenticating.
 
@@ -824,6 +839,14 @@ Configuration
         * ``filterstr``: An optional filter string (e.g. '(objectClass=person)').
           In order to be valid, ``filterstr`` must be enclosed in parentheses.
 
+.. class:: LDAPSearchUnion
+
+    .. method:: __init__(\*searches)
+
+        * ``searches``: Zero or more LDAPSearch objects. The result of the
+          overall search is the union (by DN) of the results of the underlying
+          searches. The precedence of the underlying results and the ordering of
+          the final results are both undefined.
 
 .. class:: LDAPGroupType
 

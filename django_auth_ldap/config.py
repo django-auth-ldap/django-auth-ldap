@@ -155,22 +155,76 @@ class LDAPSearch(object):
             filterstr = self.filterstr % filterargs
             results = connection.search_s(self.base_dn.encode('utf-8'),
                 self.scope, filterstr.encode('utf-8'))
-
-            # There's been a report of an LDAP server returning extraneous
-            # entries with DNs of None. This will filter them out.
-            results = filter(lambda r: r[0] is not None, results)
-
-            results = _DeepStringCoder('utf-8').decode(results)
-
-            result_dns = [result[0] for result in results]
-            logger.debug(u"search_s('%s', %d, '%s') returned %d objects: %s" %
-                (self.base_dn, self.scope, filterstr, len(result_dns), "; ".join(result_dns)))
         except self.ldap.LDAPError, e:
             results = []
             logger.error(u"search_s('%s', %d, '%s') raised %s" %
                 (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
 
+        return self._process_results(results)
+
+    def _begin(self, connection, filterargs=()):
+        """
+        Begins an asynchronous search and returns the message id to retrieve
+        the results.
+        """
+        try:
+            filterstr = self.filterstr % filterargs
+            msgid = connection.search(self.base_dn.encode('utf-8'),
+                self.scope, filterstr.encode('utf-8'))
+        except self.ldap.LDAPError, e:
+            msgid = None
+            logger.error(u"search('%s', %d, '%s') raised %s" %
+                (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
+
+        return msgid
+
+    def _results(self, connection, msgid):
+        """
+        Returns the result of a previous asynchronous query.
+        """
+        try:
+            kind, results = connection.result(msgid)
+            if kind != self.ldap.RES_SEARCH_RESULT:
+                results = []
+        except self.ldap.LDAPError, e:
+            results = []
+            logger.error(u"result(%d) raised %s" % (msgid, pprint.pformat(e)))
+
+        return self._process_results(results)
+
+    def _process_results(self, results):
+        """
+        Returns a sanitized copy of raw LDAP results. This scrubs out
+        references, decodes utf8, etc.
+        """
+        results = filter(lambda r: r[0] is not None, results)
+        results = _DeepStringCoder('utf-8').decode(results)
+
+        result_dns = [result[0] for result in results]
+        logger.debug(u"search_s('%s', %d, '%s') returned %d objects: %s" %
+            (self.base_dn, self.scope, self.filterstr, len(result_dns), "; ".join(result_dns)))
+
         return results
+
+
+class LDAPSearchUnion(object):
+    """
+    A compound search object that returns the union of the results. Instantiate
+    it with one or more LDAPSearch objects.
+    """
+    def __init__(self, *args):
+        self.searches = args
+        self.ldap = _LDAPConfig.get_ldap()
+
+    def execute(self, connection, filterargs=()):
+        msgids = [search._begin(connection, filterargs) for search in self.searches]
+        results = {}
+
+        for search, msgid in zip(self.searches, msgids):
+            result = search._results(connection, msgid)
+            results.update(dict(result))
+
+        return results.items()
 
 
 class _DeepStringCoder(object):

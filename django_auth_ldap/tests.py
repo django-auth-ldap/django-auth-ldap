@@ -40,7 +40,7 @@ from django.test import TestCase
 
 import django_auth_ldap.models
 from django_auth_ldap import backend
-from django_auth_ldap.config import _LDAPConfig, LDAPSearch
+from django_auth_ldap.config import _LDAPConfig, LDAPSearch, LDAPSearchUnion
 from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType
 from django_auth_ldap.config import GroupOfNamesType
 
@@ -88,6 +88,8 @@ class MockLDAP(object):
     SCOPE_BASE = 0
     SCOPE_ONELEVEL = 1
     SCOPE_SUBTREE = 2
+
+    RES_SEARCH_RESULT = 101
 
     class LDAPError(Exception): pass
     class INVALID_CREDENTIALS(LDAPError): pass
@@ -138,6 +140,7 @@ class MockLDAP(object):
         """
         self.calls = []
         self.return_value_maps = defaultdict(lambda: {})
+        self.async_results = []
         self.options = {}
         self.tls_enabled = False
 
@@ -200,6 +203,31 @@ class MockLDAP(object):
             value = self._simple_bind_s(who, cred)
 
         return value
+
+    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
+        self._record_call('search', {
+            'base': base,
+            'scope': scope,
+            'filterstr':filterstr,
+            'attrlist':attrlist,
+            'attrsonly':attrsonly
+        })
+
+        value = self._get_return_value('search_s',
+            (base, scope, filterstr, attrlist, attrsonly))
+        if value is None:
+            value = self._search_s(base, scope, filterstr, attrlist, attrsonly)
+
+        return self._add_async_result(value)
+
+    def result(self, msgid, all=1, timeout=None):
+        self._record_call('result', {
+            'msgid': msgid,
+            'all': all,
+            'timeout': timeout,
+        })
+
+        return self.RES_SEARCH_RESULT, self._pop_async_result(msgid)
 
     def search_s(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
         self._record_call('search_s', {
@@ -279,6 +307,20 @@ class MockLDAP(object):
             raise self.NO_SUCH_OBJECT()
 
         return [(base, attrs)]
+
+    def _add_async_result(self, value):
+        self.async_results.append(value)
+
+        return len(self.async_results) - 1
+
+    def _pop_async_result(self, msgid):
+        if msgid in xrange(len(self.async_results)):
+            value = self.async_results[msgid]
+            self.async_results[msgid] = None
+        else:
+            value = None
+
+        return value
 
     #
     # Utils
@@ -1224,9 +1266,7 @@ class LDAPTest(TestCase):
 
     def test_null_search_results(self):
         """
-        Reportedly, some servers under some circumstances can return search
-        results of the form (None, '<some ldap url>'). We're not sure what they
-        are, but we filter those out so we don't trip over them.
+        Make sure we're not phased by referrals.
         """
         self._init_settings(
             USER_SEARCH=LDAPSearch(
@@ -1238,6 +1278,25 @@ class LDAPTest(TestCase):
 
         self.backend.authenticate(username='alice', password='password')
 
+    def test_union_search(self):
+        self._init_settings(
+            USER_SEARCH=LDAPSearchUnion(
+                LDAPSearch("ou=groups,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
+                LDAPSearch("ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
+            )
+        )
+        self.mock_ldap.set_return_value('search_s',
+            ("ou=groups,o=test", 2, "(uid=alice)", None, 0), [])
+        self.mock_ldap.set_return_value('search_s',
+            ("ou=people,o=test", 2, "(uid=alice)", None, 0), [self.alice])
+
+        alice = self.backend.authenticate(username='alice', password='password')
+
+        self.assert_(alice is not None)
+
+        self.assertEqual(self.mock_ldap.ldap_methods_called(),
+            ['set_option', 'initialize', 'simple_bind_s', 'search', 'search',
+                'result', 'result', 'simple_bind_s'])
 
     def _init_settings(self, **kwargs):
         self.backend.settings = TestSettings(**kwargs)

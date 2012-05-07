@@ -27,6 +27,8 @@ backend depends on the `python-ldap <http://www.python-ldap.org/>`_ module.
             'django.contrib.auth.backends.ModelBackend',
         )
 
+Version 1.1 of django-auth-ldap is tested with Django 1.3 and 1.4. Earlier
+versions may still work, but they are not supported.
 
 Configuring basic authentication
 ================================
@@ -67,7 +69,7 @@ return exactly one result or authentication will fail. If you can't search
 anonymously, you can set :ref:`AUTH_LDAP_BIND_DN` to the distinguished name of
 an authorized user and :ref:`AUTH_LDAP_BIND_PASSWORD` to the password.
 
-If you need to search in more than one place for a user, you can use
+(New in 1.1) If you need to search in more than one place for a user, you can use
 :class:`~django_auth_ldap.config.LDAPSearchUnion`.  This takes multiple
 LDAPSearch objects and returns the union of the results. The precedence of the
 underlying searches is unspecified.
@@ -341,6 +343,8 @@ feature of authentication, not authorization.
 
 Multiple LDAP Configs
 =====================
+
+(New in 1.1)
 
 You've probably noticed that all of the settings for this backend have the
 prefix AUTH_LDAP\_. This is the default, but it can be customized by subclasses
@@ -840,6 +844,8 @@ Configuration
           In order to be valid, ``filterstr`` must be enclosed in parentheses.
 
 .. class:: LDAPSearchUnion
+
+    (New in 1.1)
 
     .. method:: __init__(\*searches)
 

@@ -83,23 +83,25 @@ class LDAPBackend(object):
 
     ldap = None # The cached ldap module (or mock object)
 
+    # This is prepended to our internal setting names to produce the names we
+    # expect in Django's settings file. Subclasses can change this in order to
+    # support multiple collections of settings.
+    settings_prefix = 'AUTH_LDAP_'
+
     def __init__(self):
+        self.settings = LDAPSettings(self.settings_prefix)
         self.ldap = self.ldap_module()
 
-    def ldap_module(cls):
+    def ldap_module(self):
         """
         Requests the ldap module from _LDAPConfig. Under a test harness, this
-        will be a mock object. We only do this once because this is where we
-        apply AUTH_LDAP_GLOBAL_OPTIONS.
+        will be a mock object.
         """
-        if cls.ldap is None:
-            cls.ldap = _LDAPConfig.get_ldap()
+        from django.conf import settings
 
-            for opt, value in ldap_settings.AUTH_LDAP_GLOBAL_OPTIONS.iteritems():
-                cls.ldap.set_option(opt, value)
+        options = getattr(settings, 'AUTH_LDAP_GLOBAL_OPTIONS', None)
 
-        return cls.ldap
-    ldap_module = classmethod(ldap_module)
+        return _LDAPConfig.get_ldap(options)
 
 
     #
@@ -137,7 +139,7 @@ class LDAPBackend(object):
         return self.get_group_permissions(user, obj)
 
     def get_group_permissions(self, user, obj=None):
-        if not hasattr(user, 'ldap_user') and ldap_settings.AUTH_LDAP_AUTHORIZE_ALL_USERS:
+        if not hasattr(user, 'ldap_user') and self.settings.AUTHORIZE_ALL_USERS:
             _LDAPUser(self, user=user) # This sets user.ldap_user
 
         if hasattr(user, 'ldap_user'):
@@ -200,7 +202,8 @@ class _LDAPUser(object):
         ignored.
         """
         self.backend = backend
-        self.ldap = backend.ldap_module()
+        self.ldap = backend.ldap
+        self.settings = backend.settings
         self._username = username
         self._user_dn = None
         self._user_attrs = None
@@ -280,7 +283,7 @@ class _LDAPUser(object):
         if self._group_permissions is None:
             self._group_permissions = set()
 
-            if ldap_settings.AUTH_LDAP_FIND_GROUP_PERMS:
+            if self.settings.FIND_GROUP_PERMS:
                 try:
                     self._load_group_permissions()
                 except self.ldap.LDAPError, e:
@@ -359,7 +362,7 @@ class _LDAPUser(object):
             raise self.AuthenticationFailed("Failed to map the username to a DN.")
 
         try:
-            sticky = ldap_settings.AUTH_LDAP_BIND_AS_AUTHENTICATING_USER
+            sticky = self.settings.BIND_AS_AUTHENTICATING_USER
 
             self._bind_as(self.dn, password, sticky=sticky)
         except self.ldap.INVALID_CREDENTIALS:
@@ -385,10 +388,10 @@ class _LDAPUser(object):
             self._search_for_user_dn()
 
     def _using_simple_bind_mode(self):
-        return (ldap_settings.AUTH_LDAP_USER_DN_TEMPLATE is not None)
+        return (self.settings.USER_DN_TEMPLATE is not None)
 
     def _construct_simple_user_dn(self):
-        template = ldap_settings.AUTH_LDAP_USER_DN_TEMPLATE
+        template = self.settings.USER_DN_TEMPLATE
         username = self.ldap.dn.escape_dn_chars(self._username)
 
         self._user_dn = template % {'user': username}
@@ -398,7 +401,7 @@ class _LDAPUser(object):
         Searches the directory for a user matching AUTH_LDAP_USER_SEARCH.
         Populates self._user_dn and self._user_attrs.
         """
-        search = ldap_settings.AUTH_LDAP_USER_SEARCH
+        search = self.settings.USER_SEARCH
         if search is None:
             raise ImproperlyConfigured('AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance.')
 
@@ -419,7 +422,7 @@ class _LDAPUser(object):
         Returns True if the group requirement (AUTH_LDAP_REQUIRE_GROUP) is
         met. Always returns True if AUTH_LDAP_REQUIRE_GROUP is None.
         """
-        required_group_dn = ldap_settings.AUTH_LDAP_REQUIRE_GROUP
+        required_group_dn = self.settings.REQUIRE_GROUP
 
         if required_group_dn is not None:
             is_member = self._get_groups().is_member_of(required_group_dn)
@@ -433,7 +436,7 @@ class _LDAPUser(object):
         Returns True if the negative group requirement (AUTH_LDAP_DENY_GROUP)
         is met. Always returns True if AUTH_LDAP_DENY_GROUP is None.
         """
-        denied_group_dn = ldap_settings.AUTH_LDAP_DENY_GROUP
+        denied_group_dn = self.settings.DENY_GROUP
 
         if denied_group_dn is not None:
             is_member = self._get_groups().is_member_of(denied_group_dn)
@@ -460,7 +463,7 @@ class _LDAPUser(object):
         self._user.ldap_user = self
         self._user.ldap_username = self._username
 
-        should_populate = force_populate or ldap_settings.AUTH_LDAP_ALWAYS_UPDATE_USER or created
+        should_populate = force_populate or self.settings.ALWAYS_UPDATE_USER or created
 
         if created:
             logger.debug("Created Django user %s", username)
@@ -472,7 +475,7 @@ class _LDAPUser(object):
             self._populate_user()
             save_user = True
 
-        if ldap_settings.AUTH_LDAP_MIRROR_GROUPS:
+        if self.settings.MIRROR_GROUPS:
             self._mirror_groups()
 
         # Give the client a chance to finish populating the user just before
@@ -498,14 +501,14 @@ class _LDAPUser(object):
         self._populate_user_from_group_memberships()
 
     def _populate_user_from_attributes(self):
-        for field, attr in ldap_settings.AUTH_LDAP_USER_ATTR_MAP.iteritems():
+        for field, attr in self.settings.USER_ATTR_MAP.iteritems():
             try:
                 setattr(self._user, field, self.attrs[attr][0])
             except StandardError:
                 logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
 
     def _populate_user_from_group_memberships(self):
-        for field, group_dn in ldap_settings.AUTH_LDAP_USER_FLAGS_BY_GROUP.iteritems():
+        for field, group_dn in self.settings.USER_FLAGS_BY_GROUP.iteritems():
             value = self._get_groups().is_member_of(group_dn)
             setattr(self._user, field, value)
 
@@ -538,7 +541,7 @@ class _LDAPUser(object):
         """
         save_profile = False
 
-        for field, attr in ldap_settings.AUTH_LDAP_PROFILE_ATTR_MAP.iteritems():
+        for field, attr in self.settings.PROFILE_ATTR_MAP.iteritems():
             try:
                 # user_attrs is a hash of lists of attribute values
                 setattr(profile, field, self.attrs[attr][0])
@@ -555,7 +558,7 @@ class _LDAPUser(object):
         """
         save_profile = False
 
-        for field, group_dn in ldap_settings.AUTH_LDAP_PROFILE_FLAGS_BY_GROUP.iteritems():
+        for field, group_dn in self.settings.PROFILE_FLAGS_BY_GROUP.iteritems():
             value = self._get_groups().is_member_of(group_dn)
             setattr(profile, field, value)
             save_profile = True
@@ -609,8 +612,8 @@ class _LDAPUser(object):
         Binds to the LDAP server with AUTH_LDAP_BIND_DN and
         AUTH_LDAP_BIND_PASSWORD.
         """
-        self._bind_as(ldap_settings.AUTH_LDAP_BIND_DN,
-            ldap_settings.AUTH_LDAP_BIND_PASSWORD,
+        self._bind_as(self.settings.BIND_DN,
+            self.settings.BIND_PASSWORD,
             sticky=True)
 
     def _bind_as(self, bind_dn, bind_password, sticky=False):
@@ -632,12 +635,12 @@ class _LDAPUser(object):
         Returns our cached LDAPObject, which may or may not be bound.
         """
         if self._connection is None:
-            self._connection = self.ldap.initialize(ldap_settings.AUTH_LDAP_SERVER_URI)
+            self._connection = self.ldap.initialize(self.settings.SERVER_URI)
 
-            for opt, value in ldap_settings.AUTH_LDAP_CONNECTION_OPTIONS.iteritems():
+            for opt, value in self.settings.CONNECTION_OPTIONS.iteritems():
                 self._connection.set_option(opt, value)
 
-            if ldap_settings.AUTH_LDAP_START_TLS:
+            if self.settings.START_TLS:
                 logger.debug("Initiating TLS")
                 self._connection.start_tls_s()
 
@@ -650,6 +653,7 @@ class _LDAPUserGroups(object):
     Represents the set of groups that a user belongs to.
     """
     def __init__(self, ldap_user):
+        self.settings = ldap_user.settings
         self._ldap_user = ldap_user
         self._group_type = None
         self._group_search = None
@@ -664,11 +668,11 @@ class _LDAPUserGroups(object):
         Loads the settings we need to deal with groups. Raises
         ImproperlyConfigured if anything's not right.
         """
-        self._group_type = ldap_settings.AUTH_LDAP_GROUP_TYPE
+        self._group_type = self.settings.GROUP_TYPE
         if self._group_type is None:
             raise ImproperlyConfigured("AUTH_LDAP_GROUP_TYPE must be an LDAPGroupType instance.")
 
-        self._group_search = ldap_settings.AUTH_LDAP_GROUP_SEARCH
+        self._group_search = self.settings.GROUP_SEARCH
         if self._group_search is None:
             raise ImproperlyConfigured("AUTH_LDAP_GROUP_SEARCH must be an LDAPSearch instance.")
 
@@ -729,16 +733,16 @@ class _LDAPUserGroups(object):
         return self._group_infos
 
     def _load_cached_attr(self, attr_name):
-        if ldap_settings.AUTH_LDAP_CACHE_GROUPS:
+        if self.settings.CACHE_GROUPS:
             key = self._cache_key(attr_name)
             value = cache.get(key)
             setattr(self, attr_name, value)
 
     def _cache_attr(self, attr_name):
-        if ldap_settings.AUTH_LDAP_CACHE_GROUPS:
+        if self.settings.CACHE_GROUPS:
             key = self._cache_key(attr_name)
             value = getattr(self, attr_name, None)
-            cache.set(key, value, ldap_settings.AUTH_LDAP_GROUP_CACHE_TIMEOUT)
+            cache.set(key, value, self.settings.GROUP_CACHE_TIMEOUT)
 
     def _cache_key(self, attr_name):
         """
@@ -758,32 +762,31 @@ class LDAPSettings(object):
     if they are not specified by the configuration.
     """
     defaults = {
-        'AUTH_LDAP_ALWAYS_UPDATE_USER': True,
-        'AUTH_LDAP_AUTHORIZE_ALL_USERS': False,
-        'AUTH_LDAP_BIND_AS_AUTHENTICATING_USER': False,
-        'AUTH_LDAP_BIND_DN': '',
-        'AUTH_LDAP_BIND_PASSWORD': '',
-        'AUTH_LDAP_CACHE_GROUPS': False,
-        'AUTH_LDAP_CONNECTION_OPTIONS': {},
-        'AUTH_LDAP_DENY_GROUP': None,
-        'AUTH_LDAP_FIND_GROUP_PERMS': False,
-        'AUTH_LDAP_GLOBAL_OPTIONS': {},
-        'AUTH_LDAP_GROUP_CACHE_TIMEOUT': None,
-        'AUTH_LDAP_GROUP_SEARCH': None,
-        'AUTH_LDAP_GROUP_TYPE': None,
-        'AUTH_LDAP_MIRROR_GROUPS': False,
-        'AUTH_LDAP_PROFILE_ATTR_MAP': {},
-        'AUTH_LDAP_PROFILE_FLAGS_BY_GROUP': {},
-        'AUTH_LDAP_REQUIRE_GROUP': None,
-        'AUTH_LDAP_SERVER_URI': 'ldap://localhost',
-        'AUTH_LDAP_START_TLS': False,
-        'AUTH_LDAP_USER_ATTR_MAP': {},
-        'AUTH_LDAP_USER_DN_TEMPLATE': None,
-        'AUTH_LDAP_USER_FLAGS_BY_GROUP': {},
-        'AUTH_LDAP_USER_SEARCH': None,
+        'ALWAYS_UPDATE_USER': True,
+        'AUTHORIZE_ALL_USERS': False,
+        'BIND_AS_AUTHENTICATING_USER': False,
+        'BIND_DN': '',
+        'BIND_PASSWORD': '',
+        'CACHE_GROUPS': False,
+        'CONNECTION_OPTIONS': {},
+        'DENY_GROUP': None,
+        'FIND_GROUP_PERMS': False,
+        'GROUP_CACHE_TIMEOUT': None,
+        'GROUP_SEARCH': None,
+        'GROUP_TYPE': None,
+        'MIRROR_GROUPS': False,
+        'PROFILE_ATTR_MAP': {},
+        'PROFILE_FLAGS_BY_GROUP': {},
+        'REQUIRE_GROUP': None,
+        'SERVER_URI': 'ldap://localhost',
+        'START_TLS': False,
+        'USER_ATTR_MAP': {},
+        'USER_DN_TEMPLATE': None,
+        'USER_FLAGS_BY_GROUP': {},
+        'USER_SEARCH': None,
     }
 
-    def __init__(self):
+    def __init__(self, prefix='AUTH_LDAP_'):
         """
         Loads our settings from django.conf.settings, applying defaults for any
         that are omitted.
@@ -791,9 +794,5 @@ class LDAPSettings(object):
         from django.conf import settings
 
         for name, default in self.defaults.iteritems():
-            value = getattr(settings, name, default)
+            value = getattr(settings, prefix + name, default)
             setattr(self, name, value)
-
-
-# Our global settings object
-ldap_settings = LDAPSettings()

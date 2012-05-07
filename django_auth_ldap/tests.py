@@ -441,8 +441,8 @@ class LDAPTest(TestCase):
 
     def test_options(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_CONNECTION_OPTIONS={'opt1': 'value1'}
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            CONNECTION_OPTIONS={'opt1': 'value1'}
         )
 
         self.backend.authenticate(username='alice', password='password')
@@ -451,7 +451,7 @@ class LDAPTest(TestCase):
 
     def test_simple_bind(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         user_count = User.objects.count()
 
@@ -465,7 +465,7 @@ class LDAPTest(TestCase):
 
     def test_new_user_lowercase(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         user_count = User.objects.count()
 
@@ -479,7 +479,7 @@ class LDAPTest(TestCase):
 
     def test_new_user_whitespace(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         user_count = User.objects.count()
 
@@ -493,7 +493,7 @@ class LDAPTest(TestCase):
 
     def test_simple_bind_bad_user(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         user_count = User.objects.count()
 
@@ -506,7 +506,7 @@ class LDAPTest(TestCase):
 
     def test_simple_bind_bad_password(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         user_count = User.objects.count()
 
@@ -519,7 +519,7 @@ class LDAPTest(TestCase):
 
     def test_existing_user(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         User.objects.create(username='alice')
         user_count = User.objects.count()
@@ -532,7 +532,7 @@ class LDAPTest(TestCase):
 
     def test_existing_user_insensitive(self):
         self._init_settings(
-            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+            USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
                 )
             )
@@ -553,11 +553,11 @@ class LDAPTest(TestCase):
             def django_to_ldap_username(self, username):
                 return username[5:]
 
+        self.backend = MyBackend()
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         user_count = User.objects.count()
-        self.backend = MyBackend()
 
         user1 = self.backend.authenticate(username='alice', password='password')
         user2 = self.backend.get_user(user1.pk)
@@ -572,7 +572,7 @@ class LDAPTest(TestCase):
 
     def test_search_bind(self):
         self._init_settings(
-            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+            USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
                 )
             )
@@ -589,7 +589,7 @@ class LDAPTest(TestCase):
 
     def test_search_bind_no_user(self):
         self._init_settings(
-            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+            USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(cn=%(user)s)'
                 )
             )
@@ -604,7 +604,7 @@ class LDAPTest(TestCase):
 
     def test_search_bind_multiple_users(self):
         self._init_settings(
-            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+            USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=*)'
                 )
             )
@@ -619,7 +619,7 @@ class LDAPTest(TestCase):
 
     def test_search_bind_bad_password(self):
         self._init_settings(
-            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+            USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
                 )
             )
@@ -634,9 +634,9 @@ class LDAPTest(TestCase):
 
     def test_search_bind_with_credentials(self):
         self._init_settings(
-            AUTH_LDAP_BIND_DN='uid=bob,ou=people,o=test',
-            AUTH_LDAP_BIND_PASSWORD='password',
-            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+            BIND_DN='uid=bob,ou=people,o=test',
+            BIND_PASSWORD='password',
+            USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
                 )
             )
@@ -654,9 +654,9 @@ class LDAPTest(TestCase):
 
     def test_search_bind_with_bad_credentials(self):
         self._init_settings(
-            AUTH_LDAP_BIND_DN='uid=bob,ou=people,o=test',
-            AUTH_LDAP_BIND_PASSWORD='bogus',
-            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+            BIND_DN='uid=bob,ou=people,o=test',
+            BIND_PASSWORD='bogus',
+            USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
                 )
             )
@@ -669,8 +669,8 @@ class LDAPTest(TestCase):
 
     def test_unicode_user(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'}
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'}
         )
 
         user = self.backend.authenticate(username=u'dreßler', password='password')
@@ -681,7 +681,7 @@ class LDAPTest(TestCase):
 
     def test_cidict(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
         )
 
         user = self.backend.authenticate(username="alice", password="password")
@@ -690,8 +690,8 @@ class LDAPTest(TestCase):
 
     def test_populate_user(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'}
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'}
         )
 
         user = self.backend.authenticate(username='alice', password='password')
@@ -706,9 +706,9 @@ class LDAPTest(TestCase):
 
     def test_bind_as_user(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
-            AUTH_LDAP_BIND_AS_AUTHENTICATING_USER=True,
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
+            BIND_AS_AUTHENTICATING_USER=True,
         )
 
         user = self.backend.authenticate(username='alice', password='password')
@@ -723,7 +723,7 @@ class LDAPTest(TestCase):
 
     def test_signal_populate_user(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         def handle_populate_user(sender, **kwargs):
             self.assert_('user' in kwargs and 'ldap_user' in kwargs)
@@ -738,7 +738,7 @@ class LDAPTest(TestCase):
         settings.AUTH_PROFILE_MODULE = 'django_auth_ldap.TestProfile'
 
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
 
         def handle_user_saved(sender, **kwargs):
@@ -758,9 +758,9 @@ class LDAPTest(TestCase):
 
     def test_no_update_existing(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
-            AUTH_LDAP_ALWAYS_UPDATE_USER=False
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
+            ALWAYS_UPDATE_USER=False
         )
         User.objects.create(username='alice', first_name='Alicia', last_name='Astro')
 
@@ -774,10 +774,10 @@ class LDAPTest(TestCase):
 
     def test_require_group(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_REQUIRE_GROUP="cn=active_gon,ou=groups,o=test"
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            REQUIRE_GROUP="cn=active_gon,ou=groups,o=test"
         )
 
         alice = self.backend.authenticate(username='alice', password='password')
@@ -790,10 +790,10 @@ class LDAPTest(TestCase):
 
     def test_denied_group(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_DENY_GROUP="cn=active_gon,ou=groups,o=test"
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            DENY_GROUP="cn=active_gon,ou=groups,o=test"
         )
 
         alice = self.backend.authenticate(username='alice', password='password')
@@ -806,9 +806,9 @@ class LDAPTest(TestCase):
 
     def test_group_dns(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
         self.mock_ldap.set_return_value('search_s',
             ("ou=groups,o=test", 2, "(&(objectClass=*)(member=uid=alice,ou=people,o=test))", None, 0),
@@ -821,9 +821,9 @@ class LDAPTest(TestCase):
 
     def test_group_names(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
         self.mock_ldap.set_return_value('search_s',
             ("ou=groups,o=test", 2, "(&(objectClass=*)(member=uid=alice,ou=people,o=test))", None, 0),
@@ -836,10 +836,10 @@ class LDAPTest(TestCase):
 
     def test_dn_group_membership(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_USER_FLAGS_BY_GROUP={
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            USER_FLAGS_BY_GROUP={
                 'is_active': "cn=active_gon,ou=groups,o=test",
                 'is_staff': "cn=staff_gon,ou=groups,o=test",
                 'is_superuser': "cn=superuser_gon,ou=groups,o=test"
@@ -858,10 +858,10 @@ class LDAPTest(TestCase):
 
     def test_posix_membership(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=PosixGroupType(),
-            AUTH_LDAP_USER_FLAGS_BY_GROUP={
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=PosixGroupType(),
+            USER_FLAGS_BY_GROUP={
                 'is_active': "cn=active_px,ou=groups,o=test",
                 'is_staff': "cn=staff_px,ou=groups,o=test",
                 'is_superuser': "cn=superuser_px,ou=groups,o=test"
@@ -880,10 +880,10 @@ class LDAPTest(TestCase):
 
     def test_nested_dn_group_membership(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=NestedMemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_USER_FLAGS_BY_GROUP={
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=NestedMemberDNGroupType(member_attr='member'),
+            USER_FLAGS_BY_GROUP={
                 'is_active': "cn=parent_gon,ou=groups,o=test",
                 'is_staff': "cn=parent_gon,ou=groups,o=test",
             }
@@ -920,10 +920,10 @@ class LDAPTest(TestCase):
 
     def test_posix_missing_attributes(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=PosixGroupType(),
-            AUTH_LDAP_USER_FLAGS_BY_GROUP={
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=PosixGroupType(),
+            USER_FLAGS_BY_GROUP={
                 'is_active': "cn=active_px,ou=groups,o=test"
             }
         )
@@ -936,10 +936,10 @@ class LDAPTest(TestCase):
         settings.AUTH_PROFILE_MODULE = 'django_auth_ldap.TestProfile'
 
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_PROFILE_FLAGS_BY_GROUP={
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            PROFILE_FLAGS_BY_GROUP={
                 'is_special': "cn=superuser_gon,ou=groups,o=test"
             }
         )
@@ -959,10 +959,10 @@ class LDAPTest(TestCase):
 
     def test_dn_group_permissions(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_FIND_GROUP_PERMS=True
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            FIND_GROUP_PERMS=True
         )
         self._init_groups()
         self.mock_ldap.set_return_value('search_s',
@@ -980,10 +980,10 @@ class LDAPTest(TestCase):
 
     def test_empty_group_permissions(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_FIND_GROUP_PERMS=True
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            FIND_GROUP_PERMS=True
         )
         self._init_groups()
         self.mock_ldap.set_return_value('search_s',
@@ -1001,12 +1001,12 @@ class LDAPTest(TestCase):
 
     def test_posix_group_permissions(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test',
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test',
                 self.mock_ldap.SCOPE_SUBTREE, "(objectClass=posixGroup)"
             ),
-            AUTH_LDAP_GROUP_TYPE=PosixGroupType(),
-            AUTH_LDAP_FIND_GROUP_PERMS=True
+            GROUP_TYPE=PosixGroupType(),
+            FIND_GROUP_PERMS=True
         )
         self._init_groups()
         self.mock_ldap.set_return_value('search_s',
@@ -1024,10 +1024,10 @@ class LDAPTest(TestCase):
 
     def test_foreign_user_permissions(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_FIND_GROUP_PERMS=True
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            FIND_GROUP_PERMS=True
         )
         self._init_groups()
 
@@ -1037,11 +1037,11 @@ class LDAPTest(TestCase):
 
     def test_group_cache(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_FIND_GROUP_PERMS=True,
-            AUTH_LDAP_CACHE_GROUPS=True
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            FIND_GROUP_PERMS=True,
+            CACHE_GROUPS=True
         )
         self._init_groups()
         self.mock_ldap.set_return_value('search_s',
@@ -1071,12 +1071,12 @@ class LDAPTest(TestCase):
 
     def test_group_mirroring(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test',
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test',
                 self.mock_ldap.SCOPE_SUBTREE, "(objectClass=posixGroup)"
             ),
-            AUTH_LDAP_GROUP_TYPE=PosixGroupType(),
-            AUTH_LDAP_MIRROR_GROUPS=True,
+            GROUP_TYPE=PosixGroupType(),
+            MIRROR_GROUPS=True,
         )
         self.mock_ldap.set_return_value('search_s',
             ("ou=groups,o=test", 2, "(&(objectClass=posixGroup)(|(gidNumber=1000)(memberUid=alice)))", None, 0),
@@ -1092,10 +1092,10 @@ class LDAPTest(TestCase):
 
     def test_nested_group_mirroring(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=NestedMemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_MIRROR_GROUPS=True,
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=NestedMemberDNGroupType(member_attr='member'),
+            MIRROR_GROUPS=True,
         )
         self.mock_ldap.set_return_value('search_s',
             ("ou=groups,o=test", 2, "(&(objectClass=*)(|(member=uid=alice,ou=people,o=test)))", None, 0),
@@ -1123,11 +1123,11 @@ class LDAPTest(TestCase):
 
     def test_authorize_external_users(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            AUTH_LDAP_FIND_GROUP_PERMS=True,
-            AUTH_LDAP_AUTHORIZE_ALL_USERS=True
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            FIND_GROUP_PERMS=True,
+            AUTHORIZE_ALL_USERS=True
         )
         self._init_groups()
         self.mock_ldap.set_return_value('search_s',
@@ -1141,7 +1141,7 @@ class LDAPTest(TestCase):
 
     def test_create_without_auth(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
         )
 
         alice = self.backend.populate_user('alice')
@@ -1162,12 +1162,12 @@ class LDAPTest(TestCase):
 
     def test_populate_without_auth(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_ALWAYS_UPDATE_USER=False,
-            AUTH_LDAP_USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
-            AUTH_LDAP_GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
-            AUTH_LDAP_GROUP_TYPE=GroupOfNamesType(),
-            AUTH_LDAP_USER_FLAGS_BY_GROUP={
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            ALWAYS_UPDATE_USER=False,
+            USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=GroupOfNamesType(),
+            USER_FLAGS_BY_GROUP={
                 'is_active': "cn=active_gon,ou=groups,o=test",
                 'is_staff': "cn=staff_gon,ou=groups,o=test",
                 'is_superuser': "cn=superuser_gon,ou=groups,o=test"
@@ -1195,7 +1195,7 @@ class LDAPTest(TestCase):
 
     def test_populate_bogus_user(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
         )
 
         bogus = self.backend.populate_user('bogus')
@@ -1204,8 +1204,8 @@ class LDAPTest(TestCase):
 
     def test_start_tls_missing(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_START_TLS=False,
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            START_TLS=False,
         )
 
         self.assert_(not self.mock_ldap.tls_enabled)
@@ -1214,8 +1214,8 @@ class LDAPTest(TestCase):
 
     def test_start_tls(self):
         self._init_settings(
-            AUTH_LDAP_USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            AUTH_LDAP_START_TLS=True,
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            START_TLS=True,
         )
 
         self.assert_(not self.mock_ldap.tls_enabled)
@@ -1229,7 +1229,7 @@ class LDAPTest(TestCase):
         are, but we filter those out so we don't trip over them.
         """
         self._init_settings(
-            AUTH_LDAP_USER_SEARCH=LDAPSearch(
+            USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
                 )
             )
@@ -1240,7 +1240,7 @@ class LDAPTest(TestCase):
 
 
     def _init_settings(self, **kwargs):
-        backend.ldap_settings = TestSettings(**kwargs)
+        self.backend.settings = TestSettings(**kwargs)
 
     def _init_groups(self):
         permissions = [

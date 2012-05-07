@@ -46,7 +46,9 @@ class _LDAPConfig(object):
     ldap = None
     logger = None
 
-    def get_ldap(cls):
+    _ldap_configured = False
+
+    def get_ldap(cls, global_options=None):
         """
         Returns the ldap module. The unit test harness will assign a mock object
         to _LDAPConfig.ldap. It is imperative that the ldap module not be
@@ -65,6 +67,13 @@ class _LDAPConfig(object):
                 ldap.dn = dn
 
             cls.ldap = ldap
+
+        # Apply global LDAP options once
+        if (not cls._ldap_configured) and (global_options is not None):
+            for opt, value in global_options.iteritems():
+                cls.ldap.set_option(opt, value)
+
+            cls._ldap_configured = True
 
         return cls.ldap
     get_ldap = classmethod(get_ldap)

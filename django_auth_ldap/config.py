@@ -195,10 +195,13 @@ class LDAPSearch(object):
     def _process_results(self, results):
         """
         Returns a sanitized copy of raw LDAP results. This scrubs out
-        references, decodes utf8, etc.
+        references, decodes utf8, normalizes DNs, etc.
         """
         results = filter(lambda r: r[0] is not None, results)
         results = _DeepStringCoder('utf-8').decode(results)
+
+        # The normal form of a DN is lower case.
+        results = map(lambda r: (r[0].lower(), r[1]), results)
 
         result_dns = [result[0] for result in results]
         logger.debug(u"search_s('%s', %d, '%s') returned %d objects: %s" %

@@ -698,6 +698,9 @@ class _LDAPUserGroups(object):
         """
         is_member = None
 
+        # Normalize the DN
+        group_dn = group_dn.lower()
+
         # If we have self._group_dns, we'll use it. Otherwise, we'll try to
         # avoid the cost of loading it.
         if self._group_dns is None:

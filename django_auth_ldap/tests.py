@@ -129,7 +129,7 @@ class MockLDAP(object):
             },
         }
         """
-        self.directory = directory
+        self.directory = self.cidict.cidict(directory)
 
         self.reset()
 
@@ -420,7 +420,7 @@ class LDAPTest(TestCase):
         "objectClass": ["groupOfNames"],
         "member": ["cn=nested_gon,ou=groups,o=test"]
     })
-    nested_gon = ("cn=nested_gon,ou=groups,o=test", {
+    nested_gon = ("CN=nested_gon,ou=groups,o=test", {
         "cn": ["nested_gon"],
         "objectClass": ["groupOfNames"],
         "member": [
@@ -440,15 +440,15 @@ class LDAPTest(TestCase):
         bob[0]: bob[1],
         dressler[0]: dressler[1],
         nobody[0]: nobody[1],
+        active_px[0]: active_px[1],
+        staff_px[0]: staff_px[1],
+        superuser_px[0]: superuser_px[1],
         active_gon[0]: active_gon[1],
         staff_gon[0]: staff_gon[1],
         superuser_gon[0]: superuser_gon[1],
         parent_gon[0]: parent_gon[1],
         nested_gon[0]: nested_gon[1],
         circular_gon[0]: circular_gon[1],
-        active_px[0]: active_px[1],
-        staff_px[0]: staff_px[1],
-        superuser_px[0]: superuser_px[1],
     })
 
 
@@ -859,7 +859,7 @@ class LDAPTest(TestCase):
 
         alice = self.backend.authenticate(username='alice', password='password')
 
-        self.assertEqual(alice.ldap_user.group_dns, set((g[0] for g in [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon])))
+        self.assertEqual(alice.ldap_user.group_dns, set((g[0].lower() for g in [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon])))
 
     def test_group_names(self):
         self._init_settings(

@@ -411,10 +411,12 @@ More options
 
 Miscellaneous settings for :class:`~django_auth_ldap.backend.LDAPBackend`:
 
-    * :ref:`AUTH_LDAP_GLOBAL_OPTIONS`: A dictionary of options to pass to
+    * :ref:`AUTH_LDAP_GLOBAL_OPTIONS`: A dictionary of `options
+      <http://python-ldap.org/doc/html/ldap.html#options>`_ to pass to
       python-ldap via ``ldap.set_option()``.
-    * :ref:`AUTH_LDAP_CONNECTION_OPTIONS`: A dictionary of options to pass to
-      each LDAPObject instance via ``LDAPObject.set_option()``.
+    * :ref:`AUTH_LDAP_CONNECTION_OPTIONS`: A dictionary of `options
+      <http://python-ldap.org/doc/html/ldap.html#options>`_ to pass to each
+      LDAPObject instance via ``LDAPObject.set_option()``.
 
 
 Performance
@@ -622,7 +624,8 @@ AUTH_LDAP_CONNECTION_OPTIONS
 Default: ``{}``
 
 A dictionary of options to pass to each connection to the LDAP server via
-``LDAPObject.set_option()``. Keys are ``ldap.OPT_*`` constants.
+``LDAPObject.set_option()``. Keys are `ldap.OPT_*
+<http://python-ldap.org/doc/html/ldap.html#options>`_ constants.
 
 
 .. _AUTH_LDAP_DENY_GROUP:
@@ -656,7 +659,7 @@ AUTH_LDAP_GLOBAL_OPTIONS
 Default: ``{}``
 
 A dictionary of options to pass to ``ldap.set_option()``. Keys are
-``ldap.OPT_*`` constants.
+`ldap.OPT_* <http://python-ldap.org/doc/html/ldap.html#options>`_ constants.
 
 
 .. _AUTH_LDAP_GROUP_CACHE_TIMEOUT:

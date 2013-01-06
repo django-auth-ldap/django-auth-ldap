@@ -81,27 +81,46 @@ class LDAPBackend(object):
     supports_object_permissions = True
     supports_inactive_user = False
 
-    ldap = None # The cached ldap module (or mock object)
+    _settings = None
+    _ldap = None # The cached ldap module (or mock object)
 
     # This is prepended to our internal setting names to produce the names we
     # expect in Django's settings file. Subclasses can change this in order to
     # support multiple collections of settings.
     settings_prefix = 'AUTH_LDAP_'
 
-    def __init__(self):
-        self.settings = LDAPSettings(self.settings_prefix)
-        self.ldap = self.ldap_module()
-
-    def ldap_module(self):
+    def __getstate__(self):
         """
-        Requests the ldap module from _LDAPConfig. Under a test harness, this
-        will be a mock object.
+        Exclude certain cached properties from pickling.
         """
-        from django.conf import settings
+        state = filter(
+            lambda (k, v): k not in ['_settings', '_ldap'],
+            self.__dict__.iteritems()
+        )
 
-        options = getattr(settings, 'AUTH_LDAP_GLOBAL_OPTIONS', None)
+        return dict(state)
 
-        return _LDAPConfig.get_ldap(options)
+    def _get_settings(self):
+        if self._settings is None:
+            self._settings = LDAPSettings(self.settings_prefix)
+
+        return self._settings
+
+    def _set_settings(self, settings):
+        self._settings = settings
+
+    settings = property(_get_settings, _set_settings)
+
+    def _get_ldap(self):
+        if self._ldap is None:
+            from django.conf import settings
+
+            options = getattr(settings, 'AUTH_LDAP_GLOBAL_OPTIONS', None)
+
+            self._ldap = _LDAPConfig.get_ldap(options)
+
+        return self._ldap
+    ldap = property(_get_ldap)
 
     #
     # The Django auth backend API
@@ -194,6 +213,15 @@ class _LDAPUser(object):
     class AuthenticationFailed(Exception):
         pass
 
+    # Defaults
+    _user = None
+    _user_dn = None
+    _user_attrs = None
+    _groups = None
+    _group_permissions = None
+    _connection = None
+    _connection_bound = False
+
     #
     # Initialization
     #
@@ -205,16 +233,7 @@ class _LDAPUser(object):
         ignored.
         """
         self.backend = backend
-        self.ldap = backend.ldap
-        self.settings = backend.settings
         self._username = username
-        self._user_dn = None
-        self._user_attrs = None
-        self._user = None
-        self._groups = None
-        self._group_permissions = None
-        self._connection = None
-        self._connection_bound = False  # True if we're bound as AUTH_LDAP_BIND_*
 
         if user is not None:
             self._set_authenticated_user(user)
@@ -225,7 +244,6 @@ class _LDAPUser(object):
     def __deepcopy__(self, memo):
         obj = object.__new__(self.__class__)
         obj.backend = self.backend
-        obj.ldap = self.ldap
         obj._user = copy.deepcopy(self._user, memo)
 
         # This is all just cached immutable data. There's no point copying it.
@@ -241,12 +259,32 @@ class _LDAPUser(object):
 
         return obj
 
+    def __getstate__(self):
+        """
+        Most of our properties are cached from the LDAP server. We only want to
+        pickle a few crucial things.
+        """
+        state = filter(
+            lambda (k, v): k in ['backend', '_username', '_user'],
+            self.__dict__.iteritems()
+        )
+
+        return dict(state)
+
     def _set_authenticated_user(self, user):
         self._user = user
         self._username = self.backend.django_to_ldap_username(user.username)
 
         user.ldap_user = self
         user.ldap_username = self._username
+
+    def _get_ldap(self):
+        return self.backend.ldap
+    ldap = property(_get_ldap)
+
+    def _get_settings(self):
+        return self.backend.settings
+    settings = property(_get_settings)
 
     #
     # Entry points

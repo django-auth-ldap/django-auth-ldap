@@ -29,9 +29,10 @@ try:
 except NameError:
     from sets import Set as set     # Python 2.3 fallback
 
-import sys
-import logging
 from collections import defaultdict
+import logging
+import pickle
+import sys
 
 from django.conf import settings
 import django.db.models.signals
@@ -478,7 +479,7 @@ class LDAPTest(TestCase):
         self.ldap = _LDAPConfig.ldap = self.mock_ldap
 
         self.backend = backend.LDAPBackend()
-        self.backend.ldap_module() # Force global configuration
+        self.backend.ldap # Force global configuration
 
         self.mock_ldap.reset()
 
@@ -1323,6 +1324,31 @@ class LDAPTest(TestCase):
         self.assertEqual(alice, None)
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
             ['initialize', 'simple_bind_s'])
+
+    def test_pickle(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', self.mock_ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            FIND_GROUP_PERMS=True
+        )
+        self._init_groups()
+        self.mock_ldap.set_return_value('search_s',
+            ("ou=groups,o=test", 2, "(&(objectClass=*)(member=uid=alice,ou=people,o=test))", None, 0),
+            [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon]
+        )
+
+        alice0 = self.backend.authenticate(username=u'alice', password=u'password')
+
+        pickled = pickle.dumps(alice0, pickle.HIGHEST_PROTOCOL)
+        alice = pickle.loads(pickled)
+        alice.ldap_user.backend.settings = alice0.ldap_user.backend.settings
+
+        self.assert_(alice is not None)
+        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assert_(self.backend.has_perm(alice, "auth.add_user"))
+        self.assert_(self.backend.has_module_perms(alice, "auth"))
 
     def _init_settings(self, **kwargs):
         self.backend.settings = TestSettings(**kwargs)

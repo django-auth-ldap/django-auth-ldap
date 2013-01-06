@@ -103,7 +103,6 @@ class LDAPBackend(object):
 
         return _LDAPConfig.get_ldap(options)
 
-
     #
     # The Django auth backend API
     #
@@ -645,7 +644,6 @@ class _LDAPUser(object):
                 self._connection.start_tls_s()
 
         return self._connection
-
 
 
 class _LDAPUserGroups(object):

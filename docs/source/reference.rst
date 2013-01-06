@@ -185,6 +185,20 @@ membership to exactly match his LDAP group membership. If the LDAP server has
 nested groups, the Django database will end up with a flattened representation.
 
 
+.. setting:: AUTH_LDAP_PERMIT_EMPTY_PASSWORD
+
+AUTH_LDAP_PERMIT_EMPTY_PASSWORD
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+If ``False`` (the default), authentication with an empty password will fail
+immediately, without any LDAP communication. This is a secure default, as some
+LDAP servers are configured to allow binds to succeed with no password, perhaps
+at a reduced level of access. If you need to make use of this LDAP feature, you
+can change this setting to ``True``.
+
+
 .. setting:: AUTH_LDAP_PROFILE_ATTR_MAP
 
 AUTH_LDAP_PROFILE_ATTR_MAP

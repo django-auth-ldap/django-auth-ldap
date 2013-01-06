@@ -91,6 +91,12 @@ LDAP is fairly flexible when it comes to matching DNs.
 this by forcing usernames to lower case when creating Django users and trimming
 whitespace when authenticating.
 
+Some LDAP servers are configured to allow users to bind without a password. As a
+precaution against false positives,
+:class:`~django_auth_ldap.backend.LDAPBackend` will summarily reject any
+authentication attempt with an empty password. You can disable this behavior by
+setting :setting:`AUTH_LDAP_PERMIT_EMPTY_PASSWORD` to True.
+
 By default, all LDAP operations are performed with the
 :setting:`AUTH_LDAP_BIND_DN` and :setting:`AUTH_LDAP_BIND_PASSWORD` credentials,
 not with the user's. Otherwise, the LDAP connection would be bound as the

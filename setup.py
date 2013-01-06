@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name="django-auth-ldap",
-    version="1.1.2",
+    version="1.1.3",
     description="Django LDAP authentication backend",
     long_description=open('README').read(),
     url="http://bitbucket.org/psagers/django-auth-ldap/",

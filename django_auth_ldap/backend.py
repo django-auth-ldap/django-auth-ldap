@@ -108,6 +108,10 @@ class LDAPBackend(object):
     #
 
     def authenticate(self, username, password):
+        if len(password) == 0 and not self.settings.PERMIT_EMPTY_PASSWORD:
+            logger.debug('Rejecting empty password for %s' % username)
+            return None
+
         ldap_user = _LDAPUser(self, username=username.strip())
         user = ldap_user.authenticate(password)
 
@@ -266,10 +270,9 @@ class _LDAPUser(object):
         except self.ldap.LDAPError, e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
                 self._username, pprint.pformat(e))
-        except Exception, e:
-            logger.error(u"Caught Exception while authenticating %s: %s",
-                self._username, pprint.pformat(e))
-            logger.error(''.join(traceback.format_tb(sys.exc_info()[2])))
+        except Exception:
+            logger.exception(u"Caught Exception while authenticating %s",
+                self._username)
             raise
 
         return user
@@ -776,6 +779,7 @@ class LDAPSettings(object):
         'GROUP_SEARCH': None,
         'GROUP_TYPE': None,
         'MIRROR_GROUPS': False,
+        'PERMIT_EMPTY_PASSWORD': False,
         'PROFILE_ATTR_MAP': {},
         'PROFILE_FLAGS_BY_GROUP': {},
         'REQUIRE_GROUP': None,

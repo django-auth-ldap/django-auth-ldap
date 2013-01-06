@@ -43,3 +43,9 @@ All of the usual rules apply: Django will attempt to authenticate a user with
 each backend in turn until one of them succeeds. When a particular backend
 successfully authenticates a user, that user will be linked to the backend for
 the duration of their session.
+
+.. note::
+
+    Due to its global nature, :setting:`AUTH_LDAP_GLOBAL_OPTIONS` ignores the
+    settings prefix. Regardless of how many backends are installed, this setting
+    is referenced once by its default name at the time we load the ldap module.

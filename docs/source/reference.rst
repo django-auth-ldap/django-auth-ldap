@@ -130,6 +130,12 @@ Default: ``{}``
 A dictionary of options to pass to ``ldap.set_option()``. Keys are
 `ldap.OPT_* <http://python-ldap.org/doc/html/ldap.html#options>`_ constants.
 
+.. note::
+
+    Due to its global nature, this setting ignores the :doc:`settings prefix
+    <multiconfig>`. Regardless of how many backends are installed, this setting
+    is referenced once by its default name at the time we load the ldap module.
+
 
 .. setting:: AUTH_LDAP_GROUP_CACHE_TIMEOUT
 

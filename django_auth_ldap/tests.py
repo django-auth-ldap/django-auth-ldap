@@ -348,7 +348,6 @@ class MockLDAP(object):
 
 
 class LDAPTest(TestCase):
-
     # Following are the objecgs in our mock LDAP directory
     alice = ("uid=alice,ou=people,o=test", {
         "uid": ["alice"],
@@ -475,10 +474,13 @@ class LDAPTest(TestCase):
 
     def setUp(self):
         self.configure_logger()
-        self.mock_ldap.reset()
 
         self.ldap = _LDAPConfig.ldap = self.mock_ldap
+
         self.backend = backend.LDAPBackend()
+        self.backend.ldap_module() # Force global configuration
+
+        self.mock_ldap.reset()
 
     def tearDown(self):
         pass
@@ -1299,6 +1301,28 @@ class LDAPTest(TestCase):
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
             ['initialize', 'simple_bind_s', 'search', 'search', 'result',
                 'result', 'simple_bind_s'])
+
+    def test_deny_empty_password(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+        )
+
+        alice = self.backend.authenticate(username=u'alice', password=u'')
+
+        self.assertEqual(alice, None)
+        self.assertEqual(self.mock_ldap.ldap_methods_called(), [])
+
+    def test_permit_empty_password(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            PERMIT_EMPTY_PASSWORD=True,
+        )
+
+        alice = self.backend.authenticate(username=u'alice', password=u'')
+
+        self.assertEqual(alice, None)
+        self.assertEqual(self.mock_ldap.ldap_methods_called(),
+            ['initialize', 'simple_bind_s'])
 
     def _init_settings(self, **kwargs):
         self.backend.settings = TestSettings(**kwargs)

@@ -1,2 +1,5 @@
-include README.rst
-recursive-include docs Makefile *.py *.rst
+include README LICENSE CHANGES
+
+recursive-include docs *
+prune docs/build
+global-exclude *.pyc .DS_Store .workon

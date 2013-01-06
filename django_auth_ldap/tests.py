@@ -82,8 +82,8 @@ class MockLDAP(object):
     ldap_methods_called() to get a record of all of the LDAP API calls that have
     been made, with or without arguments.
     """
-
-    class PresetReturnRequiredError(Exception): pass
+    class PresetReturnRequiredError(Exception):
+        pass
 
     SCOPE_BASE = 0
     SCOPE_ONELEVEL = 1
@@ -91,10 +91,17 @@ class MockLDAP(object):
 
     RES_SEARCH_RESULT = 101
 
-    class LDAPError(Exception): pass
-    class INVALID_CREDENTIALS(LDAPError): pass
-    class NO_SUCH_OBJECT(LDAPError): pass
-    class NO_SUCH_ATTRIBUTE(LDAPError): pass
+    class LDAPError(Exception):
+        pass
+
+    class INVALID_CREDENTIALS(LDAPError):
+        pass
+
+    class NO_SUCH_OBJECT(LDAPError):
+        pass
+
+    class NO_SUCH_ATTRIBUTE(LDAPError):
+        pass
 
     #
     # Submodules
@@ -112,7 +119,6 @@ class MockLDAP(object):
     class cidict(object):
         class cidict(dict):
             pass
-
 
     def __init__(self, directory):
         """
@@ -208,9 +214,9 @@ class MockLDAP(object):
         self._record_call('search', {
             'base': base,
             'scope': scope,
-            'filterstr':filterstr,
-            'attrlist':attrlist,
-            'attrsonly':attrsonly
+            'filterstr': filterstr,
+            'attrlist': attrlist,
+            'attrsonly': attrsonly
         })
 
         value = self._get_return_value('search_s',
@@ -233,9 +239,9 @@ class MockLDAP(object):
         self._record_call('search_s', {
             'base': base,
             'scope': scope,
-            'filterstr':filterstr,
-            'attrlist':attrlist,
-            'attrsonly':attrsonly
+            'filterstr': filterstr,
+            'attrlist': attrlist,
+            'attrsonly': attrsonly
         })
 
         value = self._get_return_value('search_s',
@@ -434,7 +440,6 @@ class LDAPTest(TestCase):
         "member": ["cn=parent_gon,ou=groups,o=test"]
     })
 
-
     mock_ldap = MockLDAP({
         alice[0]: alice[1],
         bob[0]: bob[1],
@@ -451,8 +456,8 @@ class LDAPTest(TestCase):
         circular_gon[0]: circular_gon[1],
     })
 
-
     logging_configured = False
+
     def configure_logger(cls):
         if not cls.logging_configured:
             logger = logging.getLogger('django_auth_ldap')
@@ -468,7 +473,6 @@ class LDAPTest(TestCase):
             cls.logging_configured = True
     configure_logger = classmethod(configure_logger)
 
-
     def setUp(self):
         self.configure_logger()
         self.mock_ldap.reset()
@@ -476,10 +480,8 @@ class LDAPTest(TestCase):
         self.ldap = _LDAPConfig.ldap = self.mock_ldap
         self.backend = backend.LDAPBackend()
 
-
     def tearDown(self):
         pass
-
 
     def test_options(self):
         self._init_settings(
@@ -532,7 +534,6 @@ class LDAPTest(TestCase):
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
 
-
     def test_simple_bind_bad_user(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
@@ -576,8 +577,8 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
-                )
             )
+        )
         self.mock_ldap.set_return_value('search_s',
             ("ou=people,o=test", 2, "(uid=Alice)", None, 0), [self.alice])
         User.objects.create(username='alice')
@@ -592,6 +593,7 @@ class LDAPTest(TestCase):
         class MyBackend(backend.LDAPBackend):
             def ldap_to_django_username(self, username):
                 return 'ldap_%s' % username
+
             def django_to_ldap_username(self, username):
                 return username[5:]
 
@@ -616,8 +618,8 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
-                )
             )
+        )
         self.mock_ldap.set_return_value('search_s',
             ("ou=people,o=test", 2, "(uid=alice)", None, 0), [self.alice])
         user_count = User.objects.count()
@@ -633,8 +635,8 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(cn=%(user)s)'
-                )
             )
+        )
         self.mock_ldap.set_return_value('search_s',
             ("ou=people,o=test", 2, "(cn=alice)", None, 0), [])
 
@@ -648,8 +650,8 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=*)'
-                )
             )
+        )
         self.mock_ldap.set_return_value('search_s',
             ("ou=people,o=test", 2, "(uid=*)", None, 0), [self.alice, self.bob])
 
@@ -663,8 +665,8 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
-                )
             )
+        )
         self.mock_ldap.set_return_value('search_s',
             ("ou=people,o=test", 2, "(uid=alice)", None, 0), [self.alice])
 
@@ -680,8 +682,8 @@ class LDAPTest(TestCase):
             BIND_PASSWORD='password',
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
-                )
             )
+        )
         self.mock_ldap.set_return_value('search_s',
             ("ou=people,o=test", 2, "(uid=alice)", None, 0), [self.alice])
 
@@ -700,8 +702,8 @@ class LDAPTest(TestCase):
             BIND_PASSWORD='bogus',
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
-                )
             )
+        )
 
         user = self.backend.authenticate(username='alice', password='password')
 
@@ -767,6 +769,7 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
+
         def handle_populate_user(sender, **kwargs):
             self.assert_('user' in kwargs and 'ldap_user' in kwargs)
             kwargs['user'].populate_user_handled = True
@@ -997,7 +1000,6 @@ class LDAPTest(TestCase):
 
         self.assert_(alice.get_profile().is_special)
         self.assert_(not bob.get_profile().is_special)
-
 
     def test_dn_group_permissions(self):
         self._init_settings(
@@ -1271,8 +1273,8 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", self.mock_ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
-                )
             )
+        )
         self.mock_ldap.set_return_value('search_s',
             ("ou=people,o=test", 2, "(uid=alice)", None, 0), [self.alice, (None, '')])
 

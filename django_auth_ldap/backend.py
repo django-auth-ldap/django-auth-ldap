@@ -61,6 +61,15 @@ from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 
+# Support Django 1.5's custom user models
+try:
+    from django.contrib.auth import get_user_model
+    get_user_username = lambda u: u.get_username()
+except ImportError:
+    get_user_model = lambda: User
+    get_user_username = lambda u: u.username
+
+
 from django_auth_ldap.config import _LDAPConfig, LDAPSearch
 
 
@@ -140,9 +149,9 @@ class LDAPBackend(object):
         user = None
 
         try:
-            user = User.objects.get(pk=user_id)
+            user = get_user_model().objects.get(pk=user_id)
             _LDAPUser(self, user=user) # This sets user.ldap_user
-        except User.DoesNotExist:
+        except ObjectDoesNotExist:
             pass
 
         return user
@@ -189,7 +198,15 @@ class LDAPBackend(object):
         username is the Django-friendly username of the user. ldap_user.dn is
         the user's DN and ldap_user.attrs contains all of their LDAP attributes.
         """
-        return User.objects.get_or_create(username__iexact=username, defaults={'username': username.lower()})
+        model = get_user_model()
+        username_field = getattr(model, 'USERNAME_FIELD', 'username')
+
+        kwargs = {
+            username_field + '__iexact': username,
+            'defaults': {username_field: username.lower()}
+        }
+
+        return model.objects.get_or_create(**kwargs)
 
     def ldap_to_django_username(self, username):
         return username
@@ -273,7 +290,7 @@ class _LDAPUser(object):
 
     def _set_authenticated_user(self, user):
         self._user = user
-        self._username = self.backend.django_to_ldap_username(user.username)
+        self._username = self.backend.django_to_ldap_username(get_user_username(user))
 
         user.ldap_user = self
         user.ldap_username = self._username
@@ -529,8 +546,9 @@ class _LDAPUser(object):
             self._user.save()
 
         # We populate the profile after the user model is saved to give the
-        # client a chance to create the profile.
-        if should_populate:
+        # client a chance to create the profile. Custom user models in Django
+        # 1.5 probably won't have a get_profile method.
+        if should_populate and hasattr(self._user, 'get_profile'):
             self._populate_and_save_user_profile()
 
     def _populate_user(self):
@@ -560,7 +578,7 @@ class _LDAPUser(object):
             profile = self._user.get_profile()
             save_profile = False
 
-            logger.debug("Populating Django user profile for %s", self._user.username)
+            logger.debug("Populating Django user profile for %s", get_user_username(self._user))
 
             save_profile = self._populate_profile_from_attributes(profile) or save_profile
             save_profile = self._populate_profile_from_group_memberships(profile) or save_profile
@@ -572,7 +590,7 @@ class _LDAPUser(object):
             if save_profile:
                 profile.save()
         except (SiteProfileNotAvailable, ObjectDoesNotExist):
-            logger.debug("Django user %s does not have a profile to populate", self._user.username)
+            logger.debug("Django user %s does not have a profile to populate", get_user_username(self._user))
 
     def _populate_profile_from_attributes(self, profile):
         """

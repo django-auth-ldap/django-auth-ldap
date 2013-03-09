@@ -2,13 +2,19 @@ User objects
 ============
 
 Authenticating against an external source is swell, but Django's auth module is
-tightly bound to the :class:`django.contrib.auth.models.User` model. Thus, when
-a user logs in, we have to create a :class:`~django.contrib.auth.models.User`
+tightly bound to a user model. When a user logs in, we have to create a model
 object to represent them in the database. Because the LDAP search is
 case-insensitive, the default implementation also searches for existing Django
 users with an iexact query and new users are created with lowercase usernames.
 See :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_create_user` if you'd
 like to override this behavior.
+
+.. note::
+
+    Prior to Django 1.5, user objects were always instances of
+    :class:`~django.contrib.auth.models.User`. Current versions of Django
+    support custom user models via the :setting:`AUTH_USER_MODEL` setting. As of
+    version 1.1.4, django-auth-ldap will respect custom user models.
 
 The only required field for a user is the username, which we obviously have. The
 :class:`~django.contrib.auth.models.User` model is picky about the characters
@@ -21,10 +27,10 @@ example, if your LDAP names have periods in them. You can subclass
 :class:`~django_auth_ldap.backend.LDAPBackend` to implement these hooks; by
 default the username is not modified. :class:`~django.contrib.auth.models.User`
 objects that are authenticated by :class:`~django_auth_ldap.backend.LDAPBackend`
-will have an :attr:`~django.contrib.auth.models.User.ldap_username` attribute
-with the original (LDAP) username.
-:attr:`~django.contrib.auth.models.User.username` will, of course, be the Django
-username.
+will have an :attr:`ldap_username` attribute with the original (LDAP) username.
+:attr:`~django.contrib.auth.models.User.username` (or
+:meth:`~django.contrib.auth.models.AbstractBaseUser.get_username`) will, of
+course, be the Django username.
 
 .. note::
 

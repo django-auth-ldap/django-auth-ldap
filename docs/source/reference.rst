@@ -495,18 +495,21 @@ Backend
 
     .. method:: get_or_create_user(self, username, ldap_user)
 
-        Given a username and an LDAP user object, this must return the
-        associated Django User object. The ``username`` argument has already
-        been passed through
+        Given a username and an LDAP user object, this must return a valid
+        Django user model instance. The ``username`` argument has already been
+        passed through
         :meth:`~django_auth_ldap.backend.LDAPBackend.ldap_to_django_username`.
         You can get information about the LDAP user via ``ldap_user.dn`` and
         ``ldap_user.attrs``. The return value must be the same as
-        ``User.objects.get_or_create()``: a (User, created) two-tuple.
+        :meth:`~django.db.models.query.QuerySet.get_or_create`: an (instance,
+        created) two-tuple.
 
-        The default implementation calls ``User.objects.get_or_create()``, using
-        a case-insensitive query and creating new users with lowercase
-        usernames. Subclasses are welcome to associate LDAP users to Django
-        users any way they like.
+        The default implementation calls ``<model>.objects.get_or_create()``,
+        using a case-insensitive query and creating new users with lowercase
+        usernames. In Django 1.5, custom user models will be respected; in
+        earlier versions, the model is always
+        :class:`django.contrib.auth.models.User`. Subclasses are welcome to
+        associate LDAP users to Django users any way they like.
 
     .. method:: ldap_to_django_username(username)
 

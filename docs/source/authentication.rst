@@ -5,7 +5,10 @@ Server Config
 -------------
 
 If your LDAP server isn't running locally on the default port, you'll want to
-start by setting :setting:`AUTH_LDAP_SERVER_URI` to point to your server.
+start by setting :setting:`AUTH_LDAP_SERVER_URI` to point to your server. The
+value of this setting can be anything that your LDAP library supports. For
+instance, openldap may allow you to give a comma- or space-separated list of
+URIs to try in sequence.
 
 .. code-block:: python
 

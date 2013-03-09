@@ -3,10 +3,10 @@ Installation
 
 This authentication backend enables a Django project to authenticate against any
 LDAP server. To use it, add :class:`django_auth_ldap.backend.LDAPBackend` to
-:django:setting:`AUTHENTICATION_BACKENDS`. It is not necessary to add
-`django_auth_ldap` to :django:setting:`INSTALLED_APPS` unless you would like to
-run the unit tests. LDAP configuration can be as simple as a single
-distinguished name template, but there are many rich options for working with
+:django:setting:`AUTHENTICATION_BACKENDS`. Adding `django_auth_ldap` to
+:django:setting:`INSTALLED_APPS` is not recommended unless you would like to run
+the unit tests. LDAP configuration can be as simple as a single distinguished
+name template, but there are many rich options for working with
 :class:`~django.contrib.auth.models.User` objects, groups, and permissions. This
 backend depends on the `python-ldap <http://www.python-ldap.org/>`_ module.
 

@@ -30,6 +30,7 @@ except NameError:
     from sets import Set as set     # Python 2.3 fallback
 
 from collections import defaultdict
+from copy import deepcopy
 import logging
 import pickle
 import sys
@@ -39,7 +40,12 @@ import django.db.models.signals
 from django.contrib.auth.models import User, Permission, Group
 from django.test import TestCase
 
-import django_auth_ldap.models
+try:
+    from django.test.utils import override_settings
+except ImportError:
+    override_settings = lambda *args, **kwargs: (lambda v: v)
+
+from django_auth_ldap.models import TestUser, TestProfile
 from django_auth_ldap import backend
 from django_auth_ldap.config import _LDAPConfig, LDAPSearch, LDAPSearchUnion
 from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType
@@ -524,6 +530,35 @@ class LDAPTest(TestCase):
         self.assertEqual(self.mock_ldap.ldap_methods_called(),
             ['initialize', 'simple_bind_s'])
 
+    def test_deepcopy(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+
+        user = self.backend.authenticate(username='Alice', password='password')
+        user = deepcopy(user)
+
+    @override_settings(AUTH_USER_MODEL='django_auth_ldap.TestUser')
+    def test_auth_custom_user(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+        )
+
+        user = self.backend.authenticate(username='Alice', password='password')
+
+        self.assert_(isinstance(user, TestUser))
+
+    @override_settings(AUTH_USER_MODEL='django_auth_ldap.TestUser')
+    def test_get_custom_user(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+        )
+
+        user = self.backend.authenticate(username='Alice', password='password')
+        user = self.backend.get_user(user.id)
+
+        self.assert_(isinstance(user, TestUser))
+
     def test_new_user_whitespace(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
@@ -791,7 +826,7 @@ class LDAPTest(TestCase):
 
         def handle_user_saved(sender, **kwargs):
             if kwargs['created']:
-                django_auth_ldap.models.TestProfile.objects.create(user=kwargs['instance'])
+                TestProfile.objects.create(user=kwargs['instance'])
 
         def handle_populate_user_profile(sender, **kwargs):
             self.assert_('profile' in kwargs and 'ldap_user' in kwargs)
@@ -994,7 +1029,7 @@ class LDAPTest(TestCase):
 
         def handle_user_saved(sender, **kwargs):
             if kwargs['created']:
-                django_auth_ldap.models.TestProfile.objects.create(user=kwargs['instance'])
+                TestProfile.objects.create(user=kwargs['instance'])
 
         django.db.models.signals.post_save.connect(handle_user_saved, sender=User)
 

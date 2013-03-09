@@ -9,7 +9,7 @@ Django) and backwards-compatibility is not broken needlessly, however users of
 older dependencies are urged to test their deployments carefully and be wary of
 updates.
 
-Full documentation can be found at http://packages.python.org/django-auth-ldap/;
+Full documentation can be found at http://pythonhosted.org/django-auth-ldap/;
 following is an example configuration, just to whet your appetite::
 
     import ldap

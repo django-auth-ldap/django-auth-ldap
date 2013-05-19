@@ -34,6 +34,7 @@ from copy import deepcopy
 import logging
 import pickle
 import sys
+import re
 
 from django.conf import settings
 import django.db.models.signals
@@ -307,22 +308,38 @@ class MockLDAP(object):
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
         """
-        We can do a SCOPE_BASE search with the default filter. Beyond that,
-        you're on your own.
+        We can do a search with a filter on the form (attr=value), where value
+        can be a string or *. Beyond that, you're on your own.
         """
-        if scope != self.SCOPE_BASE:
+
+        valid_filterstr = re.compile(r'\(\w+=([\w@.]+|[*])\)')
+
+        if not valid_filterstr.match(filterstr):
             raise self.PresetReturnRequiredError('search_s("%s", %d, "%s", "%s", %d)' %
                 (base, scope, filterstr, attrlist, attrsonly))
 
-        if filterstr != '(objectClass=*)':
-            raise self.PresetReturnRequiredError('search_s("%s", %d, "%s", "%s", %d)' %
-                (base, scope, filterstr, attrlist, attrsonly))
+        def get_results(dn, filterstr, results):
+            attrs = self.directory.get(dn)
+            attr, value = filterstr[1:-1].split('=')
+            if attrs and attr in attrs.keys() and str(value) in attrs[attr] or value == u'*':
+                results.append((dn, attrs))
 
-        attrs = self.directory.get(base)
-        if attrs is None:
+        results = []
+        all_dn = self.directory.keys()
+        if scope == self.SCOPE_BASE:
+            get_results(base, filterstr, results)
+        elif scope == self.SCOPE_ONELEVEL:
+            for dn in all_dn:
+                if len(dn.split('=')) == len(base.split('=')) + 1 and dn.endswith(base):
+                    get_results(dn, filterstr, results)
+        elif scope == self.SCOPE_SUBTREE:
+            for dn in all_dn:
+                if dn.endswith(base):
+                    get_results(dn, filterstr, results)
+        if results:
+            return results
+        else:
             raise self.NO_SUCH_OBJECT()
-
-        return [(base, attrs)]
 
     def _add_async_result(self, value):
         self.async_results.append(value)

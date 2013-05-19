@@ -276,6 +276,9 @@ class MockLDAP(object):
 
         return result
 
+    def unbind(self):
+        pass
+
     #
     # Internal implementations
     #

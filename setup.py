@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name="django-auth-ldap",
@@ -28,5 +28,8 @@ setup(
     install_requires=[
         "django >= 1.1",
         "python-ldap >= 2.0",
+    ],
+    setup_requires=[
+        "setuptools >= 0.6c11",
     ]
 )

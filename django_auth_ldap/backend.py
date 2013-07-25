@@ -131,6 +131,9 @@ class LDAPBackend(object):
         return self._ldap
     ldap = property(_get_ldap)
 
+    def get_user_model(self):
+        return get_user_model()
+
     #
     # The Django auth backend API
     #
@@ -149,7 +152,7 @@ class LDAPBackend(object):
         user = None
 
         try:
-            user = get_user_model().objects.get(pk=user_id)
+            user = self.get_user_model().objects.get(pk=user_id)
             _LDAPUser(self, user=user) # This sets user.ldap_user
         except ObjectDoesNotExist:
             pass
@@ -198,7 +201,7 @@ class LDAPBackend(object):
         username is the Django-friendly username of the user. ldap_user.dn is
         the user's DN and ldap_user.attrs contains all of their LDAP attributes.
         """
-        model = get_user_model()
+        model = self.get_user_model()
         username_field = getattr(model, 'USERNAME_FIELD', 'username')
 
         kwargs = {

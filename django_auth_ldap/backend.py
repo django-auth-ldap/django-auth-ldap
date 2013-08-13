@@ -55,7 +55,6 @@ import traceback
 import pprint
 import copy
 
-import django.db
 from django.contrib.auth.models import User, Group, Permission, SiteProfileNotAvailable
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
@@ -66,7 +65,7 @@ try:
     from django.contrib.auth import get_user_model
     get_user_username = lambda u: u.get_username()
 except ImportError:
-    get_user_model = lambda: User
+    get_user_model = lambda: User                                        # noqa
     get_user_username = lambda u: u.username
 
 
@@ -132,6 +131,11 @@ class LDAPBackend(object):
     ldap = property(_get_ldap)
 
     def get_user_model(self):
+        """
+        By default, this will return the model class configured by
+        AUTH_USER_MODEL. Subclasses may wish to override it and return a proxy
+        model.
+        """
         return get_user_model()
 
     #

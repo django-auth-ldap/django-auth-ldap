@@ -493,6 +493,16 @@ Backend
         the indicated Django user as if they had just logged in.
         :setting:`AUTH_LDAP_ALWAYS_UPDATE_USER` is ignored (assumed ``True``).
 
+    .. method:: get_user_model(self)
+
+        Returns the user model that
+        :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_create_user` will
+        instantiate. In Django 1.5, custom user models will be respected; in
+        earlier versions, the model defaults to
+        :class:`django.contrib.auth.models.User`. Subclasses would most likely
+        override this in order to substitute a :ref:`proxy model
+        <proxy-models>`.
+
     .. method:: get_or_create_user(self, username, ldap_user)
 
         Given a username and an LDAP user object, this must return a valid
@@ -506,10 +516,10 @@ Backend
 
         The default implementation calls ``<model>.objects.get_or_create()``,
         using a case-insensitive query and creating new users with lowercase
-        usernames. In Django 1.5, custom user models will be respected; in
-        earlier versions, the model is always
-        :class:`django.contrib.auth.models.User`. Subclasses are welcome to
-        associate LDAP users to Django users any way they like.
+        usernames. The user model is obtained from
+        :meth:`~django_auth_ldap.backend.LDAPBackend.get_user_model`. A subclass
+        may override this to associate LDAP users to Django users any way it
+        likes.
 
     .. method:: ldap_to_django_username(username)
 

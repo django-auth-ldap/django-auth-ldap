@@ -55,7 +55,6 @@ import traceback
 import pprint
 import copy
 
-import django.db
 from django.contrib.auth.models import User, Group, Permission, SiteProfileNotAvailable
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
@@ -66,7 +65,7 @@ try:
     from django.contrib.auth import get_user_model
     get_user_username = lambda u: u.get_username()
 except ImportError:
-    get_user_model = lambda: User
+    get_user_model = lambda: User                                        # noqa
     get_user_username = lambda u: u.username
 
 
@@ -131,6 +130,14 @@ class LDAPBackend(object):
         return self._ldap
     ldap = property(_get_ldap)
 
+    def get_user_model(self):
+        """
+        By default, this will return the model class configured by
+        AUTH_USER_MODEL. Subclasses may wish to override it and return a proxy
+        model.
+        """
+        return get_user_model()
+
     #
     # The Django auth backend API
     #
@@ -149,7 +156,7 @@ class LDAPBackend(object):
         user = None
 
         try:
-            user = get_user_model().objects.get(pk=user_id)
+            user = self.get_user_model().objects.get(pk=user_id)
             _LDAPUser(self, user=user) # This sets user.ldap_user
         except ObjectDoesNotExist:
             pass
@@ -198,7 +205,7 @@ class LDAPBackend(object):
         username is the Django-friendly username of the user. ldap_user.dn is
         the user's DN and ldap_user.attrs contains all of their LDAP attributes.
         """
-        model = get_user_model()
+        model = self.get_user_model()
         username_field = getattr(model, 'USERNAME_FIELD', 'username')
 
         kwargs = {

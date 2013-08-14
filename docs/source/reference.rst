@@ -447,6 +447,25 @@ Configuration
     .. method:: __init__(name_attr='cn')
 
 
+.. class:: OrganizationalRoleGroupType
+
+    A concrete subclass of :class:`~django_auth_ldap.config.MemberDNGroupType`
+    that handles the ``organizationalRole`` object class. Equivalent to
+    ``MemberDNGroupType('roleOccupant')``.
+
+    .. method:: __init__(name_attr='cn')
+
+
+.. class:: NestedOrganizationalRoleGroupType
+
+    A concrete subclass of
+    :class:`~django_auth_ldap.config.NestedMemberDNGroupType` that handles the
+    ``organizationalRole`` object class. Equivalent to
+    ``NestedMemberDNGroupType('roleOccupant')``.
+
+    .. method:: __init__(name_attr='cn')
+
+
 Backend
 -------
 

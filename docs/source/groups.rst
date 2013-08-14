@@ -28,6 +28,8 @@ readability, several trivial subclasses of the above are provided:
     * :class:`~django_auth_ldap.config.NestedGroupOfUniqueNamesType`
     * :class:`~django_auth_ldap.config.ActiveDirectoryGroupType`
     * :class:`~django_auth_ldap.config.NestedActiveDirectoryGroupType`
+    * :class:`~django_auth_ldap.config.OrganizationalRoleGroupType`
+    * :class:`~django_auth_ldap.config.NestedOrganizationalRoleGroupType`
 
 
 Finding Groups

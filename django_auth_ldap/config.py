@@ -520,3 +520,20 @@ class NestedActiveDirectoryGroupType(NestedMemberDNGroupType):
     """
     def __init__(self, name_attr='cn'):
         super(NestedActiveDirectoryGroupType, self).__init__('member', name_attr)
+
+
+class OrganizationalRoleGroupType(MemberDNGroupType):
+    """
+    An LDAPGroupType subclass that handles groups of class organizationalRole.
+    """
+    def __init__(self, name_attr='cn'):
+        super(OrganizationalRoleGroupType, self).__init__('roleOccupant', name_attr)
+
+
+class NestedOrganizationalRoleGroupType(NestedMemberDNGroupType):
+    """
+    An LDAPGroupType subclass that handles groups of class OrganizationalRoleGroupType
+    with nested group references.
+    """
+    def __init__(self, name_attr='cn'):
+        super(NestedOrganizationalRoleGroupType, self).__init__('roleOccupant', name_attr)

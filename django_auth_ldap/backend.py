@@ -85,7 +85,7 @@ class LDAPBackend(object):
     supports_inactive_user = False
 
     _settings = None
-    _ldap = None # The cached ldap module (or mock object)
+    _ldap = None  # The cached ldap module (or mock object)
 
     # This is prepended to our internal setting names to produce the names we
     # expect in Django's settings file. Subclasses can change this in order to
@@ -152,7 +152,7 @@ class LDAPBackend(object):
 
         try:
             user = self.get_user_model().objects.get(pk=user_id)
-            _LDAPUser(self, user=user) # This sets user.ldap_user
+            _LDAPUser(self, user=user)  # This sets user.ldap_user
         except ObjectDoesNotExist:
             pass
 
@@ -173,7 +173,7 @@ class LDAPBackend(object):
 
     def get_group_permissions(self, user, obj=None):
         if not hasattr(user, 'ldap_user') and self.settings.AUTHORIZE_ALL_USERS:
-            _LDAPUser(self, user=user) # This sets user.ldap_user
+            _LDAPUser(self, user=user)  # This sets user.ldap_user
 
         if hasattr(user, 'ldap_user'):
             return user.ldap_user.get_group_permissions()
@@ -326,10 +326,10 @@ class _LDAPUser(object):
             logger.debug(u"Authentication failed for %s" % self._username)
         except self.ldap.LDAPError, e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
-                self._username, pprint.pformat(e))
+                           self._username, pprint.pformat(e))
         except Exception:
             logger.exception(u"Caught Exception while authenticating %s",
-                self._username)
+                             self._username)
             raise
 
         return user
@@ -347,7 +347,7 @@ class _LDAPUser(object):
                     self._load_group_permissions()
                 except self.ldap.LDAPError, e:
                     logger.warning("Caught LDAPError loading group permissions: %s",
-                        pprint.pformat(e))
+                                   pprint.pformat(e))
 
         return self._group_permissions
 
@@ -366,10 +366,10 @@ class _LDAPUser(object):
             user = self._user
         except self.ldap.LDAPError, e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
-                self._username, pprint.pformat(e))
+                           self._username, pprint.pformat(e))
         except Exception, e:
             logger.error(u"Caught Exception while authenticating %s: %s",
-                self._username, pprint.pformat(e))
+                         self._username, pprint.pformat(e))
             logger.error(''.join(traceback.format_tb(sys.exc_info()[2])))
             raise
 
@@ -632,7 +632,7 @@ class _LDAPUser(object):
         """
         group_names = self._get_groups().get_group_names()
         groups = [Group.objects.get_or_create(name=group_name)[0] for group_name
-            in group_names]
+                  in group_names]
 
         self._user.groups = groups
 
@@ -647,9 +647,9 @@ class _LDAPUser(object):
         """
         group_names = self._get_groups().get_group_names()
 
-        perms = Permission.objects.filter(group__name__in=group_names
-            ).values_list('content_type__app_label', 'codename'
-            ).order_by()
+        perms = Permission.objects.filter(group__name__in=group_names)
+        perms = perms.values_list('content_type__app_label', 'codename')
+        perms = perms.order_by()
 
         self._group_permissions = set(["%s.%s" % (ct, name) for ct, name in perms])
 
@@ -672,9 +672,8 @@ class _LDAPUser(object):
         Binds to the LDAP server with AUTH_LDAP_BIND_DN and
         AUTH_LDAP_BIND_PASSWORD.
         """
-        self._bind_as(self.settings.BIND_DN,
-            self.settings.BIND_PASSWORD,
-            sticky=True)
+        self._bind_as(self.settings.BIND_DN, self.settings.BIND_PASSWORD,
+                      sticky=True)
 
     def _bind_as(self, bind_dn, bind_password, sticky=False):
         """
@@ -686,7 +685,7 @@ class _LDAPUser(object):
         the credentials, after which the connection will be considered unbound.
         """
         self._get_connection().simple_bind_s(bind_dn.encode('utf-8'),
-            bind_password.encode('utf-8'))
+                                             bind_password.encode('utf-8'))
 
         self._connection_bound = sticky
 
@@ -745,8 +744,10 @@ class _LDAPUserGroups(object):
 
         if self._group_names is None:
             group_infos = self._get_group_infos()
-            self._group_names = set([self._group_type.group_name_from_info(group_info)
-                for group_info in group_infos])
+            self._group_names = set(
+                self._group_type.group_name_from_info(group_info)
+                for group_info in group_infos
+            )
             self._cache_attr("_group_names")
 
         return self._group_names
@@ -779,7 +780,7 @@ class _LDAPUserGroups(object):
         """
         if self._group_dns is None:
             group_infos = self._get_group_infos()
-            self._group_dns = set([group_info[0] for group_info in group_infos])
+            self._group_dns = set(group_info[0] for group_info in group_infos)
 
         return self._group_dns
 
@@ -790,7 +791,7 @@ class _LDAPUserGroups(object):
         """
         if self._group_infos is None:
             self._group_infos = self._group_type.user_groups(self._ldap_user,
-                self._group_search)
+                                                             self._group_search)
 
         return self._group_infos
 

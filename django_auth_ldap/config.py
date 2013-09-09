@@ -149,11 +149,12 @@ class LDAPSearch(object):
         try:
             filterstr = self.filterstr % filterargs
             results = connection.search_s(self.base_dn.encode('utf-8'),
-                self.scope, filterstr.encode('utf-8'))
+                                          self.scope,
+                                          filterstr.encode('utf-8'))
         except self.ldap.LDAPError, e:
             results = []
             logger.error(u"search_s('%s', %d, '%s') raised %s" %
-                (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
+                         (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
 
         return self._process_results(results)
 
@@ -165,11 +166,11 @@ class LDAPSearch(object):
         try:
             filterstr = self.filterstr % filterargs
             msgid = connection.search(self.base_dn.encode('utf-8'),
-                self.scope, filterstr.encode('utf-8'))
+                                      self.scope, filterstr.encode('utf-8'))
         except self.ldap.LDAPError, e:
             msgid = None
             logger.error(u"search('%s', %d, '%s') raised %s" %
-                (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
+                         (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
 
         return msgid
 
@@ -200,7 +201,8 @@ class LDAPSearch(object):
 
         result_dns = [result[0] for result in results]
         logger.debug(u"search_s('%s', %d, '%s') returned %d objects: %s" %
-            (self.base_dn, self.scope, self.filterstr, len(result_dns), "; ".join(result_dns)))
+                     (self.base_dn, self.scope, self.filterstr, len(result_dns),
+                      "; ".join(result_dns)))
 
         return results
 
@@ -437,13 +439,14 @@ class NestedMemberDNGroupType(LDAPGroupType):
         those groups belong to, etc. Circular references will be detected and
         pruned.
         """
-        group_info_map = {} # Maps group_dn to group_info of groups we've found
-        member_dn_set = set([ldap_user.dn]) # Member DNs to search with next
-        handled_dn_set = set() # Member DNs that we've already searched with
+        group_info_map = {}  # Maps group_dn to group_info of groups we've found
+        member_dn_set = set([ldap_user.dn])  # Member DNs to search with next
+        handled_dn_set = set()  # Member DNs that we've already searched with
 
         while len(member_dn_set) > 0:
             group_infos = self.find_groups_with_any_member(member_dn_set,
-                group_search, ldap_user.connection)
+                                                           group_search,
+                                                           ldap_user.connection)
             new_group_info_map = dict([(info[0], info) for info in group_infos])
             group_info_map.update(new_group_info_map)
             handled_dn_set.update(member_dn_set)

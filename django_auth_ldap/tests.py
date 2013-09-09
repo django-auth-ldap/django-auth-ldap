@@ -24,11 +24,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-try:
-    set
-except NameError:
-    from sets import Set as set     # Python 2.3 fallback
-
 from collections import defaultdict
 from copy import deepcopy
 import logging

@@ -45,11 +45,6 @@ information will be user_dn or user_info.
 Additional classes can be found in the config module next to this one.
 """
 
-try:
-    set
-except NameError:
-    from sets import Set as set     # Python 2.3 fallback
-
 import sys
 import traceback
 import pprint

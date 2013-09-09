@@ -30,11 +30,6 @@ Please see the docstring on the backend module for more information, including
 notes on naming conventions.
 """
 
-try:
-    set
-except NameError:
-    from sets import Set as set     # Python 2.3 fallback
-
 import logging
 import pprint
 

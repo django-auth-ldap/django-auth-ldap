@@ -45,6 +45,7 @@ information will be user_dn or user_info.
 Additional classes can be found in the config module next to this one.
 """
 
+import ldap
 import sys
 import traceback
 import pprint
@@ -324,7 +325,7 @@ class _LDAPUser(object):
             user = self._user
         except self.AuthenticationFailed, e:
             logger.debug(u"Authentication failed for %s" % self._username)
-        except self.ldap.LDAPError, e:
+        except ldap.LDAPError, e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
                            self._username, pprint.pformat(e))
         except Exception:
@@ -345,7 +346,7 @@ class _LDAPUser(object):
             if self.settings.FIND_GROUP_PERMS:
                 try:
                     self._load_group_permissions()
-                except self.ldap.LDAPError, e:
+                except ldap.LDAPError as e:
                     logger.warning("Caught LDAPError loading group permissions: %s",
                                    pprint.pformat(e))
 
@@ -364,7 +365,7 @@ class _LDAPUser(object):
                 self._get_or_create_user(force_populate=True)
 
             user = self._user
-        except self.ldap.LDAPError, e:
+        except ldap.LDAPError, e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
                            self._username, pprint.pformat(e))
         except Exception, e:
@@ -424,12 +425,12 @@ class _LDAPUser(object):
             sticky = self.settings.BIND_AS_AUTHENTICATING_USER
 
             self._bind_as(self.dn, password, sticky=sticky)
-        except self.ldap.INVALID_CREDENTIALS:
+        except ldap.INVALID_CREDENTIALS:
             raise self.AuthenticationFailed("User DN/password rejected by LDAP server.")
 
     def _load_user_attrs(self):
         if self.dn is not None:
-            search = LDAPSearch(self.dn, self.ldap.SCOPE_BASE)
+            search = LDAPSearch(self.dn, ldap.SCOPE_BASE)
             results = search.execute(self.connection)
 
             if results is not None and len(results) > 0:
@@ -451,7 +452,7 @@ class _LDAPUser(object):
 
     def _construct_simple_user_dn(self):
         template = self.settings.USER_DN_TEMPLATE
-        username = self.ldap.dn.escape_dn_chars(self._username)
+        username = ldap.dn.escape_dn_chars(self._username)
 
         self._user_dn = template % {'user': username}
 
@@ -694,7 +695,7 @@ class _LDAPUser(object):
         Returns our cached LDAPObject, which may or may not be bound.
         """
         if self._connection is None:
-            self._connection = self.ldap.initialize(self.settings.SERVER_URI)
+            self._connection = ldap.initialize(self.settings.SERVER_URI)
 
             for opt, value in self.settings.CONNECTION_OPTIONS.iteritems():
                 self._connection.set_option(opt, value)

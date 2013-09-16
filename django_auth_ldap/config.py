@@ -30,6 +30,7 @@ Please see the docstring on the backend module for more information, including
 notes on naming conventions.
 """
 
+import ldap
 import logging
 import pprint
 
@@ -51,7 +52,6 @@ class _LDAPConfig(object):
         of python-ldap.
         """
         if cls.ldap is None:
-            import ldap
             import ldap.filter
 
             # Support for python-ldap < 2.0.6
@@ -151,7 +151,7 @@ class LDAPSearch(object):
             results = connection.search_s(self.base_dn.encode('utf-8'),
                                           self.scope,
                                           filterstr.encode('utf-8'))
-        except self.ldap.LDAPError, e:
+        except ldap.LDAPError, e:
             results = []
             logger.error(u"search_s('%s', %d, '%s') raised %s" %
                          (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
@@ -167,7 +167,7 @@ class LDAPSearch(object):
             filterstr = self.filterstr % filterargs
             msgid = connection.search(self.base_dn.encode('utf-8'),
                                       self.scope, filterstr.encode('utf-8'))
-        except self.ldap.LDAPError, e:
+        except ldap.LDAPError, e:
             msgid = None
             logger.error(u"search('%s', %d, '%s') raised %s" %
                          (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
@@ -180,9 +180,9 @@ class LDAPSearch(object):
         """
         try:
             kind, results = connection.result(msgid)
-            if kind != self.ldap.RES_SEARCH_RESULT:
+            if kind != ldap.RES_SEARCH_RESULT:
                 results = []
-        except self.ldap.LDAPError, e:
+        except ldap.LDAPError, e:
             results = []
             logger.error(u"result(%d) raised %s" % (msgid, pprint.pformat(e)))
 
@@ -371,13 +371,13 @@ class PosixGroupType(LDAPGroupType):
 
             try:
                 is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'memberUid', user_uid.encode('utf-8'))
-            except self.ldap.NO_SUCH_ATTRIBUTE:
+            except ldap.UNDEFINED_TYPE:
                 is_member = False
 
             if not is_member:
                 try:
                     is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'gidNumber', user_gid.encode('utf-8'))
-                except self.ldap.NO_SUCH_ATTRIBUTE:
+                except ldap.UNDEFINED_TYPE:
                     is_member = False
         except (KeyError, IndexError):
             is_member = False
@@ -411,7 +411,7 @@ class MemberDNGroupType(LDAPGroupType):
                 self.member_attr.encode('utf-8'),
                 ldap_user.dn.encode('utf-8')
             )
-        except self.ldap.NO_SUCH_ATTRIBUTE:
+        except ldap.UNDEFINED_TYPE:
             result = 0
 
         return result

@@ -31,5 +31,8 @@ setup(
     ],
     setup_requires=[
         "setuptools >= 0.6c11",
+    ],
+    tests_require=[
+        "mockldap >= 0.1",
     ]
 )

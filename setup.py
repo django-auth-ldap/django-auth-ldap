@@ -26,7 +26,7 @@ setup(
     ],
     keywords=["django", "ldap", "authentication", "auth"],
     install_requires=[
-        "django >= 1.1",
+        "django",
         "python-ldap >= 2.0",
     ],
     setup_requires=[

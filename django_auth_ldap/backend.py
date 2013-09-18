@@ -346,7 +346,7 @@ class _LDAPUser(object):
             if self.settings.FIND_GROUP_PERMS:
                 try:
                     self._load_group_permissions()
-                except ldap.LDAPError as e:
+                except ldap.LDAPError, e:
                     logger.warning("Caught LDAPError loading group permissions: %s",
                                    pprint.pformat(e))
 

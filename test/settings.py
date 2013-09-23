@@ -18,8 +18,7 @@ USE_TZ = True
 
 SECRET_KEY = 'nt56v8)moa)37ta5z7dd=if-@y#k@l7+t8lct*c8m730lpd=so'
 
-ROOT_URLCONF = 'test.urls'
-WSGI_APPLICATION = 'test.wsgi.application'
+ROOT_URLCONF = 'urls'
 
 INSTALLED_APPS = (
     'django.contrib.auth',

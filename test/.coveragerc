@@ -1,0 +1,3 @@
+[run]
+source = django_auth_ldap.config
+         django_auth_ldap.backend

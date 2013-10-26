@@ -16,7 +16,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
         "Programming Language :: Python",
-        "Programming Language :: Python, :: 2",
+        "Programming Language :: Python :: 2",
         "Framework :: Django",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",

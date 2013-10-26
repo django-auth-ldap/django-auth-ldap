@@ -63,13 +63,17 @@ group membership::
 
     AUTH_LDAP_USER_FLAGS_BY_GROUP = {
         "is_active": "cn=active,ou=groups,dc=example,dc=com",
-        "is_staff": "cn=staff,ou=groups,dc=example,dc=com",
+        "is_staff": ["cn=staff,ou=groups,dc=example,dc=com",
+                     "cn=admin,ou=groups,dc=example,dc=com"],
         "is_superuser": "cn=superuser,ou=groups,dc=example,dc=com"
     }
 
     AUTH_LDAP_PROFILE_FLAGS_BY_GROUP = {
-        "is_awesome": "cn=awesome,ou=django,ou=groups,dc=example,dc=com"
+        "is_awesome": ["cn=awesome,ou=groups,dc=example,dc=com"]
     }
+
+If a list of groups is given, the flag will be set if the user is a member of
+any group.
 
 
 Updating Users

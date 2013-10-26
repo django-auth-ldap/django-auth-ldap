@@ -569,8 +569,10 @@ class _LDAPUser(object):
                 logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
 
     def _populate_user_from_group_memberships(self):
-        for field, group_dn in self.settings.USER_FLAGS_BY_GROUP.iteritems():
-            value = self._get_groups().is_member_of(group_dn)
+        for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.iteritems():
+            if isinstance(group_dns, basestring):
+                group_dns = [group_dns]
+            value = any(self._get_groups().is_member_of(dn) for dn in group_dns)
             setattr(self._user, field, value)
 
     def _populate_and_save_user_profile(self):
@@ -619,8 +621,10 @@ class _LDAPUser(object):
         """
         save_profile = False
 
-        for field, group_dn in self.settings.PROFILE_FLAGS_BY_GROUP.iteritems():
-            value = self._get_groups().is_member_of(group_dn)
+        for field, group_dns in self.settings.PROFILE_FLAGS_BY_GROUP.iteritems():
+            if isinstance(group_dns, basestring):
+                group_dns = [group_dns]
+            value = any(self._get_groups().is_member_of(dn) for dn in group_dns)
             setattr(profile, field, value)
             save_profile = True
 

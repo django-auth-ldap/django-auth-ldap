@@ -122,6 +122,11 @@ class LDAPTest(TestCase):
     })
 
     # groupOfUniqueName groups
+    empty_gon = ("cn=empty_gon,ou=groups,o=test", {
+        "cn": ["empty_gon"],
+        "objectClass": ["groupOfNames"],
+        "member": []
+    })
     active_gon = ("cn=active_gon,ou=groups,o=test", {
         "cn": ["active_gon"],
         "objectClass": ["groupOfNames"],
@@ -159,8 +164,9 @@ class LDAPTest(TestCase):
     })
 
     directory = dict([top, people, groups, alice, bob, dressler, nobody,
-                      active_px, staff_px, superuser_px, active_gon, staff_gon,
-                      superuser_gon, parent_gon, nested_gon, circular_gon])
+                      active_px, staff_px, superuser_px, empty_gon, active_gon,
+                      staff_gon, superuser_gon, parent_gon, nested_gon,
+                      circular_gon])
 
     @classmethod
     def configure_logger(cls):
@@ -634,7 +640,8 @@ class LDAPTest(TestCase):
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
             USER_FLAGS_BY_GROUP={
                 'is_active': "cn=active_gon,ou=groups,o=test",
-                'is_staff': "cn=staff_gon,ou=groups,o=test",
+                'is_staff': ["cn=empty_gon,ou=groups,o=test",
+                             "cn=staff_gon,ou=groups,o=test"],
                 'is_superuser': "cn=superuser_gon,ou=groups,o=test"
             }
         )
@@ -711,7 +718,7 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
             PROFILE_FLAGS_BY_GROUP={
-                'is_special': "cn=superuser_gon,ou=groups,o=test"
+                'is_special': ["cn=superuser_gon,ou=groups,o=test"]
             }
         )
 

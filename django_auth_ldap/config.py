@@ -346,12 +346,17 @@ class PosixGroupType(LDAPGroupType):
 
         try:
             user_uid = ldap_user.attrs['uid'][0]
-            user_gid = ldap_user.attrs['gidNumber'][0]
 
-            filterstr = u'(|(gidNumber=%s)(memberUid=%s))' % (
-                self.ldap.filter.escape_filter_chars(user_gid),
-                self.ldap.filter.escape_filter_chars(user_uid)
-            )
+            if 'gidNumber' in ldap_user.attrs:
+                user_gid = ldap_user.attrs['gidNumber'][0]
+                filterstr = u'(|(gidNumber=%s)(memberUid=%s))' % (
+                    self.ldap.filter.escape_filter_chars(user_gid),
+                    self.ldap.filter.escape_filter_chars(user_uid)
+                )
+            else:
+                filterstr = u'(memberUid=%s)' % (
+                    self.ldap.filter.escape_filter_chars(user_uid),
+                )
 
             search = group_search.search_with_additional_term_string(filterstr)
             groups = search.execute(ldap_user.connection)
@@ -367,7 +372,6 @@ class PosixGroupType(LDAPGroupType):
         """
         try:
             user_uid = ldap_user.attrs['uid'][0]
-            user_gid = ldap_user.attrs['gidNumber'][0]
 
             try:
                 is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'memberUid', user_uid.encode('utf-8'))
@@ -376,6 +380,7 @@ class PosixGroupType(LDAPGroupType):
 
             if not is_member:
                 try:
+                    user_gid = ldap_user.attrs['gidNumber'][0]
                     is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'gidNumber', user_gid.encode('utf-8'))
                 except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                     is_member = False

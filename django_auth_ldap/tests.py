@@ -107,6 +107,7 @@ class LDAPTest(TestCase):
         "cn": ["active_px"],
         "objectClass": ["posixGroup"],
         "gidNumber": ["1000"],
+        "memberUid": [],
     })
     staff_px = ("cn=staff_px,ou=groups,o=test", {
         "cn": ["staff_px"],
@@ -777,6 +778,26 @@ class LDAPTest(TestCase):
             FIND_GROUP_PERMS=True
         )
         self._init_groups()
+
+        alice = User.objects.create(username='alice')
+        alice = self.backend.get_user(alice.pk)
+
+        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
+        self.assertTrue(self.backend.has_module_perms(alice, "auth"))
+
+    def test_posix_group_permissions_no_gid(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE,
+                                    '(objectClass=posixGroup)'),
+            GROUP_TYPE=PosixGroupType(),
+            FIND_GROUP_PERMS=True
+        )
+        self._init_groups()
+        self.ldapobj.modify_s(self.alice[0], [(ldap.MOD_DELETE, 'gidNumber', None)])
+        self.ldapobj.modify_s(self.active_px[0], [(ldap.MOD_ADD, 'memberUid', ['alice'])])
 
         alice = User.objects.create(username='alice')
         alice = self.backend.get_user(alice.pk)

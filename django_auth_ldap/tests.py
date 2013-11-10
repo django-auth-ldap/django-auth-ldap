@@ -210,6 +210,21 @@ class LDAPTest(TestCase):
 
         self.assertEqual(self.ldapobj.get_option('opt1'), 'value1')
 
+    def test_callable_server_uri(self):
+        self._init_settings(
+            SERVER_URI=lambda: 'ldap://ldap.example.com',
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+
+        self.backend.authenticate(username='alice', password='password')
+
+        ldapobj = self.mockldap['ldap://ldap.example.com']
+        self.assertEqual(
+            ldapobj.methods_called(with_args=True),
+            [('initialize', ('ldap://ldap.example.com',), {}),
+             ('simple_bind_s', ('uid=alice,ou=people,o=test', 'password'), {})]
+        )
+
     def test_simple_bind(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'

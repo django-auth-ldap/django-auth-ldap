@@ -14,6 +14,17 @@ URIs to try in sequence.
 
     AUTH_LDAP_SERVER_URI = "ldap://ldap.example.com"
 
+If your server location is even more dynamic than this, you may provide a
+function (or any callable object) that returns the URI. You should assume that
+this will be called on every request, so if it's an expensive operation, some
+caching is in order.
+
+.. code-block:: python
+
+    from my_module import find_my_ldap_server
+
+    AUTH_LDAP_SERVER_URI = find_my_ldap_server
+
 If you need to configure any python-ldap options, you can set
 :setting:`AUTH_LDAP_GLOBAL_OPTIONS` and/or
 :setting:`AUTH_LDAP_CONNECTION_OPTIONS`. For example, disabling referrals is not

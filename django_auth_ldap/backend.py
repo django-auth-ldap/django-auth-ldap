@@ -699,7 +699,11 @@ class _LDAPUser(object):
         Returns our cached LDAPObject, which may or may not be bound.
         """
         if self._connection is None:
-            self._connection = ldap.initialize(self.settings.SERVER_URI)
+            uri = self.settings.SERVER_URI
+            if callable(uri):
+                uri = uri()
+
+            self._connection = ldap.initialize(uri)
 
             for opt, value in self.settings.CONNECTION_OPTIONS.iteritems():
                 self._connection.set_option(opt, value)

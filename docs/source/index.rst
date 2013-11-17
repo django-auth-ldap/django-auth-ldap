@@ -30,6 +30,12 @@ updates.
     changes
 
 
+Older Versions
+==============
+
+- `django-auth-ldap 1.0.19 <_static/versions/1.0.19/index.html>`_
+
+
 License
 =======
 

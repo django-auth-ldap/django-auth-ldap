@@ -337,7 +337,7 @@ Configuration
 
 .. class:: LDAPSearchUnion
 
-    (New in 1.1)
+    .. versionadded:: 1.1
 
     .. method:: __init__(\*searches)
 

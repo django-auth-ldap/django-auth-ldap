@@ -69,8 +69,13 @@ return exactly one result or authentication will fail. If you can't search
 anonymously, you can set :setting:`AUTH_LDAP_BIND_DN` to the distinguished name
 of an authorized user and :setting:`AUTH_LDAP_BIND_PASSWORD` to the password.
 
-(New in 1.1) If you need to search in more than one place for a user, you can use
-:class:`~django_auth_ldap.config.LDAPSearchUnion`.  This takes multiple
+Search Unions
+^^^^^^^^^^^^^
+
+.. versionadded:: 1.1
+
+If you need to search in more than one place for a user, you can use
+:class:`~django_auth_ldap.config.LDAPSearchUnion`. This takes multiple
 LDAPSearch objects and returns the union of the results. The precedence of the
 underlying searches is unspecified.
 

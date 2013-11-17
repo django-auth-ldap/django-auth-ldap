@@ -1,7 +1,7 @@
 Multiple LDAP Configs
 =====================
 
-(New in 1.1)
+.. versionadded:: 1.1
 
 You've probably noticed that all of the settings for this backend have the
 prefix AUTH_LDAP\_. This is the default, but it can be customized by subclasses

@@ -90,4 +90,4 @@ doctest:
 
 zip:
 	rm $(BUILDDIR)/html.zip || true
-	cd $(BUILDDIR)/html && zip -R ../html.zip '*' -x .buildinfo -x '_sources/*'
+	cd $(BUILDDIR)/html && zip -R ../html.zip '*' -x .buildinfo

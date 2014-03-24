@@ -39,6 +39,10 @@ from django.conf import settings
 import django.db.models.signals
 from django.contrib.auth.models import User, Permission, Group
 from django.test import TestCase
+try:
+    from django.utils.encoding import force_str
+except ImportError: # Django < 1.5
+    from django.utils.encoding import smart_str as force_str
 from django.utils import unittest
 try:
     from django.test.utils import override_settings
@@ -58,7 +62,7 @@ class TestSettings(backend.LDAPSettings):
     from django.conf.
     """
     def __init__(self, **kwargs):
-        for name, default in self.defaults.iteritems():
+        for name, default in self.defaults.items():
             value = kwargs.get(name, default)
             setattr(self, name, value)
 
@@ -87,14 +91,14 @@ class LDAPTest(TestCase):
         "givenName": ["Robert"],
         "sn": ["Barker"]
     })
-    dressler = (u"uid=dreßler,ou=people,o=test".encode('utf-8'), {
-        "uid": [u"dreßler".encode('utf-8')],
+    dressler = (force_str(u"uid=dreßler,ou=people,o=test"), {
+        "uid": [force_str(u"dreßler")],
         "objectClass": ["person", "organizationalPerson", "inetOrgPerson", "posixAccount"],
         "userPassword": ["password"],
         "uidNumber": ["1002"],
         "gidNumber": ["50"],
         "givenName": ["Wolfgang"],
-        "sn": [u"Dreßler".encode('utf-8')]
+        "sn": [force_str(u"Dreßler")]
     })
     nobody = ("uid=nobody,ou=people,o=test", {
         "uid": ["nobody"],

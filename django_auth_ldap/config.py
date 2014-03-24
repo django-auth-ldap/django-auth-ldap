@@ -33,6 +33,12 @@ notes on naming conventions.
 import ldap
 import logging
 import pprint
+import sys
+
+try:
+    from django.utils.encoding import force_str
+except ImportError: # Django < 1.5
+    from django.utils.encoding import smart_str as force_str
 
 
 class _LDAPConfig(object):
@@ -65,7 +71,7 @@ class _LDAPConfig(object):
 
         # Apply global LDAP options once
         if (not cls._ldap_configured) and (global_options is not None):
-            for opt, value in global_options.iteritems():
+            for opt, value in global_options.items():
                 cls.ldap.set_option(opt, value)
 
             cls._ldap_configured = True
@@ -118,7 +124,7 @@ class LDAPSearch(object):
         """
         term_strings = [self.filterstr]
 
-        for name, value in term_dict.iteritems():
+        for name, value in term_dict.items():
             if escape:
                 value = self.ldap.filter.escape_filter_chars(value)
             term_strings.append(u'(%s=%s)' % (name, value))
@@ -148,10 +154,10 @@ class LDAPSearch(object):
         """
         try:
             filterstr = self.filterstr % filterargs
-            results = connection.search_s(self.base_dn.encode('utf-8'),
+            results = connection.search_s(force_str(self.base_dn),
                                           self.scope,
-                                          filterstr.encode('utf-8'))
-        except ldap.LDAPError, e:
+                                          force_str(filterstr))
+        except ldap.LDAPError as e:
             results = []
             logger.error(u"search_s('%s', %d, '%s') raised %s" %
                          (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
@@ -165,9 +171,9 @@ class LDAPSearch(object):
         """
         try:
             filterstr = self.filterstr % filterargs
-            msgid = connection.search(self.base_dn.encode('utf-8'),
-                                      self.scope, filterstr.encode('utf-8'))
-        except ldap.LDAPError, e:
+            msgid = connection.search(force_str(self.base_dn),
+                                      self.scope, force_str(filterstr))
+        except ldap.LDAPError as e:
             msgid = None
             logger.error(u"search('%s', %d, '%s') raised %s" %
                          (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
@@ -182,7 +188,7 @@ class LDAPSearch(object):
             kind, results = connection.result(msgid)
             if kind != ldap.RES_SEARCH_RESULT:
                 results = []
-        except ldap.LDAPError, e:
+        except ldap.LDAPError as e:
             results = []
             logger.error(u"result(%d) raised %s" % (msgid, pprint.pformat(e)))
 
@@ -193,11 +199,12 @@ class LDAPSearch(object):
         Returns a sanitized copy of raw LDAP results. This scrubs out
         references, decodes utf8, normalizes DNs, etc.
         """
-        results = filter(lambda r: r[0] is not None, results)
-        results = _DeepStringCoder('utf-8').decode(results)
+        results = [r for r in results if r[0] is not None]
+        if sys.version_info[0] < 3:
+            results = _DeepStringCoder('utf-8').decode(results)
 
         # The normal form of a DN is lower case.
-        results = map(lambda r: (r[0].lower(), r[1]), results)
+        results = [(r[0].lower(), r[1]) for r in results]
 
         result_dns = [result[0] for result in results]
         logger.debug(u"search_s('%s', %d, '%s') returned %d objects: %s" %
@@ -273,7 +280,7 @@ class _DeepStringCoder(object):
         # for search results.
         decoded = self.ldap.cidict.cidict()
 
-        for k, v in value.iteritems():
+        for k, v in value.items():
             decoded[self.decode(k)] = self.decode(v)
 
         return decoded
@@ -386,14 +393,14 @@ class PosixGroupType(LDAPGroupType):
             user_uid = ldap_user.attrs['uid'][0]
 
             try:
-                is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'memberUid', user_uid.encode('utf-8'))
+                is_member = ldap_user.connection.compare_s(force_str(group_dn), 'memberUid', force_str(user_uid))
             except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                 is_member = False
 
             if not is_member:
                 try:
                     user_gid = ldap_user.attrs['gidNumber'][0]
-                    is_member = ldap_user.connection.compare_s(group_dn.encode('utf-8'), 'gidNumber', user_gid.encode('utf-8'))
+                    is_member = ldap_user.connection.compare_s(force_str(group_dn), 'gidNumber', force_str(user_gid))
                 except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                     is_member = False
         except (KeyError, IndexError):
@@ -424,9 +431,9 @@ class MemberDNGroupType(LDAPGroupType):
     def is_member(self, ldap_user, group_dn):
         try:
             result = ldap_user.connection.compare_s(
-                group_dn.encode('utf-8'),
-                self.member_attr.encode('utf-8'),
-                ldap_user.dn.encode('utf-8')
+                force_str(group_dn),
+                force_str(self.member_attr),
+                force_str(ldap_user.dn)
             )
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
             result = 0

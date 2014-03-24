@@ -55,6 +55,10 @@ from django.contrib.auth.models import User, Group, Permission, SiteProfileNotAv
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
+try:
+    from django.utils.encoding import force_str
+except ImportError: # Django < 1.5
+    from django.utils.encoding import smart_str as force_str
 
 # Support Django 1.5's custom user models
 try:
@@ -64,6 +68,11 @@ except ImportError:
     get_user_model = lambda: User                                        # noqa
     get_user_username = lambda u: u.username
 
+# Small compatibility hack
+try:
+    basestring
+except NameError:
+    basestring = str
 
 from django_auth_ldap.config import _LDAPConfig, LDAPSearch
 
@@ -97,12 +106,9 @@ class LDAPBackend(object):
         """
         Exclude certain cached properties from pickling.
         """
-        state = filter(
-            lambda (k, v): k not in ['_settings', '_ldap'],
-            self.__dict__.iteritems()
-        )
-
-        return dict(state)
+        return dict((k, v)
+            for (k, v) in self.__dict__.items()
+            if k not in ['_settings', '_ldap'])
 
     def _get_settings(self):
         if self._settings is None:
@@ -284,12 +290,9 @@ class _LDAPUser(object):
         Most of our properties are cached from the LDAP server. We only want to
         pickle a few crucial things.
         """
-        state = filter(
-            lambda (k, v): k in ['backend', '_username', '_user'],
-            self.__dict__.iteritems()
-        )
-
-        return dict(state)
+        return dict((k, v)
+            for (k, v) in self.__dict__.items()
+            if k in ['backend', '_username', '_user'])
 
     def _set_authenticated_user(self, user):
         self._user = user
@@ -323,9 +326,9 @@ class _LDAPUser(object):
             self._get_or_create_user()
 
             user = self._user
-        except self.AuthenticationFailed, e:
+        except self.AuthenticationFailed as e:
             logger.debug(u"Authentication failed for %s" % self._username)
-        except ldap.LDAPError, e:
+        except ldap.LDAPError as e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
                            self._username, pprint.pformat(e))
         except Exception:
@@ -346,7 +349,7 @@ class _LDAPUser(object):
             if self.settings.FIND_GROUP_PERMS:
                 try:
                     self._load_group_permissions()
-                except ldap.LDAPError, e:
+                except ldap.LDAPError as e:
                     logger.warning("Caught LDAPError loading group permissions: %s",
                                    pprint.pformat(e))
 
@@ -365,10 +368,10 @@ class _LDAPUser(object):
                 self._get_or_create_user(force_populate=True)
 
             user = self._user
-        except ldap.LDAPError, e:
+        except ldap.LDAPError as e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
                            self._username, pprint.pformat(e))
-        except Exception, e:
+        except Exception as e:
             logger.error(u"Caught Exception while authenticating %s: %s",
                          self._username, pprint.pformat(e))
             logger.error(''.join(traceback.format_tb(sys.exc_info()[2])))
@@ -467,7 +470,7 @@ class _LDAPUser(object):
 
         results = search.execute(self.connection, {'user': self._username})
         if results is not None and len(results) == 1:
-            (self._user_dn, self._user_attrs) = results[0]
+            (self._user_dn, self._user_attrs) = next(iter(results))
 
     def _check_requirements(self):
         """
@@ -562,14 +565,14 @@ class _LDAPUser(object):
         self._populate_user_from_group_memberships()
 
     def _populate_user_from_attributes(self):
-        for field, attr in self.settings.USER_ATTR_MAP.iteritems():
+        for field, attr in self.settings.USER_ATTR_MAP.items():
             try:
                 setattr(self._user, field, self.attrs[attr][0])
-            except StandardError:
+            except Exception:
                 logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
 
     def _populate_user_from_group_memberships(self):
-        for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.iteritems():
+        for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.items():
             if isinstance(group_dns, basestring):
                 group_dns = [group_dns]
             value = any(self._get_groups().is_member_of(dn) for dn in group_dns)
@@ -604,12 +607,12 @@ class _LDAPUser(object):
         """
         save_profile = False
 
-        for field, attr in self.settings.PROFILE_ATTR_MAP.iteritems():
+        for field, attr in self.settings.PROFILE_ATTR_MAP.items():
             try:
                 # user_attrs is a hash of lists of attribute values
                 setattr(profile, field, self.attrs[attr][0])
                 save_profile = True
-            except StandardError:
+            except Exception:
                 logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
 
         return save_profile
@@ -621,7 +624,7 @@ class _LDAPUser(object):
         """
         save_profile = False
 
-        for field, group_dns in self.settings.PROFILE_FLAGS_BY_GROUP.iteritems():
+        for field, group_dns in self.settings.PROFILE_FLAGS_BY_GROUP.items():
             if isinstance(group_dns, basestring):
                 group_dns = [group_dns]
             value = any(self._get_groups().is_member_of(dn) for dn in group_dns)
@@ -689,8 +692,8 @@ class _LDAPUser(object):
         the life of this object. If False, then the caller only wishes to test
         the credentials, after which the connection will be considered unbound.
         """
-        self._get_connection().simple_bind_s(bind_dn.encode('utf-8'),
-                                             bind_password.encode('utf-8'))
+        self._get_connection().simple_bind_s(force_str(bind_dn),
+                                             force_str(bind_password))
 
         self._connection_bound = sticky
 
@@ -705,7 +708,7 @@ class _LDAPUser(object):
 
             self._connection = self.backend.ldap.initialize(uri)
 
-            for opt, value in self.settings.CONNECTION_OPTIONS.iteritems():
+            for opt, value in self.settings.CONNECTION_OPTIONS.items():
                 self._connection.set_option(opt, value)
 
             if self.settings.START_TLS:
@@ -866,6 +869,6 @@ class LDAPSettings(object):
         """
         from django.conf import settings
 
-        for name, default in self.defaults.iteritems():
+        for name, default in self.defaults.items():
             value = getattr(settings, prefix + name, default)
             setattr(self, name, value)

@@ -57,7 +57,7 @@ from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 try:
     from django.utils.encoding import force_str
-except ImportError: # Django < 1.5
+except ImportError:  # Django < 1.5
     from django.utils.encoding import smart_str as force_str
 
 # Support Django 1.5's custom user models
@@ -106,9 +106,8 @@ class LDAPBackend(object):
         """
         Exclude certain cached properties from pickling.
         """
-        return dict((k, v)
-            for (k, v) in self.__dict__.items()
-            if k not in ['_settings', '_ldap'])
+        return dict((k, v) for (k, v) in self.__dict__.items()
+                    if k not in ['_settings', '_ldap'])
 
     def _get_settings(self):
         if self._settings is None:
@@ -290,9 +289,8 @@ class _LDAPUser(object):
         Most of our properties are cached from the LDAP server. We only want to
         pickle a few crucial things.
         """
-        return dict((k, v)
-            for (k, v) in self.__dict__.items()
-            if k in ['backend', '_username', '_user'])
+        return dict((k, v) for (k, v) in self.__dict__.items()
+                    if k in ['backend', '_username', '_user'])
 
     def _set_authenticated_user(self, user):
         self._user = user

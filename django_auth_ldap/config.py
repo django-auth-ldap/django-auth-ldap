@@ -33,12 +33,12 @@ notes on naming conventions.
 import ldap
 import logging
 import pprint
-import sys
 
 try:
     from django.utils.encoding import force_str
-except ImportError: # Django < 1.5
+except ImportError:  # Django < 1.5
     from django.utils.encoding import smart_str as force_str
+from django.utils import six
 
 
 class _LDAPConfig(object):
@@ -200,8 +200,7 @@ class LDAPSearch(object):
         references, decodes utf8, normalizes DNs, etc.
         """
         results = [r for r in results if r[0] is not None]
-        if sys.version_info[0] < 3:
-            results = _DeepStringCoder('utf-8').decode(results)
+        results = _DeepStringCoder('utf-8').decode(results)
 
         # The normal form of a DN is lower case.
         results = [(r[0].lower(), r[1]) for r in results]
@@ -258,7 +257,7 @@ class _DeepStringCoder(object):
 
     def decode(self, value):
         try:
-            if isinstance(value, str):
+            if isinstance(value, six.binary_type):
                 value = value.decode(self.encoding)
             elif isinstance(value, list):
                 value = self._decode_list(value)

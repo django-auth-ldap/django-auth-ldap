@@ -41,7 +41,7 @@ from django.contrib.auth.models import User, Permission, Group
 from django.test import TestCase
 try:
     from django.utils.encoding import force_str
-except ImportError: # Django < 1.5
+except ImportError:  # Django < 1.5
     from django.utils.encoding import smart_str as force_str
 from django.utils import unittest
 try:
@@ -510,6 +510,7 @@ class LDAPTest(TestCase):
         )
 
         user = self.backend.authenticate(username="alice", password="password")
+
         self.assertTrue(isinstance(user.ldap_user.attrs, ldap.cidict.cidict))
 
     def test_populate_user(self):

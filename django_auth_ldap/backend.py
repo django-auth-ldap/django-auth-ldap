@@ -51,7 +51,7 @@ import traceback
 import pprint
 import copy
 
-from django.contrib.auth.models import User, Group, Permission, SiteProfileNotAvailable
+from django.contrib.auth.models import User, Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
@@ -59,6 +59,12 @@ try:
     from django.utils.encoding import force_str
 except ImportError:  # Django < 1.5
     from django.utils.encoding import smart_str as force_str
+
+# Django 1.7 Removed custom profiles
+try:
+    from django.contrib.auth.models import SiteProfileNotAvailable
+except ImportError:
+    SiteProfileNotAvailable = Exception
 
 # Support Django 1.5's custom user models
 try:

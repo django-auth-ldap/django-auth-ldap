@@ -11,6 +11,9 @@ v1.2 - 2014-04-10
 
       $ pip install git+https://github.com/rbarrois/python-ldap.git@py3
 
+  Thanks to `Aymeric Augustin <https://myks.org/en/>`_ for making this happen.
+
+
 v1.1.8 - 2014-02-01
 -------------------
 

@@ -38,7 +38,6 @@ try:
     from django.utils.encoding import force_str
 except ImportError:  # Django < 1.5
     from django.utils.encoding import smart_str as force_str
-from django.utils import six
 
 
 class _LDAPConfig(object):
@@ -257,7 +256,7 @@ class _DeepStringCoder(object):
 
     def decode(self, value):
         try:
-            if isinstance(value, six.binary_type):
+            if isinstance(value, bytes):
                 value = value.decode(self.encoding)
             elif isinstance(value, list):
                 value = self._decode_list(value)

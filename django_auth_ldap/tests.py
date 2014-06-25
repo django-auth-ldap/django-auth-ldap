@@ -35,6 +35,7 @@ try:
 except ImportError:
     mockldap = None
 
+import django
 from django.conf import settings
 import django.db.models.signals
 from django.contrib.auth.models import User, Permission, Group
@@ -564,6 +565,7 @@ class LDAPTest(TestCase):
 
         self.assertTrue(user.populate_user_handled)
 
+    @unittest.skipIf(django.VERSION >= (1, 7), "Skip profile tests in Django>=1.7")
     def test_signal_populate_user_profile(self):
         settings.AUTH_PROFILE_MODULE = 'django_auth_ldap.TestProfile'
 
@@ -773,6 +775,7 @@ class LDAPTest(TestCase):
 
         self.assertTrue(not nobody.is_active)
 
+    @unittest.skipIf(django.VERSION >= (1, 7), "Skip profile tests in Django>=1.7")
     def test_profile_flags(self):
         settings.AUTH_PROFILE_MODULE = 'django_auth_ldap.TestProfile'
 

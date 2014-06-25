@@ -558,7 +558,7 @@ class _LDAPUser(object):
         # We populate the profile after the user model is saved to give the
         # client a chance to create the profile. Custom user models in Django
         # 1.5 probably won't have a get_profile method.
-        if should_populate and hasattr(self._user, 'get_profile'):
+        if should_populate and django.VERSION < (1, 7) and hasattr(self._user, 'get_profile'):
             self._populate_and_save_user_profile()
 
     def _populate_user(self):

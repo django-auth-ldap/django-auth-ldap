@@ -331,7 +331,7 @@ class _LDAPUser(object):
 
             user = self._user
         except self.AuthenticationFailed as e:
-            logger.debug(u"Authentication failed for %s" % self._username)
+            logger.debug(u"Authentication failed for %s: %s" % (self._username, e))
         except ldap.LDAPError as e:
             logger.warning(u"Caught LDAPError while authenticating %s: %s",
                            self._username, pprint.pformat(e))
@@ -426,14 +426,14 @@ class _LDAPUser(object):
         AuthenticationFailed on failure.
         """
         if self.dn is None:
-            raise self.AuthenticationFailed("Failed to map the username to a DN.")
+            raise self.AuthenticationFailed("failed to map the username to a DN.")
 
         try:
             sticky = self.settings.BIND_AS_AUTHENTICATING_USER
 
             self._bind_as(self.dn, password, sticky=sticky)
         except ldap.INVALID_CREDENTIALS:
-            raise self.AuthenticationFailed("User DN/password rejected by LDAP server.")
+            raise self.AuthenticationFailed("user DN/password rejected by LDAP server.")
 
     def _load_user_attrs(self):
         if self.dn is not None:
@@ -494,7 +494,7 @@ class _LDAPUser(object):
         if required_group_dn is not None:
             is_member = self._get_groups().is_member_of(required_group_dn)
             if not is_member:
-                raise self.AuthenticationFailed("User is not a member of AUTH_LDAP_REQUIRE_GROUP")
+                raise self.AuthenticationFailed("user is not a member of AUTH_LDAP_REQUIRE_GROUP")
 
         return True
 
@@ -508,7 +508,7 @@ class _LDAPUser(object):
         if denied_group_dn is not None:
             is_member = self._get_groups().is_member_of(denied_group_dn)
             if is_member:
-                raise self.AuthenticationFailed("User is a member of AUTH_LDAP_DENY_GROUP")
+                raise self.AuthenticationFailed("user is a member of AUTH_LDAP_DENY_GROUP")
 
         return True
 

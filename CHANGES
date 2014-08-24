@@ -1,3 +1,9 @@
+v1.2.1 - 2014-08-24
+-------------------
+
+- More verbose log messages for authentication failures.
+
+
 v1.2 - 2014-04-10
 -----------------
 

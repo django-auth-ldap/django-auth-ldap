@@ -27,3 +27,5 @@ INSTALLED_APPS = (
 
     'django_auth_ldap',
 )
+
+MIDDLEWARE_CLASSES = []

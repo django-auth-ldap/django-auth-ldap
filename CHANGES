@@ -1,3 +1,10 @@
+v1.2.2 - 2014-09-22
+-------------------
+
+- Include test harness in source distribution. Some package maintainers find
+  this helpful.
+
+
 v1.2.1 - 2014-08-24
 -------------------
 

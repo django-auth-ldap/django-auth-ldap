@@ -149,7 +149,7 @@ class LDAPBackend(object):
     # The Django auth backend API
     #
 
-    def authenticate(self, username, password):
+    def authenticate(self, username, password, **kwargs):
         if len(password) == 0 and not self.settings.PERMIT_EMPTY_PASSWORD:
             logger.debug('Rejecting empty password for %s' % username)
             return None

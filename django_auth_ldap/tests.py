@@ -252,6 +252,21 @@ class LDAPTest(TestCase):
             ['initialize', 'simple_bind_s']
         )
 
+    def test_simple_bind_escaped(self):
+        """ Bind with a username that requires escaping. """
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+
+        user = self.backend.authenticate(username='alice,1', password='password')
+
+        self.assertEqual(user, None)
+        self.assertEqual(
+            self.ldapobj.methods_called(with_args=True),
+            [('initialize', ('ldap://localhost',), {}),
+             ('simple_bind_s', ('uid=alice\\,1,ou=people,o=test', 'password'), {})]
+        )
+
     def test_new_user_lowercase(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
@@ -410,6 +425,24 @@ class LDAPTest(TestCase):
         self.assertEqual(
             self.ldapobj.methods_called(),
             ['initialize', 'simple_bind_s', 'search_s', 'simple_bind_s']
+        )
+
+    def test_search_bind_escaped(self):
+        """ Search for a username that requires escaping. """
+        self._init_settings(
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
+            )
+        )
+
+        user = self.backend.authenticate(username='alice*', password='password')
+
+        self.assertEqual(user, None)
+        self.assertEqual(
+            self.ldapobj.methods_called(with_args=True),
+            [('initialize', ('ldap://localhost',), {}),
+             ('simple_bind_s', ('', ''), {}),
+             ('search_s', ('ou=people,o=test', ldap.SCOPE_SUBTREE, '(uid=alice\\2a)'), {})]
         )
 
     def test_search_bind_no_user(self):

@@ -142,15 +142,19 @@ class LDAPSearch(object):
 
         return self.__class__(self.base_dn, self.scope, filterstr)
 
-    def execute(self, connection, filterargs=()):
+    def execute(self, connection, filterargs=(), escape=True):
         """
         Executes the search on the given connection (an LDAPObject). filterargs
         is an object that will be used for expansion of the filter string.
+        If escape is True, values in filterargs will be escaped.
 
         The python-ldap library returns utf8-encoded strings. For the sake of
         sanity, this method will decode all result strings and return them as
         Unicode.
         """
+        if escape:
+            filterargs = self._escape_filterargs(filterargs)
+
         try:
             filterstr = self.filterstr % filterargs
             results = connection.search_s(force_str(self.base_dn),
@@ -163,11 +167,18 @@ class LDAPSearch(object):
 
         return self._process_results(results)
 
-    def _begin(self, connection, filterargs=()):
+    def _begin(self, connection, filterargs=(), escape=True):
         """
         Begins an asynchronous search and returns the message id to retrieve
         the results.
+
+        filterargs is an object that will be used for expansion of the filter
+        string. If escape is True, values in filterargs will be escaped.
+
         """
+        if escape:
+            filterargs = self._escape_filterargs(filterargs)
+
         try:
             filterstr = self.filterstr % filterargs
             msgid = connection.search(force_str(self.base_dn),
@@ -192,6 +203,26 @@ class LDAPSearch(object):
             logger.error(u"result(%d) raised %s" % (msgid, pprint.pformat(e)))
 
         return self._process_results(results)
+
+    def _escape_filterargs(self, filterargs):
+        """
+        Escapes values in filterargs.
+
+        filterargs is a value suitable for Django's string formatting operator
+        (%), which means it's either a tuple or a dict. This return a new tuple
+        or dict with all values escaped for use in filter strings.
+
+        """
+        if isinstance(filterargs, tuple):
+            filterargs = tuple(self.ldap.filter.escape_filter_chars(value)
+                               for value in filterargs)
+        elif isinstance(filterargs, dict):
+            filterargs = dict((key, self.ldap.filter.escape_filter_chars(value))
+                              for key, value in filterargs.items())
+        else:
+            raise TypeError("filterargs must be a tuple or dict.")
+
+        return filterargs
 
     def _process_results(self, results):
         """
@@ -238,8 +269,9 @@ class LDAPSearchUnion(object):
         results = {}
 
         for search, msgid in zip(self.searches, msgids):
-            result = search._results(connection, msgid)
-            results.update(dict(result))
+            if msgid is not None:
+                result = search._results(connection, msgid)
+                results.update(dict(result))
 
         return results.items()
 

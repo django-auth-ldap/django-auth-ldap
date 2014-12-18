@@ -53,7 +53,7 @@ except ImportError:
 from django_auth_ldap.models import TestUser, TestProfile
 from django_auth_ldap import backend
 from django_auth_ldap.config import LDAPSearch, LDAPSearchUnion
-from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType
+from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType, NISGroupType
 from django_auth_ldap.config import GroupOfNamesType
 
 
@@ -155,6 +155,23 @@ class LDAPTest(TestCase):
         "member": ["uid=bob,ou=people,o=test"]
     })
 
+    # nisGroup objects
+    active_nis = ("cn=active_nis,ou=groups,o=test", {
+        "cn": ["active_nis"],
+        "objectClass": ["nisNetgroup"],
+        "nisNetgroupTriple": ["(,alice,)"]
+    })
+    staff_nis = ("cn=staff_nis,ou=groups,o=test", {
+        "cn": ["staff_nis"],
+        "objectClass": ["nisNetgroup"],
+        "nisNetgroupTriple": ["(,alice,)"],
+    })
+    superuser_nis = ("cn=superuser_nis,ou=groups,o=test", {
+        "cn": ["superuser_nis"],
+        "objectClass": ["nisNetgroup"],
+        "nisNetgroupTriple": ["(,alice,)"],
+    })
+
     # Nested groups with a circular reference
     parent_gon = ("cn=parent_gon,ou=groups,o=test", {
         "cn": ["parent_gon"],
@@ -178,6 +195,7 @@ class LDAPTest(TestCase):
     directory = dict([top, people, groups, moregroups, alice, bob, dressler,
                       nobody, active_px, staff_px, superuser_px, empty_gon,
                       active_gon, staff_gon, superuser_gon, other_gon,
+                      active_nis, staff_nis, superuser_nis,
                       parent_gon, nested_gon, circular_gon])
 
     @classmethod
@@ -776,6 +794,28 @@ class LDAPTest(TestCase):
         self.assertTrue(not bob.is_staff)
         self.assertTrue(not bob.is_superuser)
 
+    def test_nis_membership(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=NISGroupType(),
+            USER_FLAGS_BY_GROUP={
+                'is_active': "cn=active_nis,ou=groups,o=test",
+                'is_staff': "cn=staff_nis,ou=groups,o=test",
+                'is_superuser': "cn=superuser_nis,ou=groups,o=test"
+            }
+        )
+
+        alice = self.backend.authenticate(username='alice', password='password')
+        bob = self.backend.authenticate(username='bob', password='password')
+
+        self.assertTrue(alice.is_active)
+        self.assertTrue(alice.is_staff)
+        self.assertTrue(alice.is_superuser)
+        self.assertTrue(not bob.is_active)
+        self.assertTrue(not bob.is_staff)
+        self.assertTrue(not bob.is_superuser)
+        
     def test_nested_dn_group_membership(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -896,6 +936,24 @@ class LDAPTest(TestCase):
         self._init_groups()
         self.ldapobj.modify_s(self.alice[0], [(ldap.MOD_DELETE, 'gidNumber', None)])
         self.ldapobj.modify_s(self.active_px[0], [(ldap.MOD_ADD, 'memberUid', ['alice'])])
+
+        alice = User.objects.create(username='alice')
+        alice = self.backend.get_user(alice.pk)
+
+        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
+        self.assertTrue(self.backend.has_module_perms(alice, "auth"))
+
+    def test_nis_group_permissions(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE,
+                                    '(objectClass=nisNetgroup)'),
+            GROUP_TYPE=NISGroupType(),
+            FIND_GROUP_PERMS=True
+        )
+        self._init_groups()
 
         alice = User.objects.create(username='alice')
         alice = self.backend.get_user(alice.pk)
@@ -1168,6 +1226,8 @@ class LDAPTest(TestCase):
         active_px = Group.objects.create(name='active_px')
         active_px.permissions.add(*permissions)
 
+        active_nis = Group.objects.create(name='active_nis')
+        active_nis.permissions.add(*permissions)
 
 # Python 2.5-compatible class decoration
 LDAPTest = unittest.skipIf(mockldap is None, "django_auth_ldap tests require the mockldap package.")(LDAPTest)

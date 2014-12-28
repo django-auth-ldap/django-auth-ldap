@@ -472,15 +472,16 @@ class MemberDNGroupType(LDAPGroupType):
 
 
 class NISGroupType(LDAPGroupType):
-
-
+    """
+    A group type that handles nisNetgroup.
+    """
     def user_groups(self, ldap_user, group_search):
         try:
             user_uid = ldap_user.attrs['uid'][0]
             filterstr = u'(|(nisNetgroupTriple=%s)(nisNetgroupTriple=%s))' % (
-                    self.ldap.filter.escape_filter_chars('(,%s,)' % user_uid),
-                    self.ldap.filter.escape_filter_chars('(-,%s,-)' % user_uid)
-                )
+                self.ldap.filter.escape_filter_chars('(,%s,)' % user_uid),
+                self.ldap.filter.escape_filter_chars('(-,%s,-)' % user_uid)
+            )
             search = group_search.search_with_additional_term_string(filterstr)
             groups = search.execute(ldap_user.connection)
         except (KeyError, IndexError):

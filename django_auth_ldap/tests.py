@@ -815,7 +815,7 @@ class LDAPTest(TestCase):
         self.assertTrue(not bob.is_active)
         self.assertTrue(not bob.is_staff)
         self.assertTrue(not bob.is_superuser)
-        
+
     def test_nested_dn_group_membership(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',

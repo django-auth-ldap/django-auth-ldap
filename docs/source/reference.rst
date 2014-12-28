@@ -358,12 +358,18 @@ Configuration
         first value of the cn attribute. You can specify a different attribute
         with ``name_attr``.
 
-
 .. class:: PosixGroupType
 
     A concrete subclass of :class:`~django_auth_ldap.config.LDAPGroupType` that
     handles the ``posixGroup`` object class. This checks for both primary group
     and group membership.
+
+    .. method:: __init__(name_attr='cn')
+
+.. class:: NISGroupType
+
+    A concrete subclass of :class:`~django_auth_ldap.config.LDAPGroupType` that
+    handles the ``nisNetgroup`` object class.
 
     .. method:: __init__(name_attr='cn')
 

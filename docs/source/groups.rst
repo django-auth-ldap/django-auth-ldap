@@ -9,18 +9,20 @@ so many different kinds. This module includes an extensible API for working with
 any kind of group and includes implementations for the most common ones.
 :class:`~django_auth_ldap.config.LDAPGroupType` is a base class whose concrete
 subclasses can determine group membership for particular grouping mechanisms.
-Three built-in subclasses cover most grouping mechanisms:
+Four built-in subclasses cover most grouping mechanisms:
 
     * :class:`~django_auth_ldap.config.PosixGroupType`
+    * :class:`~django_auth_ldap.config.NISGroupType`
     * :class:`~django_auth_ldap.config.MemberDNGroupType`
     * :class:`~django_auth_ldap.config.NestedMemberDNGroupType`
 
-posixGroup objects are somewhat specialized, so they get their own class. The
-other two cover mechanisms whereby a group object stores a list of its members
-as distinguished names. This includes groupOfNames, groupOfUniqueNames, and
-Active Directory groups, among others. The nested variant allows groups to
-contain other groups, to as many levels as you like. For convenience and
-readability, several trivial subclasses of the above are provided:
+posixGroup and nisNetgroup objects are somewhat specialized, so they get their
+own classes. The other two cover mechanisms whereby a group object stores a list
+of its members as distinguished names. This includes groupOfNames,
+groupOfUniqueNames, and Active Directory groups, among others. The nested
+variant allows groups to contain other groups, to as many levels as you like.
+For convenience and readability, several trivial subclasses of the above are
+provided:
 
     * :class:`~django_auth_ldap.config.GroupOfNamesType`
     * :class:`~django_auth_ldap.config.NestedGroupOfNamesType`

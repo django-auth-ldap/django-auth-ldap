@@ -68,6 +68,7 @@ class TestSettings(backend.LDAPSettings):
             setattr(self, name, value)
 
 
+@unittest.skipIf(mockldap is None, "django_auth_ldap tests require the mockldap package.")
 class LDAPTest(TestCase):
     top = ("o=test", {"o": "test"})
     people = ("ou=people,o=test", {"ou": "people"})
@@ -1228,6 +1229,3 @@ class LDAPTest(TestCase):
 
         active_nis = Group.objects.create(name='active_nis')
         active_nis.permissions.add(*permissions)
-
-# Python 2.5-compatible class decoration
-LDAPTest = unittest.skipIf(mockldap is None, "django_auth_ldap tests require the mockldap package.")(LDAPTest)

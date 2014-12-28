@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name="django-auth-ldap",
-    version="1.2.3",
+    version="1.2.4",
     description="Django LDAP authentication backend",
     long_description=open('README').read(),
     url="http://bitbucket.org/psagers/django-auth-ldap/",

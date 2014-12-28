@@ -1,3 +1,9 @@
+v1.2.4 - 2014-12-28
+-------------------
+
+- Add support for nisNetgroup groups (thanks to Christopher Bartz).
+
+
 v1.2.3 - 2014-11-18
 -------------------
 

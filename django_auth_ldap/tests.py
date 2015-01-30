@@ -28,6 +28,7 @@
 from copy import deepcopy
 import logging
 import pickle
+import warnings
 
 import ldap
 try:
@@ -215,6 +216,8 @@ class LDAPTest(TestCase):
     def setUpClass(cls):
         cls.configure_logger()
         cls.mockldap = mockldap.MockLdap(cls.directory)
+
+        warnings.filterwarnings('ignore', message='.*?AUTH_PROFILE_MODULE', category=DeprecationWarning, module='django_auth_ldap')
 
     @classmethod
     def tearDownClass(cls):
@@ -1055,6 +1058,22 @@ class LDAPTest(TestCase):
         alice = User.objects.create(username='alice')
 
         self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+
+    def test_authorize_external_unknown(self):
+        self._init_settings(
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
+            ),
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            FIND_GROUP_PERMS=True,
+            AUTHORIZE_ALL_USERS=True
+        )
+        self._init_groups()
+
+        alice = User.objects.create(username='not-in-ldap')
+
+        self.assertEqual(self.backend.get_group_permissions(alice), set())
 
     def test_create_without_auth(self):
         self._init_settings(

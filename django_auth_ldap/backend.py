@@ -187,7 +187,7 @@ class LDAPBackend(object):
         if not hasattr(user, 'ldap_user') and self.settings.AUTHORIZE_ALL_USERS:
             _LDAPUser(self, user=user)  # This sets user.ldap_user
 
-        if hasattr(user, 'ldap_user'):
+        if hasattr(user, 'ldap_user') and (user.ldap_user.dn is not None):
             return user.ldap_user.get_group_permissions()
         else:
             return set()

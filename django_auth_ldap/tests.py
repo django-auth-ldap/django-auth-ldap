@@ -234,6 +234,10 @@ class LDAPTest(TestCase):
         self.mockldap.stop()
         del self.ldapobj
 
+    #
+    # Tests
+    #
+
     def test_options(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -262,6 +266,25 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
+        user_count = User.objects.count()
+
+        user = self.backend.authenticate(username='alice', password='password')
+
+        self.assertTrue(not user.has_usable_password())
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(User.objects.count(), user_count + 1)
+        self.assertEqual(
+            self.ldapobj.methods_called(),
+            ['initialize', 'simple_bind_s']
+        )
+
+    def test_default_settings(self):
+        class MyBackend(backend.LDAPBackend):
+            default_settings = dict(
+                USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+            )
+        self.backend = MyBackend()
+
         user_count = User.objects.count()
 
         user = self.backend.authenticate(username='alice', password='password')

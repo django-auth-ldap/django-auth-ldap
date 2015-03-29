@@ -115,6 +115,9 @@ class LDAPBackend(object):
     # support multiple collections of settings.
     settings_prefix = 'AUTH_LDAP_'
 
+    # Default settings to override the built-in defaults.
+    default_settings = {}
+
     def __getstate__(self):
         """
         Exclude certain cached properties from pickling.
@@ -124,7 +127,8 @@ class LDAPBackend(object):
 
     def _get_settings(self):
         if self._settings is None:
-            self._settings = LDAPSettings(self.settings_prefix)
+            self._settings = LDAPSettings(self.settings_prefix,
+                                          self.default_settings)
 
         return self._settings
 
@@ -892,11 +896,13 @@ class LDAPSettings(object):
         'USER_SEARCH': None,
     }
 
-    def __init__(self, prefix='AUTH_LDAP_'):
+    def __init__(self, prefix='AUTH_LDAP_', defaults={}):
         """
         Loads our settings from django.conf.settings, applying defaults for any
         that are omitted.
         """
-        for name, default in self.defaults.items():
+        defaults = dict(self.defaults, **defaults)
+
+        for name, default in defaults.items():
             value = getattr(django.conf.settings, prefix + name, default)
             setattr(self, name, value)

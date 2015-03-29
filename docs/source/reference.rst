@@ -517,9 +517,16 @@ Backend
     .. data:: settings_prefix
 
         A prefix for all of our Django settings. By default, this is
-        ``"AUTH_LDAP_"``, but subclasses can override this. When different
+        ``'AUTH_LDAP_'``, but subclasses can override this. When different
         subclasses use different prefixes, they can both be installed and
         operate independently.
+
+    .. data:: default_settings
+
+        A dictionary of default settings. This is empty in
+        :class:`~django_auth_ldap.backend.LDAPBackend`, but subclasses can
+        populate this with values that will override the built-in defaults. Note
+        that the keys should omit the ``'AUTH_LDAP_'`` prefix.
 
     .. method:: populate_user(username)
 

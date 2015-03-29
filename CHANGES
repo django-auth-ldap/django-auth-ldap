@@ -1,3 +1,23 @@
+v1.2.6 - 2015-03-29
+-------------------
+
+- Performance improvements to group mirroring (from
+  `Denver Janke <https://bitbucket.org/denverjanke>`_).
+
+- Add :data:`django_auth_ldap.backend.ldap_error` signal for custom handling of
+  :exc:`~ldap.LDAPError` exceptions.
+
+- Add :data:`django_auth_ldap.backend.LDAPBackend.default_settings` for
+  per-subclass default settings.
+
+
+v1.2.5 - 2015-01-30
+-------------------
+
+- Fix interaction between :setting:`AUTH_LDAP_AUTHORIZE_ALL_USERS` and
+  :setting:`AUTH_LDAP_USER_SEARCH`.
+
+
 v1.2.4 - 2014-12-28
 -------------------
 

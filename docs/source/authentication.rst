@@ -133,3 +133,10 @@ the StartTLS extension. The latter is generally the preferred mechanism. To
 enable StartTLS, set :setting:`AUTH_LDAP_START_TLS` to ``True``::
 
     AUTH_LDAP_START_TLS = True
+
+If :class:`~django_auth_ldap.backend.LDAPBackend` receives an
+:exc:`~ldap.LDAPError` from python_ldap, it will normally swallow it and log a
+warning. If you'd like to perform any special handling for these exceptions, you
+can add a signal handler to :data:`django_auth_ldap.backend.ldap_error`. The
+signal handler can handle the exception any way you like, including re-raising
+it or any other exception.

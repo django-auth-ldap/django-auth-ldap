@@ -87,9 +87,15 @@ from django_auth_ldap.config import _LDAPConfig, LDAPSearch
 logger = _LDAPConfig.get_logger()
 
 
-# Signals for populating user objects.
+# Exported signals
+
+# Allows clients to perform custom user/profile population.
 populate_user = django.dispatch.Signal(providing_args=["user", "ldap_user"])
 populate_user_profile = django.dispatch.Signal(providing_args=["profile", "ldap_user"])
+
+# Allows clients to inspect and perform special handling of LDAPError
+# exceptions. Exceptions raised by handlers will be propagated out.
+ldap_error = django.dispatch.Signal(providing_args=['context', 'exception'])
 
 
 class LDAPBackend(object):
@@ -332,8 +338,11 @@ class _LDAPUser(object):
         except self.AuthenticationFailed as e:
             logger.debug(u"Authentication failed for %s: %s" % (self._username, e))
         except ldap.LDAPError as e:
-            logger.warning(u"Caught LDAPError while authenticating %s: %s",
-                           self._username, pprint.pformat(e))
+            results = ldap_error.send(self.backend.__class__,
+                                      context='authenticate', exception=e)
+            if len(results) == 0:
+                logger.warning(u"Caught LDAPError while authenticating %s: %s",
+                               self._username, pprint.pformat(e))
         except Exception:
             logger.exception(u"Caught Exception while authenticating %s",
                              self._username)
@@ -353,8 +362,12 @@ class _LDAPUser(object):
                 try:
                     self._load_group_permissions()
                 except ldap.LDAPError as e:
-                    logger.warning("Caught LDAPError loading group permissions: %s",
-                                   pprint.pformat(e))
+                    results = ldap_error.send(self.backend.__class__,
+                                              context='get_group_permissions',
+                                              exception=e)
+                    if len(results) == 0:
+                        logger.warning("Caught LDAPError loading group permissions: %s",
+                                       pprint.pformat(e))
 
         return self._group_permissions
 
@@ -372,8 +385,11 @@ class _LDAPUser(object):
 
             user = self._user
         except ldap.LDAPError as e:
-            logger.warning(u"Caught LDAPError while authenticating %s: %s",
-                           self._username, pprint.pformat(e))
+            results = ldap_error.send(self.backend.__class__,
+                                      context='populate_user', exception=e)
+            if len(results) == 0:
+                logger.warning(u"Caught LDAPError while authenticating %s: %s",
+                               self._username, pprint.pformat(e))
         except Exception as e:
             logger.error(u"Caught Exception while authenticating %s: %s",
                          self._username, pprint.pformat(e))

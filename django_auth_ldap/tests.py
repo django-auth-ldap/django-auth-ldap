@@ -614,11 +614,13 @@ class LDAPTest(TestCase):
         def handle_populate_user(sender, **kwargs):
             self.assertTrue('user' in kwargs and 'ldap_user' in kwargs)
             kwargs['user'].populate_user_handled = True
-        backend.populate_user.connect(handle_populate_user)
 
+        backend.populate_user.connect(handle_populate_user)
         user = self.backend.authenticate(username='alice', password='password')
 
         self.assertTrue(user.populate_user_handled)
+
+        backend.populate_user.disconnect(handle_populate_user)
 
     @unittest.skipIf(django.VERSION >= (1, 7), "Skip profile tests in Django>=1.7")
     def test_signal_populate_user_profile(self):
@@ -638,10 +640,30 @@ class LDAPTest(TestCase):
 
         django.db.models.signals.post_save.connect(handle_user_saved, sender=User)
         backend.populate_user_profile.connect(handle_populate_user_profile)
-
         user = self.backend.authenticate(username='alice', password='password')
 
         self.assertTrue(user.get_profile().populated)
+
+        backend.populate_user_profile.disconnect(handle_populate_user_profile)
+        django.db.models.signals.post_save.disconnect(handle_user_saved, sender=User)
+
+    def test_signal_ldap_error(self):
+        self._init_settings(
+            BIND_DN='uid=bob,ou=people,o=test',
+            BIND_PASSWORD='bogus',
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
+            )
+        )
+
+        def handle_ldap_error(sender, **kwargs):
+            self.assertEqual(kwargs['context'], 'authenticate')
+            raise kwargs['exception']
+
+        backend.ldap_error.connect(handle_ldap_error)
+        with self.assertRaises(ldap.LDAPError):
+            self.backend.authenticate(username='alice', password='password')
+        backend.ldap_error.disconnect(handle_ldap_error)
 
     def test_no_update_existing(self):
         self._init_settings(
@@ -1230,6 +1252,10 @@ class LDAPTest(TestCase):
         self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
         self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
+
+    #
+    # Utilities
+    #
 
     def _init_settings(self, **kwargs):
         self.backend.settings = TestSettings(**kwargs)

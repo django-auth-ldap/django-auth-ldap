@@ -52,6 +52,7 @@ import pprint
 import copy
 
 from django.contrib.auth.models import User, Group, Permission
+import django.conf
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
@@ -128,9 +129,7 @@ class LDAPBackend(object):
 
     def _get_ldap(self):
         if self._ldap is None:
-            from django.conf import settings
-
-            options = getattr(settings, 'AUTH_LDAP_GLOBAL_OPTIONS', None)
+            options = getattr(django.conf.settings, 'AUTH_LDAP_GLOBAL_OPTIONS', None)
 
             self._ldap = _LDAPConfig.get_ldap(options)
 
@@ -558,7 +557,7 @@ class _LDAPUser(object):
         # We populate the profile after the user model is saved to give the
         # client a chance to create the profile. Custom user models in Django
         # 1.5 probably won't have a get_profile method.
-        if should_populate and django.VERSION < (1, 7) and hasattr(self._user, 'get_profile'):
+        if should_populate and self._should_populate_profile():
             self._populate_and_save_user_profile()
 
     def _populate_user(self):
@@ -581,6 +580,11 @@ class _LDAPUser(object):
                 group_dns = [group_dns]
             value = any(self._get_groups().is_member_of(dn) for dn in group_dns)
             setattr(self._user, field, value)
+
+    def _should_populate_profile(self):
+        return ((django.VERSION < (1, 7)) and
+                (getattr(django.conf.settings, 'AUTH_PROFILE_MODULE', None) is not None) and
+                hasattr(self._user, 'get_profile'))
 
     def _populate_and_save_user_profile(self):
         """
@@ -871,8 +875,6 @@ class LDAPSettings(object):
         Loads our settings from django.conf.settings, applying defaults for any
         that are omitted.
         """
-        from django.conf import settings
-
         for name, default in self.defaults.items():
-            value = getattr(settings, prefix + name, default)
+            value = getattr(django.conf.settings, prefix + name, default)
             setattr(self, name, value)

@@ -21,7 +21,7 @@ example should demonstrate this:
         settings_prefix = "AUTH_LDAP_1_"
 
     class LDAPBackend2(LDAPBackend):
-        settings_prefix = "AUTH_LDAP_2_" 
+        settings_prefix = "AUTH_LDAP_2_"
 
 
 .. code-block:: python

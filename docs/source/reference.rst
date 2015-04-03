@@ -209,6 +209,8 @@ Default: ``{}``
 A mapping from user profile field names to LDAP attribute names. A user's
 profile will be populated from his LDAP attributes at login.
 
+This is ignored in Django 1.7 and later.
+
 
 .. setting:: AUTH_LDAP_PROFILE_FLAGS_BY_GROUP
 
@@ -220,6 +222,8 @@ Default: ``{}``
 A mapping from boolean profile field names to distinguished names of LDAP
 groups. The corresponding field in a user's profile is set to ``True`` or
 ``False`` according to whether the user is a member of the group.
+
+This is ignored in Django 1.7 and later.
 
 
 .. setting:: AUTH_LDAP_REQUIRE_GROUP
@@ -498,6 +502,8 @@ Backend
     signal has two keyword arguments: ``profile`` is the user profile object and
     ``ldap_user`` is the same as ``user.ldap_user``. The sender is the
     :class:`~django_auth_ldap.backend.LDAPBackend` class.
+
+    This is not sent in Django 1.7 and later.
 
 .. data:: ldap_error
 

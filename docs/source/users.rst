@@ -75,6 +75,11 @@ group membership::
 If a list of groups is given, the flag will be set if the user is a member of
 any group.
 
+.. note::
+
+    Django 1.7 and later do not directly support user profiles. In these
+    versions, LDAPBackend will ignore the profile-related settings.
+
 
 Updating Users
 --------------

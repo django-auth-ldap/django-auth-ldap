@@ -29,3 +29,5 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE_CLASSES = []
+
+AUTH_USER_MODEL = 'auth.User'

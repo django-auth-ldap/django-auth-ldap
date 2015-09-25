@@ -41,11 +41,17 @@ from django.conf import settings
 import django.db.models.signals
 from django.contrib.auth.models import User, Permission, Group
 from django.test import TestCase
+
 try:
     from django.utils.encoding import force_str
 except ImportError:  # Django < 1.5
     from django.utils.encoding import smart_str as force_str
-from django.utils import unittest
+
+try:
+    from django.utils import unittest
+except ImportError:
+    import unittest
+
 try:
     from django.test.utils import override_settings
 except ImportError:

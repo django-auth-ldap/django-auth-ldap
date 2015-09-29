@@ -7,16 +7,10 @@ service. Configuration can be as simple as a single distinguished name template,
 but there are many rich configuration options for working with users, groups,
 and permissions.
 
-This version is officially supported on Python >= 2.6 and < 3, Django >= 1.3,
-and python-ldap >= 2.0. It is known to work on earlier versions (especially of
-Django) and backwards-compatibility is not broken needlessly, however users of
-older dependencies are urged to test their deployments carefully and be wary of
-updates.
-
-Support for Python >= 3.3 is considered experimental at this time. Since
-python-ldap doesn't support Python 3 yet, you have to install a fork::
-
-    $ pip install git+https://github.com/rbarrois/python-ldap.git@py3
+This version is supported on Python 2.6, 2.7, 3.3, and 3.4; and Django >= 1.3.
+Under Python 2, it requires `python-ldap
+<https://pypi.python.org/pypi/python-ldap>`_ >= 2.0; under Python 3, it uses
+`pyldap <https://pypi.python.org/pypi/pyldap>`_.
 
 .. toctree::
     :maxdepth: 2

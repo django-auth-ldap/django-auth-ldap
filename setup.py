@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
+import sys
+
 from setuptools import setup
+
+
+PY3 = (sys.version_info[0] == 3)
+
 
 setup(
     name="django-auth-ldap",
@@ -33,12 +39,12 @@ setup(
     keywords=["django", "ldap", "authentication", "auth"],
     install_requires=[
         "django",
-        "python-ldap >= 2.0",
+        "pyldap" if PY3 else "python-ldap >= 2.0",
     ],
     setup_requires=[
         "setuptools >= 0.6c11",
     ],
     tests_require=[
-        "mockldap >= 0.2",
+        "mockldap >= 0.2.6",
     ]
 )

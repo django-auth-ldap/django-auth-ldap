@@ -1,3 +1,9 @@
+v1.2.7 - 2015-09-29
+-------------------
+
+- Support Python 3 with `pyldap <https://pypi.python.org/pypi/pyldap>`_.
+
+
 v1.2.6 - 2015-03-29
 -------------------
 

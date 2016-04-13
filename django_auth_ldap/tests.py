@@ -427,7 +427,7 @@ class LDAPTest(TestCase):
         )
         # mockldap doesn't handle case-insensitive matching properly.
         self.ldapobj.search_s.seed('ou=people,o=test', ldap.SCOPE_SUBTREE,
-                                   '(uid=Alice)')([self.alice])
+                                   '(uid=Alice)', None)([self.alice])
         User.objects.create(username='alice')
 
         user = self.backend.authenticate(username='Alice', password='password')
@@ -493,7 +493,7 @@ class LDAPTest(TestCase):
             self.ldapobj.methods_called(with_args=True),
             [('initialize', ('ldap://localhost',), {}),
              ('simple_bind_s', ('', ''), {}),
-             ('search_s', ('ou=people,o=test', ldap.SCOPE_SUBTREE, '(uid=alice\\2a)'), {})]
+             ('search_s', ('ou=people,o=test', ldap.SCOPE_SUBTREE, '(uid=alice\\2a)', None), {})]
         )
 
     def test_search_bind_no_user(self):
@@ -1281,6 +1281,15 @@ class LDAPTest(TestCase):
         self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
         self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
+
+    def test_search_attrlist(self):
+        search = LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE,
+                            '(uid=alice)', ['*', '+'])
+        search.execute(self.ldapobj)
+        self.assertEqual(
+            self.ldapobj.methods_called(with_args=True),
+            [('search_s', ('ou=people,o=test', ldap.SCOPE_SUBTREE, '(uid=alice)', ['*', '+']), {})]
+        )
 
     #
     # Utilities

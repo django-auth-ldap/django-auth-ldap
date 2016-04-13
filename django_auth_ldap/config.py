@@ -105,7 +105,8 @@ class LDAPSearch(object):
     documented for configuration purposes. Internal clients may use the other
     methods to refine and execute the search.
     """
-    def __init__(self, base_dn, scope, filterstr=u'(objectClass=*)'):
+    def __init__(self, base_dn, scope, filterstr=u'(objectClass=*)',
+                 attrlist=None):
         """
         These parameters are the same as the first three parameters to
         ldap.search_s.
@@ -113,6 +114,7 @@ class LDAPSearch(object):
         self.base_dn = base_dn
         self.scope = scope
         self.filterstr = filterstr
+        self.attrlist = attrlist
         self.ldap = _LDAPConfig.get_ldap()
 
     def search_with_additional_terms(self, term_dict, escape=True):
@@ -159,7 +161,8 @@ class LDAPSearch(object):
             filterstr = self.filterstr % filterargs
             results = connection.search_s(force_str(self.base_dn),
                                           self.scope,
-                                          force_str(filterstr))
+                                          force_str(filterstr),
+                                          self.attrlist)
         except ldap.LDAPError as e:
             results = []
             logger.error(u"search_s('%s', %d, '%s') raised %s" %
@@ -182,7 +185,8 @@ class LDAPSearch(object):
         try:
             filterstr = self.filterstr % filterargs
             msgid = connection.search(force_str(self.base_dn),
-                                      self.scope, force_str(filterstr))
+                                      self.scope, force_str(filterstr),
+                                      self.attrlist)
         except ldap.LDAPError as e:
             msgid = None
             logger.error(u"search('%s', %d, '%s') raised %s" %

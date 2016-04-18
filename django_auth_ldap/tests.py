@@ -616,6 +616,29 @@ class LDAPTest(TestCase):
             ['initialize', 'simple_bind_s', 'simple_bind_s', 'search_s']
         )
 
+    def test_poplate_with_attrlist(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
+            USER_ATTRLIST=['*', '+'],
+        )
+
+        user = self.backend.authenticate(username='alice', password='password')
+
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(user.first_name, 'Alice')
+        self.assertEqual(user.last_name, 'Adams')
+
+        # init, bind as user, bind anonymous, lookup user attrs
+        self.assertEqual(
+            self.ldapobj.methods_called(),
+            ['initialize', 'simple_bind_s', 'simple_bind_s', 'search_s']
+        )
+        self.assertEqual(
+            self.ldapobj.methods_called(with_args=True)[3],
+            ('search_s', ('uid=alice,ou=people,o=test', ldap.SCOPE_BASE, '(objectClass=*)', ['*', '+']), {})
+        )
+
     def test_bind_as_user(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -1283,8 +1306,7 @@ class LDAPTest(TestCase):
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
 
     def test_search_attrlist(self):
-        search = LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE,
-                            '(uid=alice)', ['*', '+'])
+        search = LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=alice)', ['*', '+'])
         search.execute(self.ldapobj)
         self.assertEqual(
             self.ldapobj.methods_called(with_args=True),

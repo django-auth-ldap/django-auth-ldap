@@ -255,12 +255,27 @@ AUTH_LDAP_START_TLS
 
 Default: ``False``
 
-If ``True``, each connection to the LDAP server will call :meth:`~ldap.LDAPObject.start_tls_s` to enable
-TLS encryption over the standard LDAP port. There are a number of configuration
-options that can be given to :setting:`AUTH_LDAP_GLOBAL_OPTIONS` that affect the
-TLS connection. For example, :data:`ldap.OPT_X_TLS_REQUIRE_CERT` can be set to
-:data:`ldap.OPT_X_TLS_NEVER` to disable certificate verification, perhaps to
-allow self-signed certificates.
+If ``True``, each connection to the LDAP server will call
+:meth:`~ldap.LDAPObject.start_tls_s` to enable TLS encryption over the standard
+LDAP port. There are a number of configuration options that can be given to
+:setting:`AUTH_LDAP_GLOBAL_OPTIONS` that affect the TLS connection. For example,
+:data:`ldap.OPT_X_TLS_REQUIRE_CERT` can be set to :data:`ldap.OPT_X_TLS_NEVER`
+to disable certificate verification, perhaps to allow self-signed certificates.
+
+
+.. setting:: AUTH_LDAP_USER_ATTRLIST
+
+AUTH_LDAP_USER_ATTRLIST
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+A list of attribute names to load for the authenticated user. Normally, you can
+ignore this and the LDAP server will send back all of the attributes of the
+directory entry. One reason you might need to override this is to get
+operational attributes, which are not normally included::
+
+    AUTH_LDAP_USER_ATTRLIST = ['*', '+']
 
 
 .. setting:: AUTH_LDAP_USER_ATTR_MAP

@@ -19,12 +19,12 @@ substitute a proxy model.
     version 1.1.4, django-auth-ldap will respect custom user models.
 
 The only required field for a user is the username, which we obviously have. The
-:class:`~django.contrib.auth.models.User` model is picky about the characters
-allowed in usernames, so :class:`~django_auth_ldap.backend.LDAPBackend` includes
-a pair of hooks,
+default :class:`~django.contrib.auth.models.User` model can be picky about the
+characters allowed in usernames, so
+:class:`~django_auth_ldap.backend.LDAPBackend` includes a pair of hooks,
 :meth:`~django_auth_ldap.backend.LDAPBackend.ldap_to_django_username` and
 :meth:`~django_auth_ldap.backend.LDAPBackend.django_to_ldap_username`, to
-translate between LDAP usernames and Django usernames. You'll need this, for
+translate between LDAP usernames and Django usernames. You may need this, for
 example, if your LDAP names have periods in them. You can subclass
 :class:`~django_auth_ldap.backend.LDAPBackend` to implement these hooks; by
 default the username is not modified. :class:`~django.contrib.auth.models.User`
@@ -45,15 +45,36 @@ course, be the Django username.
     unavailable.
 
 
-User Attributes
+Populating Users
+----------------
+
+You can perform arbitrary population of your user models by adding listeners to
+a pair of :mod:`Django signals <django:django.dispatch>`:
+:data:`django_auth_ldap.backend.populate_user` and
+:data:`django_auth_ldap.backend.populate_user_profile`. These are sent after the
+user object has been created and any configured attribute mapping has been
+applied (see below). You can use this to propagate information from the LDAP
+directory to the user and profile objects any way you like. The user instance
+will be saved automatically after the signal handlers are run.
+
+If you need an attribute that isn't included by default in the LDAP search
+results, see :setting:`AUTH_LDAP_USER_ATTRLIST`.
+
+.. note::
+
+    Django 1.7 and later do not directly support user profiles. In these
+    versions, :data:`~django_auth_ldap.backend.populate_user_profile` will not
+    be sent.
+
+
+Easy Attributes
 ---------------
 
-LDAP directories tend to contain much more information about users that you may
-wish to propagate. A pair of settings, :setting:`AUTH_LDAP_USER_ATTR_MAP` and
-:setting:`AUTH_LDAP_PROFILE_ATTR_MAP`, serve to copy directory information into
-:class:`~django.contrib.auth.models.User` and profile objects. These are
-dictionaries that map user and profile model keys, respectively, to
-(case-insensitive) LDAP attribute names::
+If you just want to copy a few attribute values directly from the user's LDAP
+directory entry to their Django user, a pair of settings,
+:setting:`AUTH_LDAP_USER_ATTR_MAP` and :setting:`AUTH_LDAP_PROFILE_ATTR_MAP`,
+make it easy. These are dictionaries that map user and profile model keys,
+respectively, to (case-insensitive) LDAP attribute names::
 
     AUTH_LDAP_USER_ATTR_MAP = {"first_name": "givenName", "last_name": "sn"}
     AUTH_LDAP_PROFILE_ATTR_MAP = {"home_directory": "homeDirectory"}
@@ -79,6 +100,9 @@ any group.
 
     Django 1.7 and later do not directly support user profiles. In these
     versions, LDAPBackend will ignore the profile-related settings.
+
+Remember that if these settings don't do quite what you want, you can always use
+the signals described in the previous section to implement your own logic.
 
 
 Updating Users
@@ -124,15 +148,3 @@ Python-ldap returns all attribute values as utf8-encoded strings. For
 convenience, this module will try to decode all values into Unicode strings. Any
 string that can not be successfully decoded will be left as-is; this may apply
 to binary values such as Active Directory's objectSid.
-
-
-Custom Field Population
------------------------
-
-If you would like to perform any additional population of user or profile
-objects, :mod:`django_auth_ldap.backend` exposes two custom signals to help:
-:data:`~django_auth_ldap.backend.populate_user` and
-:data:`~django_auth_ldap.backend.populate_user_profile`. These are sent after
-the backend has finished populating the respective objects and before they are
-saved to the database. You can use this to propagate additional information from
-the LDAP directory to the user and profile objects any way you like.

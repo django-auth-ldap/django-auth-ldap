@@ -105,8 +105,7 @@ class LDAPSearch(object):
     documented for configuration purposes. Internal clients may use the other
     methods to refine and execute the search.
     """
-    def __init__(self, base_dn, scope, filterstr=u'(objectClass=*)',
-                 attrlist=None):
+    def __init__(self, base_dn, scope, filterstr=u'(objectClass=*)', attrlist=None):
         """
         These parameters are the same as the first three parameters to
         ldap.search_s.

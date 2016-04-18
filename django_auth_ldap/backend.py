@@ -456,7 +456,7 @@ class _LDAPUser(object):
 
     def _load_user_attrs(self):
         if self.dn is not None:
-            search = LDAPSearch(self.dn, ldap.SCOPE_BASE)
+            search = LDAPSearch(self.dn, ldap.SCOPE_BASE, attrlist=self.settings.USER_ATTRLIST)
             results = search.execute(self.connection)
 
             if results is not None and len(results) > 0:
@@ -890,6 +890,7 @@ class LDAPSettings(object):
         'REQUIRE_GROUP': None,
         'SERVER_URI': 'ldap://localhost',
         'START_TLS': False,
+        'USER_ATTRLIST': None,
         'USER_ATTR_MAP': {},
         'USER_DN_TEMPLATE': None,
         'USER_FLAGS_BY_GROUP': {},

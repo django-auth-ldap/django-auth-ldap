@@ -1,5 +1,12 @@
-v1.2.7 - 2015-09-29
--------------------
+v1.2.8 - 2016-04-18 - AUTH_LDAP_USER_ATTRLIST
+---------------------------------------------
+
+- Add :setting:`AUTH_LDAP_USER_ATTRLIST` to override the set of attributes
+  requested from the LDAP server.
+
+
+v1.2.7 - 2015-09-29 - Python 3
+------------------------------
 
 - Support Python 3 with `pyldap <https://pypi.python.org/pypi/pyldap>`_.
 
@@ -24,8 +31,8 @@ v1.2.5 - 2015-01-30
   :setting:`AUTH_LDAP_USER_SEARCH`.
 
 
-v1.2.4 - 2014-12-28
--------------------
+v1.2.4 - 2014-12-28 - nisNetgroup support
+-----------------------------------------
 
 - Add support for nisNetgroup groups (thanks to Christopher Bartz).
 

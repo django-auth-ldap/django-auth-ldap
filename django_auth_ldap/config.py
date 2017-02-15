@@ -199,7 +199,7 @@ class LDAPSearch(object):
         """
         try:
             kind, results = connection.result(msgid)
-            if kind != ldap.RES_SEARCH_RESULT:
+            if kind not in (ldap.RES_SEARCH_ENTRY, ldap.RES_SEARCH_RESULT):
                 results = []
         except ldap.LDAPError as e:
             results = []

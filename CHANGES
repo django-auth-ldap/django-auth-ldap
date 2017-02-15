@@ -1,3 +1,12 @@
+v1.2.9 - 2017-02-14 - Fix python-ldap incompatibility
+-----------------------------------------------------
+
+- Fix `#65`_: Ignore python-ldap documentation and accept
+  :data:`ldap.RES_SEARCH_ENTRY` from :meth:`ldap.LDAPObject.result`.
+
+.. _#65: https://bitbucket.org/psagers/django-auth-ldap/issues/65/
+
+
 v1.2.8 - 2016-04-18 - AUTH_LDAP_USER_ATTRLIST
 ---------------------------------------------
 

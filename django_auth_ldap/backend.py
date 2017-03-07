@@ -70,10 +70,15 @@ except ImportError:
 # Support Django 1.5's custom user models
 try:
     from django.contrib.auth import get_user_model
-    get_user_username = lambda u: u.get_username()
+
+    def get_user_username(user):
+        return user.get_username()
 except ImportError:
-    get_user_model = lambda: User                                        # noqa
-    get_user_username = lambda u: u.username
+    def get_user_model():
+        return User
+
+    def get_user_username(user):
+        return user.username
 
 # Small compatibility hack
 try:
@@ -159,12 +164,12 @@ class LDAPBackend(object):
     #
 
     def authenticate(self, username, password, **kwargs):
-        if len(password) == 0 and not self.settings.PERMIT_EMPTY_PASSWORD:
+        if bool(password) or self.settings.PERMIT_EMPTY_PASSWORD:
+            ldap_user = _LDAPUser(self, username=username.strip())
+            user = ldap_user.authenticate(password)
+        else:
             logger.debug('Rejecting empty password for %s' % username)
-            return None
-
-        ldap_user = _LDAPUser(self, username=username.strip())
-        user = ldap_user.authenticate(password)
+            user = None
 
         return user
 

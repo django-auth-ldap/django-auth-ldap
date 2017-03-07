@@ -55,7 +55,8 @@ except ImportError:
 try:
     from django.test.utils import override_settings
 except ImportError:
-    override_settings = lambda *args, **kwargs: (lambda v: v)
+    def override_settings(*args, **kwargs):
+        return lambda v: v
 
 from django_auth_ldap.models import TestUser, TestProfile
 from django_auth_ldap import backend
@@ -1277,6 +1278,20 @@ class LDAPTest(TestCase):
         )
 
         alice = self.backend.authenticate(username=u'alice', password=u'')
+
+        self.assertEqual(alice, None)
+        self.assertEqual(
+            self.ldapobj.methods_called(),
+            ['initialize', 'simple_bind_s']
+        )
+
+    def test_permit_null_password(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            PERMIT_EMPTY_PASSWORD=True,
+        )
+
+        alice = self.backend.authenticate(username=u'alice', password=None)
 
         self.assertEqual(alice, None)
         self.assertEqual(

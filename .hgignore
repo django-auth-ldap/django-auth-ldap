@@ -3,6 +3,8 @@ syntax: glob
 *.pyc
 *.coverage
 django_auth_ldap.egg-info
+.tox
+.python-version
 
 syntax: regexp
 

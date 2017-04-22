@@ -1,3 +1,11 @@
+v1.2.11 - 2017-04-22 - Testing and debugging cleanup
+----------------------------------------------------
+
+- Some more descriptive object representations.
+
+- Improved tox.ini organization.
+
+
 v1.2.9 - 2017-02-14 - Fix python-ldap incompatibility
 -----------------------------------------------------
 

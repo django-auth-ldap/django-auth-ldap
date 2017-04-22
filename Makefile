@@ -15,8 +15,8 @@ wheel:
 
 sign:
 	for f in dist/*.gz dist/*.whl; do \
-	    if [ ! -e ${f}.asc ] \
-	        gpg2 --detach-sign --armor ${f}; \
+	    if [ ! -e "$${f}.asc" ]; then \
+	        gpg2 --detach-sign --armor "$${f}"; \
 	    fi \
 	done
 

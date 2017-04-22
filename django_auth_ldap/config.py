@@ -116,6 +116,9 @@ class LDAPSearch(object):
         self.attrlist = attrlist
         self.ldap = _LDAPConfig.get_ldap()
 
+    def __repr__(self):
+        return "<{}: {}>".format(self.__class__.__name__, self.base_dn)
+
     def search_with_additional_terms(self, term_dict, escape=True):
         """
         Returns a new search object with additional search terms and-ed to the
@@ -454,6 +457,9 @@ class MemberDNGroupType(LDAPGroupType):
         self.member_attr = member_attr
 
         super(MemberDNGroupType, self).__init__(name_attr)
+
+    def __repr__(self):
+        return "<{}: {}>".format(self.__class__.__name__, self.member_attr)
 
     def user_groups(self, ldap_user, group_search):
         search = group_search.search_with_additional_terms({self.member_attr: ldap_user.dn})

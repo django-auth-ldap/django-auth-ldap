@@ -639,49 +639,81 @@ class NestedOrganizationalRoleGroupType(NestedMemberDNGroupType):
 
 
 class LDAPGroupQuery(Node):
+    """
+    Represents a compound query for group membership.
 
+    This can be used to construct an arbitrarily complex group membership query
+    with AND, OR, and NOT logical operators. Construct primitive queries with a
+    group DN as a string as the only argument. These queries can then be
+    combined with the &, |, and ~ operators.
+
+    """
     # Connection types
     AND = 'AND'
     OR = 'OR'
     default = AND
 
+    _CONNECTORS = [AND, OR]
+
     def __init__(self, *args, **kwargs):
         super(LDAPGroupQuery, self).__init__(children=list(args) + list(kwargs.items()))
 
-    def _combine(self, other, conn):
-        if not isinstance(other, LDAPGroupQuery):
-            raise TypeError(other)
-        obj = type(self)()
-        obj.connector = conn
-        obj.add(self, conn)
-        obj.add(other, conn)
-        return obj
+    def __and__(self, other):
+        return self._combine(other, self.AND)
 
     def __or__(self, other):
         return self._combine(other, self.OR)
-
-    def __and__(self, other):
-        return self._combine(other, self.AND)
 
     def __invert__(self):
         obj = type(self)()
         obj.add(self, self.AND)
         obj.negate()
+
         return obj
 
-    def resolve_membership(self, user, groups=None):
-        membership = True
-        if not groups:
-            groups = user._get_groups()
+    def _combine(self, other, conn):
+        if not isinstance(other, LDAPGroupQuery):
+            raise TypeError(other)
+        if conn not in self._CONNECTORS:
+            raise ValueError(conn)
+
+        obj = type(self)()
+        obj.connector = conn
+        obj.add(self, conn)
+        obj.add(other, conn)
+
+        return obj
+
+    def resolve(self, ldap_user, groups=None):
+        if groups is None:
+            groups = ldap_user._get_groups()
+
+        result = self.aggregator(self._resolve_children(ldap_user, groups))
+        if self.negated:
+            result = not result
+
+        return result
+
+    @property
+    def aggregator(self):
+        """
+        Returns a function for aggretating a sequence of sub-results.
+        """
+        if self.connector == self.AND:
+            aggregator = all
+        elif self.connector == self.OR:
+            aggregator = any
+        else:
+            raise ValueError(self.connector)
+
+        return aggregator
+
+    def _resolve_children(self, ldap_user, groups):
+        """
+        Generates the query result for each child.
+        """
         for child in self.children:
             if isinstance(child, LDAPGroupQuery):
-                membership = child.resolve_membership(user, groups)
+                yield child.resolve(ldap_user, groups)
             else:
-                membership = groups.is_member_of(child)
-            if self.negated:
-                membership = not membership
-            if membership and self.connector == self.OR:
-                break
-            elif not membership and self.connector == self.AND:
-                break
-        return membership
+                yield groups.is_member_of(child)

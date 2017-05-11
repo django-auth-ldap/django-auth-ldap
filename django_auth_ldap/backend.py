@@ -518,9 +518,9 @@ class _LDAPUser(object):
         if required_group_dn is not None:
             if not isinstance(required_group_dn, LDAPGroupQuery):
                 required_group_dn = LDAPGroupQuery(required_group_dn)
-            is_member = required_group_dn.resolve_membership(self)
+            is_member = required_group_dn.resolve(self)
             if not is_member:
-                raise self.AuthenticationFailed("user is not a member of AUTH_LDAP_REQUIRE_GROUP")
+                raise self.AuthenticationFailed("user does not satisfy AUTH_LDAP_REQUIRE_GROUP")
 
         return True
 
@@ -534,7 +534,7 @@ class _LDAPUser(object):
         if denied_group_dn is not None:
             is_member = self._get_groups().is_member_of(denied_group_dn)
             if is_member:
-                raise self.AuthenticationFailed("user is a member of AUTH_LDAP_DENY_GROUP")
+                raise self.AuthenticationFailed("user does not satisfy AUTH_LDAP_DENY_GROUP")
 
         return True
 

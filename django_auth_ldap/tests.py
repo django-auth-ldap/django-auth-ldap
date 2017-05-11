@@ -782,7 +782,7 @@ class LDAPTest(TestCase):
         )
         alice = self.backend.authenticate(username='alice', password='password')
         query = LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
-        self.assertTrue(query.resolve_membership(alice.ldap_user))
+        self.assertTrue(query.resolve(alice.ldap_user))
 
     def test_negated_group_query(self):
         self._init_settings(
@@ -792,7 +792,7 @@ class LDAPTest(TestCase):
         )
         alice = self.backend.authenticate(username='alice', password='password')
         query = ~LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
-        self.assertFalse(query.resolve_membership(alice.ldap_user))
+        self.assertFalse(query.resolve(alice.ldap_user))
 
     def test_or_group_query(self):
         self._init_settings(
@@ -807,8 +807,8 @@ class LDAPTest(TestCase):
             LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') |
             LDAPGroupQuery('cn=bob_gon,ou=query_groups,o=test')
         )
-        self.assertTrue(query.resolve_membership(alice.ldap_user))
-        self.assertTrue(query.resolve_membership(bob.ldap_user))
+        self.assertTrue(query.resolve(alice.ldap_user))
+        self.assertTrue(query.resolve(bob.ldap_user))
 
     def test_and_group_query(self):
         self._init_settings(
@@ -823,8 +823,8 @@ class LDAPTest(TestCase):
             LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') &
             LDAPGroupQuery('cn=mutual_gon,ou=query_groups,o=test')
         )
-        self.assertTrue(query.resolve_membership(alice.ldap_user))
-        self.assertFalse(query.resolve_membership(bob.ldap_user))
+        self.assertTrue(query.resolve(alice.ldap_user))
+        self.assertFalse(query.resolve(bob.ldap_user))
 
     def test_nested_group_query(self):
         self._init_settings(
@@ -842,8 +842,8 @@ class LDAPTest(TestCase):
             ) |
             LDAPGroupQuery('cn=bob_gon,ou=query_groups,o=test')
         )
-        self.assertTrue(query.resolve_membership(alice.ldap_user))
-        self.assertTrue(query.resolve_membership(bob.ldap_user))
+        self.assertTrue(query.resolve(alice.ldap_user))
+        self.assertTrue(query.resolve(bob.ldap_user))
 
     def test_require_group_as_group_query(self):
         query = (

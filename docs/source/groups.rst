@@ -71,6 +71,27 @@ the reverse: if given, members of this group will be rejected.
     AUTH_LDAP_REQUIRE_GROUP = "cn=enabled,ou=groups,dc=example,dc=com"
     AUTH_LDAP_DENY_GROUP = "cn=disabled,ou=groups,dc=example,dc=com"
 
+However, these two settings alone may not be enough to satisfy your needs. In
+such cases, you can use the `~django_auth_ldap.config.LDAPGroupQuery` object to
+perform more complex matches against a user's groups. For example:
+
+.. code-block:: python
+
+    from django_auth_ldap.config import LDAPGroupQuery
+
+    AUTH_LDAP_REQUIRE_GROUP = (
+        (
+            LDAPGroupQuery("cn=enabled,ou=groups,dc=example,dc=com") |
+            LDAPGroupQuery("cn=also_enabled,ou=groups,dc=example,dc=com")
+        ) &
+        ~LDAPGroupQuery("cn=disabled,ou=groups,dc=example,dc=com")
+    )
+
+It is important to note a couple features of the example above. First and foremost,
+this handles the case of both `AUTH_LDAP_REQUIRE_GROUP` and `AUTH_LDAP_DENY_GROUP`
+in one setting. Second, you can use three operators on these queries: ``&``, ``|``,
+and ``~``; ``and``, ``or``, and ``not``, respectively.
+
 When groups are configured, you can always get the list of a user's groups from
 ``user.ldap_user.group_dns`` or ``user.ldap_user.group_names``. More advanced
 uses of groups are covered in the next two sections.

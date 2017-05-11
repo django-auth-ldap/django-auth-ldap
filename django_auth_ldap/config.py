@@ -34,6 +34,7 @@ import ldap
 import logging
 import pprint
 
+from django.utils.tree import Node
 try:
     from django.utils.encoding import force_str
 except ImportError:  # Django < 1.5
@@ -635,3 +636,52 @@ class NestedOrganizationalRoleGroupType(NestedMemberDNGroupType):
     """
     def __init__(self, name_attr='cn'):
         super(NestedOrganizationalRoleGroupType, self).__init__('roleOccupant', name_attr)
+
+
+class LDAPGroupQuery(Node):
+
+    # Connection types
+    AND = 'AND'
+    OR = 'OR'
+    default = AND
+
+    def __init__(self, *args, **kwargs):
+        super(LDAPGroupQuery, self).__init__(children=list(args) + list(kwargs.items()))
+
+    def _combine(self, other, conn):
+        if not isinstance(other, LDAPGroupQuery):
+            raise TypeError(other)
+        obj = type(self)()
+        obj.connector = conn
+        obj.add(self, conn)
+        obj.add(other, conn)
+        return obj
+
+    def __or__(self, other):
+        return self._combine(other, self.OR)
+
+    def __and__(self, other):
+        return self._combine(other, self.AND)
+
+    def __invert__(self):
+        obj = type(self)()
+        obj.add(self, self.AND)
+        obj.negate()
+        return obj
+
+    def resolve_membership(self, user, groups=None):
+        membership = True
+        if not groups:
+            groups = user._get_groups()
+        for child in self.children:
+            if isinstance(child, LDAPGroupQuery):
+                membership = child.resolve_membership(user, groups)
+            else:
+                membership = groups.is_member_of(child)
+            if self.negated:
+                membership = not membership
+            if membership and self.connector == self.OR:
+                break
+            elif not membership and self.connector == self.AND:
+                break
+        return membership

@@ -86,7 +86,7 @@ try:
 except NameError:
     basestring = str
 
-from django_auth_ldap.config import _LDAPConfig, LDAPSearch
+from django_auth_ldap.config import _LDAPConfig, LDAPGroupQuery, LDAPSearch
 
 
 logger = _LDAPConfig.get_logger()
@@ -516,7 +516,9 @@ class _LDAPUser(object):
         required_group_dn = self.settings.REQUIRE_GROUP
 
         if required_group_dn is not None:
-            is_member = self._get_groups().is_member_of(required_group_dn)
+            if not isinstance(required_group_dn, LDAPGroupQuery):
+                required_group_dn = LDAPGroupQuery(required_group_dn)
+            is_member = required_group_dn.resolve_membership(self)
             if not is_member:
                 raise self.AuthenticationFailed("user is not a member of AUTH_LDAP_REQUIRE_GROUP")
 

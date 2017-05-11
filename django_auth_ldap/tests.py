@@ -60,6 +60,7 @@ except ImportError:
 
 from django_auth_ldap.models import TestUser, TestProfile
 from django_auth_ldap import backend
+from django_auth_ldap.config import LDAPGroupQuery
 from django_auth_ldap.config import LDAPSearch, LDAPSearchUnion
 from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType, NISGroupType
 from django_auth_ldap.config import GroupOfNamesType
@@ -164,6 +165,23 @@ class LDAPTest(TestCase):
         "member": ["uid=bob,ou=people,o=test"]
     })
 
+    # grouOfNames objects for LDAPGroupQuery testing
+    alice_gon = ("cn=alice_gon,ou=query_groups,o=test", {
+        "cn": ["alice_gon"],
+        "objectClass": ["groupOfNames"],
+        "member": ["uid=alice,ou=people,o=test"]
+    })
+    mutual_gon = ("cn=mutual_gon,ou=query_groups,o=test", {
+        "cn": ["mutual_gon"],
+        "objectClass": ["groupOfNames"],
+        "member": ["uid=alice,ou=people,o=test", "uid=bob,ou=people,o=test"]
+    })
+    bob_gon = ("cn=bob_gon,ou=query_groups,o=test", {
+        "cn": ["bob_gon"],
+        "objectClass": ["groupOfNames"],
+        "member": ["uid=bob,ou=people,o=test"]
+    })
+
     # nisGroup objects
     active_nis = ("cn=active_nis,ou=groups,o=test", {
         "cn": ["active_nis"],
@@ -204,6 +222,7 @@ class LDAPTest(TestCase):
     directory = dict([top, people, groups, moregroups, alice, bob, dressler,
                       nobody, active_px, staff_px, superuser_px, empty_gon,
                       active_gon, staff_gon, superuser_gon, other_gon,
+                      alice_gon, mutual_gon, bob_gon,
                       active_nis, staff_nis, superuser_nis,
                       parent_gon, nested_gon, circular_gon])
 
@@ -224,7 +243,9 @@ class LDAPTest(TestCase):
         cls.configure_logger()
         cls.mockldap = mockldap.MockLdap(cls.directory)
 
-        warnings.filterwarnings('ignore', message='.*?AUTH_PROFILE_MODULE', category=DeprecationWarning, module='django_auth_ldap')
+        warnings.filterwarnings(
+            'ignore', message='.*?AUTH_PROFILE_MODULE', category=DeprecationWarning, module='django_auth_ldap'
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -753,6 +774,95 @@ class LDAPTest(TestCase):
              'initialize', 'simple_bind_s', 'simple_bind_s', 'compare_s']
         )
 
+    def test_simple_group_query(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+        )
+        alice = self.backend.authenticate(username='alice', password='password')
+        query = LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
+        self.assertTrue(query.resolve_membership(alice.ldap_user))
+
+    def test_negated_group_query(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+        )
+        alice = self.backend.authenticate(username='alice', password='password')
+        query = ~LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
+        self.assertFalse(query.resolve_membership(alice.ldap_user))
+
+    def test_or_group_query(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+        )
+        alice = self.backend.authenticate(username='alice', password='password')
+        bob = self.backend.authenticate(username='bob', password='password')
+
+        query = (
+            LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') |
+            LDAPGroupQuery('cn=bob_gon,ou=query_groups,o=test')
+        )
+        self.assertTrue(query.resolve_membership(alice.ldap_user))
+        self.assertTrue(query.resolve_membership(bob.ldap_user))
+
+    def test_and_group_query(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+        )
+        alice = self.backend.authenticate(username='alice', password='password')
+        bob = self.backend.authenticate(username='bob', password='password')
+
+        query = (
+            LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') &
+            LDAPGroupQuery('cn=mutual_gon,ou=query_groups,o=test')
+        )
+        self.assertTrue(query.resolve_membership(alice.ldap_user))
+        self.assertFalse(query.resolve_membership(bob.ldap_user))
+
+    def test_nested_group_query(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+        )
+        alice = self.backend.authenticate(username='alice', password='password')
+        bob = self.backend.authenticate(username='bob', password='password')
+
+        query = (
+            (
+                LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') &
+                LDAPGroupQuery('cn=mutual_gon,ou=query_groups,o=test')
+            ) |
+            LDAPGroupQuery('cn=bob_gon,ou=query_groups,o=test')
+        )
+        self.assertTrue(query.resolve_membership(alice.ldap_user))
+        self.assertTrue(query.resolve_membership(bob.ldap_user))
+
+    def test_require_group_as_group_query(self):
+        query = (
+            LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') &
+            LDAPGroupQuery('cn=mutual_gon,ou=query_groups,o=test')
+        )
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            REQUIRE_GROUP=query
+        )
+
+        alice = self.backend.authenticate(username='alice', password='password')
+        bob = self.backend.authenticate(username='bob', password='password')
+
+        self.assertTrue(alice is not None)
+        self.assertTrue(bob is None)
+
     def test_group_union(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -816,7 +926,10 @@ class LDAPTest(TestCase):
         )
         alice = self.backend.authenticate(username='alice', password='password')
 
-        self.assertEqual(alice.ldap_user.group_dns, set((g[0].lower() for g in [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon])))
+        self.assertEqual(
+            alice.ldap_user.group_dns,
+            set((g[0].lower() for g in [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon]))
+        )
 
     def test_group_names(self):
         self._init_settings(

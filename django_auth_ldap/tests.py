@@ -38,8 +38,9 @@ except ImportError:
 
 import django
 from django.conf import settings
-import django.db.models.signals
 from django.contrib.auth.models import User, Permission, Group
+from django.core.exceptions import ImproperlyConfigured
+import django.db.models.signals
 from django.test import TestCase
 
 try:
@@ -947,7 +948,7 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
             USER_FLAGS_BY_GROUP={
-                'is_active': "cn=active_gon,ou=groups,o=test",
+                'is_active': LDAPGroupQuery("cn=active_gon,ou=groups,o=test"),
                 'is_staff': ["cn=empty_gon,ou=groups,o=test",
                              "cn=staff_gon,ou=groups,o=test"],
                 'is_superuser': "cn=superuser_gon,ou=groups,o=test"
@@ -963,6 +964,21 @@ class LDAPTest(TestCase):
         self.assertTrue(not bob.is_active)
         self.assertTrue(not bob.is_staff)
         self.assertTrue(not bob.is_superuser)
+
+    def test_user_flags_misconfigured(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            USER_FLAGS_BY_GROUP={
+                'is_active': LDAPGroupQuery("cn=active_gon,ou=groups,o=test"),
+                'is_staff': [],
+                'is_superuser': "cn=superuser_gon,ou=groups,o=test"
+            }
+        )
+
+        with self.assertRaises(ImproperlyConfigured):
+            self.backend.authenticate(username='alice', password='password')
 
     def test_posix_membership(self):
         self._init_settings(

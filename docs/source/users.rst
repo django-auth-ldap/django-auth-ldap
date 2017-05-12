@@ -84,8 +84,10 @@ group membership::
 
     AUTH_LDAP_USER_FLAGS_BY_GROUP = {
         "is_active": "cn=active,ou=groups,dc=example,dc=com",
-        "is_staff": ["cn=staff,ou=groups,dc=example,dc=com",
-                     "cn=admin,ou=groups,dc=example,dc=com"],
+        "is_staff": (
+            LDAPGroupQuery("cn=staff,ou=groups,dc=example,dc=com") |
+            LDAPGroupQuery("cn=admin,ou=groups,dc=example,dc=com")
+        ),
         "is_superuser": "cn=superuser,ou=groups,dc=example,dc=com"
     }
 
@@ -93,8 +95,9 @@ group membership::
         "is_awesome": ["cn=awesome,ou=groups,dc=example,dc=com"]
     }
 
-If a list of groups is given, the flag will be set if the user is a member of
-any group.
+Values in these dictionaries may be simple DNs (as strings), lists or tuples of
+DNs, or :class:`~django_auth_ldap.config.LDAPGroupQuery` instances. Lists are
+converted to queries joined by ``|``.
 
 .. note::
 

@@ -223,6 +223,10 @@ A mapping from boolean profile field names to distinguished names of LDAP
 groups. The corresponding field in a user's profile is set to ``True`` or
 ``False`` according to whether the user is a member of the group.
 
+Values may be strings for simple group membership tests or
+:class:`~django_auth_ldap.config.LDAPGroupQuery` instances for more complex
+cases.
+
 This is ignored in Django 1.7 and later.
 
 
@@ -234,7 +238,8 @@ AUTH_LDAP_REQUIRE_GROUP
 Default: ``None``
 
 The distinguished name of a group; authentication will fail for any user that
-does not belong to this group.
+does not belong to this group. This can also be an
+:class:`~django_auth_ldap.config.LDAPGroupQuery` instance.
 
 
 .. setting:: AUTH_LDAP_SERVER_URI
@@ -312,6 +317,10 @@ A mapping from boolean :class:`~django.contrib.auth.models.User` field names to
 distinguished names of LDAP groups. The corresponding field is set to ``True``
 or ``False`` according to whether the user is a member of the group.
 
+Values may be strings for simple group membership tests or
+:class:`~django_auth_ldap.config.LDAPGroupQuery` instances for more complex
+cases.
+
 
 .. setting:: AUTH_LDAP_USER_SEARCH
 
@@ -349,10 +358,12 @@ Configuration
 
     .. method:: __init__(base_dn, scope, filterstr='(objectClass=*)')
 
-        * ``base_dn``: The distinguished name of the search base.
-        * ``scope``: One of ``ldap.SCOPE_*``.
-        * ``filterstr``: An optional filter string (e.g. '(objectClass=person)').
-          In order to be valid, ``filterstr`` must be enclosed in parentheses.
+        :param str base_dn: The distinguished name of the search base.
+        :param int scope: One of ``ldap.SCOPE_*``.
+        :param str filterstr: An optional filter string (e.g.
+            '(objectClass=person)'). In order to be valid, ``filterstr`` must be
+            enclosed in parentheses.
+
 
 .. class:: LDAPSearchUnion
 
@@ -360,10 +371,12 @@ Configuration
 
     .. method:: __init__(\*searches)
 
-        * ``searches``: Zero or more LDAPSearch objects. The result of the
-          overall search is the union (by DN) of the results of the underlying
-          searches. The precedence of the underlying results and the ordering of
-          the final results are both undefined.
+        :param searches: Zero or more LDAPSearch objects. The result of the
+            overall search is the union (by DN) of the results of the underlying
+            searches. The precedence of the underlying results and the ordering
+            of the final results are both undefined.
+        :type searches: :class:`LDAPSearch`
+
 
 .. class:: LDAPGroupType
 
@@ -377,6 +390,7 @@ Configuration
         first value of the cn attribute. You can specify a different attribute
         with ``name_attr``.
 
+
 .. class:: PosixGroupType
 
     A concrete subclass of :class:`~django_auth_ldap.config.LDAPGroupType` that
@@ -385,12 +399,14 @@ Configuration
 
     .. method:: __init__(name_attr='cn')
 
+
 .. class:: NISGroupType
 
     A concrete subclass of :class:`~django_auth_ldap.config.LDAPGroupType` that
     handles the ``nisNetgroup`` object class.
 
     .. method:: __init__(name_attr='cn')
+
 
 .. class:: MemberDNGroupType
 
@@ -400,8 +416,9 @@ Configuration
 
     .. method:: __init__(member_attr, name_attr='cn')
 
-        * ``member_attr``: The attribute on the group object that contains a
-          list of member DNs. 'member' and 'uniqueMember' are common examples.
+        :param str member_attr: The attribute on the group object that contains
+            a list of member DNs. 'member' and 'uniqueMember' are common
+            examples.
 
 
 .. class:: NestedMemberDNGroupType
@@ -489,6 +506,21 @@ Configuration
     ``NestedMemberDNGroupType('roleOccupant')``.
 
     .. method:: __init__(name_attr='cn')
+
+
+.. class:: LDAPGroupQuery
+
+    Represents a compound query for group membership.
+
+    This can be used to construct an arbitrarily complex group membership query
+    with AND, OR, and NOT logical operators. Construct primitive queries with a
+    group DN as the only argument. These queries can then be combined with the
+    ``&``, ``|``, and ``~`` operators.
+
+    .. method:: __init__(group_dn)
+
+        :param str group_dn: The distinguished name of a group to test for
+            membership.
 
 
 Backend

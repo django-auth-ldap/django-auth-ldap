@@ -45,11 +45,13 @@ information will be user_dn or user_info.
 Additional classes can be found in the config module next to this one.
 """
 
+import copy
+from functools import reduce
 import ldap
+import operator
+import pprint
 import sys
 import traceback
-import pprint
-import copy
 
 from django.contrib.auth.models import User, Group, Permission
 import django.conf
@@ -518,8 +520,8 @@ class _LDAPUser(object):
         if required_group_dn is not None:
             if not isinstance(required_group_dn, LDAPGroupQuery):
                 required_group_dn = LDAPGroupQuery(required_group_dn)
-            is_member = required_group_dn.resolve(self)
-            if not is_member:
+            result = required_group_dn.resolve(self)
+            if not result:
                 raise self.AuthenticationFailed("user does not satisfy AUTH_LDAP_REQUIRE_GROUP")
 
         return True
@@ -603,9 +605,12 @@ class _LDAPUser(object):
 
     def _populate_user_from_group_memberships(self):
         for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.items():
-            if isinstance(group_dns, basestring):
-                group_dns = [group_dns]
-            value = any(self._get_groups().is_member_of(dn) for dn in group_dns)
+            try:
+                query = self._normalize_group_dns(group_dns)
+            except ValueError as e:
+                raise ImproperlyConfigured("{}: {}", self.settings._name('USER_FLAGS_BY_GROUP'), e)
+
+            value = query.resolve(self)
             setattr(self._user, field, value)
 
     def _should_populate_profile(self):
@@ -660,13 +665,36 @@ class _LDAPUser(object):
         save_profile = False
 
         for field, group_dns in self.settings.PROFILE_FLAGS_BY_GROUP.items():
-            if isinstance(group_dns, basestring):
-                group_dns = [group_dns]
-            value = any(self._get_groups().is_member_of(dn) for dn in group_dns)
+            try:
+                query = self._normalize_group_dns(group_dns)
+            except ValueError as e:
+                raise ImproperlyConfigured("{}: {}", self.settings._name('PROFILE_FLAGS_BY_GROUP'), e)
+
+            value = query.resolve(self)
             setattr(profile, field, value)
             save_profile = True
 
         return save_profile
+
+    def _normalize_group_dns(self, group_dns):
+        """
+        Converts one or more group DNs to an LDAPGroupQuery.
+
+        group_dns may be a string, a non-empty list or tuple of strings, or an
+        LDAPGroupQuery. The result will be an LDAPGroupQuery. A list or tuple
+        will be joined with the | operator.
+
+        """
+        if isinstance(group_dns, LDAPGroupQuery):
+            query = group_dns
+        elif isinstance(group_dns, basestring):
+            query = LDAPGroupQuery(group_dns)
+        elif isinstance(group_dns, (list, tuple)) and len(group_dns) > 0:
+            query = reduce(operator.or_, map(LDAPGroupQuery, group_dns))
+        else:
+            raise ValueError(group_dns)
+
+        return query
 
     def _mirror_groups(self):
         """
@@ -877,6 +905,8 @@ class LDAPSettings(object):
     instance will contain all of our settings as attributes, with default values
     if they are not specified by the configuration.
     """
+    _prefix = 'AUTH_LDAP_'
+
     defaults = {
         'ALWAYS_UPDATE_USER': True,
         'AUTHORIZE_ALL_USERS': False,
@@ -909,8 +939,13 @@ class LDAPSettings(object):
         Loads our settings from django.conf.settings, applying defaults for any
         that are omitted.
         """
+        self._prefix = prefix
+
         defaults = dict(self.defaults, **defaults)
 
         for name, default in defaults.items():
             value = getattr(django.conf.settings, prefix + name, default)
             setattr(self, name, value)
+
+    def _name(self, suffix):
+        return (self._prefix + suffix)

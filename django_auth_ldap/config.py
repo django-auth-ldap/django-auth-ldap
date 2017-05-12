@@ -644,8 +644,10 @@ class LDAPGroupQuery(Node):
 
     This can be used to construct an arbitrarily complex group membership query
     with AND, OR, and NOT logical operators. Construct primitive queries with a
-    group DN as a string as the only argument. These queries can then be
-    combined with the &, |, and ~ operators.
+    group DN as the only argument. These queries can then be combined with the
+    ``&``, ``|``, and ``~`` operators.
+
+    :param str group_dn: The DN of a group to test for membership.
 
     """
     # Connection types
@@ -697,7 +699,7 @@ class LDAPGroupQuery(Node):
     @property
     def aggregator(self):
         """
-        Returns a function for aggretating a sequence of sub-results.
+        Returns a function for aggregating a sequence of sub-results.
         """
         if self.connector == self.AND:
             aggregator = all

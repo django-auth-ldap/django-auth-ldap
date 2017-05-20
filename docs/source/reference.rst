@@ -517,6 +517,11 @@ Configuration
     group DN as the only argument. These queries can then be combined with the
     ``&``, ``|``, and ``~`` operators.
 
+    This is used by certain settings, including
+    :setting:`AUTH_LDAP_REQUIRE_GROUP` and
+    :setting:`AUTH_LDAP_USER_FLAGS_BY_GROUP`. An example is shown in
+    :ref:`limiting-access`.
+
     .. method:: __init__(group_dn)
 
         :param str group_dn: The distinguished name of a group to test for

@@ -58,6 +58,8 @@ configuration must be of this type and part of the search results.
     AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
 
 
+.. _limiting-access:
+
 Limiting Access
 ---------------
 

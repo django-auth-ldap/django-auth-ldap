@@ -1,3 +1,10 @@
+v1.2.12 - 2017-05-20 - Complex group queries
+--------------------------------------------
+
+- Support for complex group queries via
+  :class:`~django_auth_ldap.config.LDAPGroupQuery`.
+
+
 v1.2.11 - 2017-04-22 - Testing and debugging cleanup
 ----------------------------------------------------
 

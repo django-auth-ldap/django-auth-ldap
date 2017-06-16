@@ -41,6 +41,10 @@ except ImportError:  # Django < 1.5
     from django.utils.encoding import smart_str as force_str
 
 
+class ConfigurationWarning(UserWarning):
+    pass
+
+
 class _LDAPConfig(object):
     """
     A private class that loads and caches some global objects.

@@ -43,22 +43,29 @@ Group Mirroring
 ---------------
 
 The second way to turn LDAP group memberships into permissions is to mirror the
-groups themselves. If :setting:`AUTH_LDAP_MIRROR_GROUPS` is ``True``, then every
-time a user logs in, :class:`~django_auth_ldap.backend.LDAPBackend` will update
-the database with the user's LDAP groups. Any group that doesn't exist will be
-created and the user's Django group membership will be updated to exactly match
-his LDAP group membership. Note that if the LDAP server has nested groups, the
-Django database will end up with a flattened representation. For group mirroring
-to have any effect, you of course need
-:class:`~django.contrib.auth.backends.ModelBackend` installed as an
-authentication backend.
+groups themselves. This approach has some important disadvantages and should be
+avoided if possible. For one thing, membership will only be updated when the
+user authenticates, which may be especially inappropriate for sites with long
+session timeouts.
 
-The main difference between this approach and
-:setting:`AUTH_LDAP_FIND_GROUP_PERMS` is that
-:setting:`AUTH_LDAP_FIND_GROUP_PERMS` will query for LDAP group membership
-either for every request or according to the cache timeout. With group
-mirroring, membership will be updated when the user authenticates. This may not
-be appropriate for sites with long session timeouts.
+If :setting:`AUTH_LDAP_MIRROR_GROUPS` is ``True``, then every time a user logs
+in, :class:`~django_auth_ldap.backend.LDAPBackend` will update the database with
+the user's LDAP groups. Any group that doesn't exist will be created and the
+user's Django group membership will be updated to exactly match their LDAP group
+membership. If the LDAP server has nested groups, the Django database will end
+up with a flattened representation. For group mirroring to have any effect, you
+of course need :class:`~django.contrib.auth.backends.ModelBackend` installed as
+an authentication backend.
+
+By default, we assume that LDAP is the sole authority on group membership; if
+you remove a user from a group in LDAP, they will be removed from the
+corresponding Django group the next time they log in. It is also possible to
+have django-auth-ldap ignore some Django groups, presumably because they are
+managed manually or through some other mechanism. If
+:setting:`AUTH_LDAP_MIRROR_GROUPS` is a list of group names, we will manage
+these groups and no others. If :setting:`AUTH_LDAP_MIRROR_GROUPS_EXCEPT` is a
+list of group names, we will manage all groups except those named;
+:setting:`AUTH_LDAP_MIRROR_GROUPS` is ignored in this case.
 
 
 Non-LDAP Users

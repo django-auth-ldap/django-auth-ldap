@@ -176,13 +176,31 @@ of group returned by :setting:`AUTH_LDAP_GROUP_SEARCH`.
 AUTH_LDAP_MIRROR_GROUPS
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``False``
+Default: ``None``
 
 If ``True``, :class:`~django_auth_ldap.backend.LDAPBackend` will mirror a user's
 LDAP group membership in the Django database. Any time a user authenticates, we
-will create all of his LDAP groups as Django groups and update his Django group
-membership to exactly match his LDAP group membership. If the LDAP server has
-nested groups, the Django database will end up with a flattened representation.
+will create all of their LDAP groups as Django groups and update their Django
+group membership to exactly match their LDAP group membership. If the LDAP
+server has nested groups, the Django database will end up with a flattened
+representation.
+
+This can also be a list or other collection of group names, in which case we'll
+only mirror those groups and leave the rest alone. This is ignored if
+:setting:`AUTH_LDAP_MIRROR_GROUPS_EXCEPT` is set.
+
+
+.. setting:: AUTH_LDAP_MIRROR_GROUPS_EXCEPT
+
+AUTH_LDAP_MIRROR_GROUPS_EXCEPT
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+If this is not ``None``, it must be a list or other collection of group names.
+This will enable group mirroring, except that we'll never change the membership
+of the indicated groups. :setting:`AUTH_LDAP_MIRROR_GROUPS` is ignored in this
+case.
 
 
 .. setting:: AUTH_LDAP_PERMIT_EMPTY_PASSWORD

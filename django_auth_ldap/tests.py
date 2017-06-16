@@ -84,6 +84,7 @@ class LDAPTest(TestCase):
     people = ("ou=people,o=test", {"ou": "people"})
     groups = ("ou=groups,o=test", {"ou": "groups"})
     moregroups = ("ou=moregroups,o=test", {"ou": "moregroups"})
+    mirror_groups = ("ou=mirror_groups,o=test", {"ou": "mirror_groups"})
 
     alice = ("uid=alice,ou=people,o=test", {
         "uid": ["alice"],
@@ -166,7 +167,7 @@ class LDAPTest(TestCase):
         "member": ["uid=bob,ou=people,o=test"]
     })
 
-    # grouOfNames objects for LDAPGroupQuery testing
+    # groupOfNames objects for LDAPGroupQuery testing
     alice_gon = ("cn=alice_gon,ou=query_groups,o=test", {
         "cn": ["alice_gon"],
         "objectClass": ["groupOfNames"],
@@ -181,6 +182,28 @@ class LDAPTest(TestCase):
         "cn": ["bob_gon"],
         "objectClass": ["groupOfNames"],
         "member": ["uid=bob,ou=people,o=test"]
+    })
+
+    # groupOfNames objects for selective group mirroring.
+    mirror1 = ("cn=mirror1,ou=mirror_groups,o=test", {
+        "cn": ["mirror1"],
+        "objectClass": ["groupOfNames"],
+        "member": ["uid=alice,ou=people,o=test"]
+    })
+    mirror2 = ("cn=mirror2,ou=mirror_groups,o=test", {
+        "cn": ["mirror2"],
+        "objectClass": ["groupOfNames"],
+        "member": []
+    })
+    mirror3 = ("cn=mirror3,ou=mirror_groups,o=test", {
+        "cn": ["mirror3"],
+        "objectClass": ["groupOfNames"],
+        "member": ["uid=alice,ou=people,o=test"]
+    })
+    mirror4 = ("cn=mirror4,ou=mirror_groups,o=test", {
+        "cn": ["mirror4"],
+        "objectClass": ["groupOfNames"],
+        "member": []
     })
 
     # nisGroup objects
@@ -220,12 +243,13 @@ class LDAPTest(TestCase):
         "member": ["cn=parent_gon,ou=groups,o=test"]
     })
 
-    directory = dict([top, people, groups, moregroups, alice, bob, dressler,
-                      nobody, active_px, staff_px, superuser_px, empty_gon,
-                      active_gon, staff_gon, superuser_gon, other_gon,
-                      alice_gon, mutual_gon, bob_gon,
-                      active_nis, staff_nis, superuser_nis,
-                      parent_gon, nested_gon, circular_gon])
+    directory = dict([
+        top, people, groups, moregroups, mirror_groups, alice, bob, dressler,
+        nobody, active_px, staff_px, superuser_px, empty_gon, active_gon,
+        staff_gon, superuser_gon, other_gon, alice_gon, mutual_gon, bob_gon,
+        mirror1, mirror2, mirror3, mirror4, active_nis, staff_nis,
+        superuser_nis, parent_gon, nested_gon, circular_gon
+    ])
 
     @classmethod
     def configure_logger(cls):
@@ -639,7 +663,7 @@ class LDAPTest(TestCase):
             ['initialize', 'simple_bind_s', 'simple_bind_s', 'search_s']
         )
 
-    def test_poplate_with_attrlist(self):
+    def test_populate_with_attrlist(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
             USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'},
@@ -1248,6 +1272,105 @@ class LDAPTest(TestCase):
                  'parent_gon', 'circular_gon'])
         )
         self.assertEqual(set(alice.groups.all()), set(Group.objects.all()))
+
+    #
+    # When selectively mirroring groups, there are eight scenarios for any
+    # given user/group pair:
+    #
+    #   (is-member-in-LDAP, not-member-in-LDAP)
+    #   x (is-member-in-Django, not-member-in-Django)
+    #   x (synced, not-synced)
+    #
+    # The four test cases below take these scenarios four at a time for each of
+    # the two settings.
+
+    def test_group_mirroring_whitelist_update(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=mirror_groups,o=test', ldap.SCOPE_SUBTREE,
+                                    '(objectClass=groupOfNames)'),
+            GROUP_TYPE=GroupOfNamesType(),
+            MIRROR_GROUPS=['mirror1', 'mirror2']
+        )
+
+        groups = {}
+        for name in ('mirror{}'.format(i) for i in range(1, 5)):
+            groups[name] = Group.objects.create(name=name)
+        alice = self.backend.populate_user('alice')
+        alice.groups = [groups['mirror2'], groups['mirror4']]
+
+        alice = self.backend.authenticate(username='alice', password='password')
+
+        self.assertEqual(
+            set(alice.groups.values_list("name", flat=True)),
+            {'mirror1', 'mirror4'}
+        )
+
+    def test_group_mirroring_whitelist_noop(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=mirror_groups,o=test', ldap.SCOPE_SUBTREE,
+                                    '(objectClass=groupOfNames)'),
+            GROUP_TYPE=GroupOfNamesType(),
+            MIRROR_GROUPS=['mirror1', 'mirror2']
+        )
+
+        groups = {}
+        for name in ('mirror{}'.format(i) for i in range(1, 5)):
+            groups[name] = Group.objects.create(name=name)
+        alice = self.backend.populate_user('alice')
+        alice.groups = [groups['mirror1'], groups['mirror3']]
+
+        alice = self.backend.authenticate(username='alice', password='password')
+
+        self.assertEqual(
+            set(alice.groups.values_list("name", flat=True)),
+            {'mirror1', 'mirror3'}
+        )
+
+    def test_group_mirroring_blacklist_update(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=mirror_groups,o=test', ldap.SCOPE_SUBTREE,
+                                    '(objectClass=groupOfNames)'),
+            GROUP_TYPE=GroupOfNamesType(),
+            MIRROR_GROUPS_EXCEPT=['mirror1', 'mirror2']
+        )
+
+        groups = {}
+        for name in ('mirror{}'.format(i) for i in range(1, 5)):
+            groups[name] = Group.objects.create(name=name)
+        alice = self.backend.populate_user('alice')
+        alice.groups = [groups['mirror2'], groups['mirror4']]
+
+        alice = self.backend.authenticate(username='alice', password='password')
+
+        self.assertEqual(
+            set(alice.groups.values_list("name", flat=True)),
+            {'mirror2', 'mirror3'}
+        )
+
+    def test_group_mirroring_blacklist_noop(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=mirror_groups,o=test', ldap.SCOPE_SUBTREE,
+                                    '(objectClass=groupOfNames)'),
+            GROUP_TYPE=GroupOfNamesType(),
+            MIRROR_GROUPS_EXCEPT=['mirror1', 'mirror2']
+        )
+
+        groups = {}
+        for name in ('mirror{}'.format(i) for i in range(1, 5)):
+            groups[name] = Group.objects.create(name=name)
+        alice = self.backend.populate_user('alice')
+        alice.groups = [groups['mirror1'], groups['mirror3']]
+
+        alice = self.backend.authenticate(username='alice', password='password')
+
+        self.assertEqual(
+            set(alice.groups.values_list("name", flat=True)),
+            {'mirror1', 'mirror3'}
+        )
 
     def test_authorize_external_users(self):
         self._init_settings(

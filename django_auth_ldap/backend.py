@@ -52,6 +52,7 @@ import operator
 import pprint
 import sys
 import traceback
+import warnings
 
 from django.contrib.auth.models import User, Group, Permission
 import django.conf
@@ -88,7 +89,7 @@ try:
 except NameError:
     basestring = str
 
-from django_auth_ldap.config import _LDAPConfig, LDAPGroupQuery, LDAPSearch
+from django_auth_ldap.config import ConfigurationWarning, _LDAPConfig, LDAPGroupQuery, LDAPSearch
 
 
 logger = _LDAPConfig.get_logger()
@@ -570,7 +571,8 @@ class _LDAPUser(object):
             self._populate_user()
             save_user = True
 
-        if self.settings.MIRROR_GROUPS:
+        if bool(self.settings.MIRROR_GROUPS) or bool(self.settings.MIRROR_GROUPS_EXCEPT):
+            self._normalize_mirror_settings()
             self._mirror_groups()
 
         # Give the client a chance to finish populating the user just before
@@ -696,6 +698,55 @@ class _LDAPUser(object):
 
         return query
 
+    def _normalize_mirror_settings(self):
+        """
+        Validates the group mirroring settings and converts them as necessary.
+        """
+        def malformed_mirror_groups_except():
+            return ImproperlyConfigured(
+                "{} must be a collection of group names".format(
+                    self.settings._name('MIRROR_GROUPS_EXCEPT')
+                )
+            )
+
+        def malformed_mirror_groups():
+            return ImproperlyConfigured(
+                "{} must be True or a collection of group names".format(
+                    self.settings._name('MIRROR_GROUPS')
+                )
+            )
+
+        mge = self.settings.MIRROR_GROUPS_EXCEPT
+        mg = self.settings.MIRROR_GROUPS
+
+        if mge is not None:
+            if isinstance(mge, (set, frozenset)):
+                pass
+            elif isinstance(mge, (list, tuple)):
+                mge = self.settings.MIRROR_GROUPS_EXCEPT = frozenset(mge)
+            else:
+                raise malformed_mirror_groups_except()
+
+            if not all(isinstance(value, basestring) for value in mge):
+                raise malformed_mirror_groups_except()
+            elif bool(mg):
+                warnings.warn(ConfigurationWarning("Ignoring {} in favor of {}".format(
+                    self.settings._name("MIRROR_GROUPS"),
+                    self.settings._name("MIRROR_GROUPS_EXCEPT")
+                )))
+                mg = self.settings.MIRROR_GROUPS = None
+
+        if mg is not None:
+            if isinstance(mg, (bool, set, frozenset)):
+                pass
+            elif isinstance(mg, (list, tuple)):
+                mg = self.settings.MIRROR_GROUPS = frozenset(mg)
+            else:
+                raise malformed_mirror_groups()
+
+            if isinstance(mg, (set, frozenset)) and (not all(isinstance(value, basestring) for value in mg)):
+                raise malformed_mirror_groups()
+
     def _mirror_groups(self):
         """
         Mirrors the user's LDAP groups in the Django database and updates the
@@ -703,6 +754,24 @@ class _LDAPUser(object):
         """
         target_group_names = frozenset(self._get_groups().get_group_names())
         current_group_names = frozenset(self._user.groups.values_list('name', flat=True).iterator())
+
+        # These were normalized to sets above.
+        MIRROR_GROUPS_EXCEPT = self.settings.MIRROR_GROUPS_EXCEPT
+        MIRROR_GROUPS = self.settings.MIRROR_GROUPS
+
+        # If the settings are white- or black-listing groups, we'll update
+        # target_group_names such that we won't modify the membership of groups
+        # beyond our purview.
+        if isinstance(MIRROR_GROUPS_EXCEPT, (set, frozenset)):
+            target_group_names = (
+                (target_group_names - MIRROR_GROUPS_EXCEPT) |
+                (current_group_names & MIRROR_GROUPS_EXCEPT)
+            )
+        elif isinstance(MIRROR_GROUPS, (set, frozenset)):
+            target_group_names = (
+                (target_group_names & MIRROR_GROUPS) |
+                (current_group_names - MIRROR_GROUPS)
+            )
 
         if target_group_names != current_group_names:
             existing_groups = list(Group.objects.filter(name__in=target_group_names).iterator())
@@ -804,8 +873,10 @@ class _LDAPUserGroups(object):
 
     def _init_group_settings(self):
         """
-        Loads the settings we need to deal with groups. Raises
-        ImproperlyConfigured if anything's not right.
+        Loads the settings we need to deal with groups.
+
+        Raises ImproperlyConfigured if anything's not right.
+
         """
         self._group_type = self.settings.GROUP_TYPE
         if self._group_type is None:
@@ -920,7 +991,8 @@ class LDAPSettings(object):
         'GROUP_CACHE_TIMEOUT': None,
         'GROUP_SEARCH': None,
         'GROUP_TYPE': None,
-        'MIRROR_GROUPS': False,
+        'MIRROR_GROUPS': None,
+        'MIRROR_GROUPS_EXCEPT': None,
         'PERMIT_EMPTY_PASSWORD': False,
         'PROFILE_ATTR_MAP': {},
         'PROFILE_FLAGS_BY_GROUP': {},

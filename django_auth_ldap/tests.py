@@ -350,6 +350,16 @@ class LDAPTest(TestCase):
             ['initialize', 'simple_bind_s']
         )
 
+    @override_settings(AUTH_LDAP_USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'))
+    def test_login_with_multiple_auth_backends(self):
+        auth = self.client.login(username='alice', password='password')
+        self.assertTrue(auth)
+
+    @override_settings(AUTH_LDAP_USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'))
+    def test_bad_login_with_multiple_auth_backends(self):
+        auth = self.client.login(username='invalid', password='i_do_not_exist')
+        self.assertFalse(auth)
+
     def test_simple_bind_escaped(self):
         """ Bind with a username that requires escaping. """
         self._init_settings(

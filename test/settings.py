@@ -31,3 +31,8 @@ INSTALLED_APPS = (
 MIDDLEWARE_CLASSES = []
 
 AUTH_USER_MODEL = 'auth.User'
+
+AUTHENTICATION_BACKENDS = [
+    'django_auth_ldap.backend.LDAPBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]

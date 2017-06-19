@@ -1,5 +1,7 @@
-python2 = python
+python2 = python2.7
 python3 = python3.5
+
+.PHONY: full sdist wheel sign upload upload_docs clean
 
 
 full: clean sdist wheel
@@ -22,6 +24,13 @@ sign:
 
 upload: sign
 	twine upload dist/*
+
+docs:
+	@cd docs
+	make html zip
+
+upload_docs: docs
+	python setup.py upload_docs --upload-dir docs/build/html
 
 clean:
 	-rm -r build dist *.egg-info

@@ -1,3 +1,14 @@
+v1.2.13 - 2017-06-19 - Selective group mirroring
+------------------------------------------------
+
+- Support selective group mirroring with :setting:`AUTH_LDAP_MIRROR_GROUPS` and
+  :setting:`AUTH_LDAP_MIRROR_GROUPS_EXCEPT`.
+
+- Fix `#73`_: Work around Django 1.11 bug with multiple authentication backends.
+
+.. _#73: https://bitbucket.org/psagers/django-auth-ldap/issues/73/
+
+
 v1.2.12 - 2017-05-20 - Complex group queries
 --------------------------------------------
 

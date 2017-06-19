@@ -10,7 +10,7 @@ PY3 = (sys.version_info[0] == 3)
 
 setup(
     name="django-auth-ldap",
-    version="1.2.12",
+    version="1.2.13",
     description="Django LDAP authentication backend",
     long_description=open('README').read(),
     url="http://bitbucket.org/psagers/django-auth-ldap/",
@@ -23,7 +23,6 @@ setup(
         "Environment :: Web Environment",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.3",
@@ -31,7 +30,6 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Framework :: Django",
-        "Framework :: Django :: 1.4",
         "Framework :: Django :: 1.5",
         "Framework :: Django :: 1.6",
         "Framework :: Django :: 1.7",

@@ -39,6 +39,7 @@ except ImportError:
 import django
 from django.conf import settings
 from django.contrib.auth.models import User, Permission, Group
+from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 import django.db.models.signals
 from django.test import TestCase
@@ -271,12 +272,17 @@ class LDAPTest(TestCase):
         warnings.filterwarnings(
             'ignore', message='.*?AUTH_PROFILE_MODULE', category=DeprecationWarning, module='django_auth_ldap'
         )
+        warnings.filterwarnings(
+            'ignore', category=UnicodeWarning, module='mockldap.ldapobject'
+        )
 
     @classmethod
     def tearDownClass(cls):
         del cls.mockldap
 
     def setUp(self):
+        cache.clear()
+
         self.mockldap.start()
         self.ldapobj = self.mockldap['ldap://localhost']
 

@@ -472,14 +472,21 @@ class _LDAPUser(object):
 
     def _load_user_dn(self):
         """
-        Populates self._user_dn with the distinguished name of our user. This
-        will either construct the DN from a template in
+        Populates self._user_dn with the distinguished name of our user.
+
+        This will either construct the DN from a template in
         AUTH_LDAP_USER_DN_TEMPLATE or connect to the server and search for it.
+        If we have to search, we'll cache the DN.
+
         """
         if self._using_simple_bind_mode():
-            self._construct_simple_user_dn()
+            self._user_dn = self._construct_simple_user_dn()
         else:
-            self._search_for_user_dn()
+            cache_key = 'django_auth_ldap.user_dn.{}'.format(self._username)
+            self._user_dn = cache_get_or_set(
+                cache, cache_key, self._search_for_user_dn,
+                self.settings.GROUP_CACHE_TIMEOUT
+            )
 
     def _using_simple_bind_mode(self):
         return (self.settings.USER_DN_TEMPLATE is not None)
@@ -488,7 +495,9 @@ class _LDAPUser(object):
         template = self.settings.USER_DN_TEMPLATE
         username = ldap.dn.escape_dn_chars(self._username)
 
-        self._user_dn = template % {'user': username}
+        user_dn = template % {'user': username}
+
+        return user_dn
 
     def _search_for_user_dn(self):
         """
@@ -500,8 +509,12 @@ class _LDAPUser(object):
             raise ImproperlyConfigured('AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance.')
 
         results = search.execute(self.connection, {'user': self._username})
-        if results is not None and len(results) == 1:
-            (self._user_dn, self._user_attrs) = next(iter(results))
+        if (results is not None) and (len(results) == 1):
+            (user_dn, self._user_attrs) = next(iter(results))
+        else:
+            user_dn = None
+
+        return user_dn
 
     def _check_requirements(self):
         """
@@ -1021,3 +1034,15 @@ class LDAPSettings(object):
 
     def _name(self, suffix):
         return (self._prefix + suffix)
+
+
+def cache_get_or_set(cache, key, default, timeout=None):
+    """
+    Backport of Django 1.9's cache.get_or_set.
+    """
+    value = cache.get(key)
+    if value is None:
+        value = default() if callable(default) else default
+        cache.set(key, value, timeout)
+
+    return value

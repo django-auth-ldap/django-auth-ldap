@@ -1,3 +1,12 @@
+v1.2.14 - 2017-07-24 - Usr DN caching
+-------------------------------------
+
+- Fix `#82`_: Under search/bind mode, the user's DN will now be cached for
+  performance.
+
+.. _#82: https://bitbucket.org/illocution/django-auth-ldap/issues/82/
+
+
 v1.2.13 - 2017-06-19 - Selective group mirroring
 ------------------------------------------------
 
@@ -6,7 +15,7 @@ v1.2.13 - 2017-06-19 - Selective group mirroring
 
 - Fix `#73`_: Work around Django 1.11 bug with multiple authentication backends.
 
-.. _#73: https://bitbucket.org/psagers/django-auth-ldap/issues/73/
+.. _#73: https://bitbucket.org/illocution/django-auth-ldap/issues/73/
 
 
 v1.2.12 - 2017-05-20 - Complex group queries
@@ -30,7 +39,7 @@ v1.2.9 - 2017-02-14 - Fix python-ldap incompatibility
 - Fix `#65`_: Ignore python-ldap documentation and accept
   :data:`ldap.RES_SEARCH_ENTRY` from :meth:`ldap.LDAPObject.result`.
 
-.. _#65: https://bitbucket.org/psagers/django-auth-ldap/issues/65/
+.. _#65: https://bitbucket.org/illocution/django-auth-ldap/issues/65/
 
 
 v1.2.8 - 2016-04-18 - AUTH_LDAP_USER_ATTRLIST
@@ -80,7 +89,7 @@ v1.2.3 - 2014-11-18
 - Accept (and ignore) arbitrary keyword arguments to
   :meth:`~django_auth_ldap.backend.LDAPBackend.authenticate`.
 
-.. _#50: https://bitbucket.org/psagers/django-auth-ldap/issue/50/
+.. _#50: https://bitbucket.org/illocution/django-auth-ldap/issue/50/
 
 
 v1.2.2 - 2014-09-22
@@ -120,7 +129,7 @@ v1.1.8 - 2014-02-01
 
 * Tox no longer supports Python 2.5, so our tests now run on 2.6 and 2.7 only.
 
-.. _#43: https://bitbucket.org/psagers/django-auth-ldap/issue/43/
+.. _#43: https://bitbucket.org/illocution/django-auth-ldap/issue/43/
 
 
 v1.1.7 - 2013-11-19
@@ -138,7 +147,7 @@ v1.1.5 - 2013-10-25
 * Support multiple group DNs for \*_FLAGS_BY_GROUP.
 
 
-.. _#41: https://bitbucket.org/psagers/django-auth-ldap/issue/41/
+.. _#41: https://bitbucket.org/illocution/django-auth-ldap/issue/41/
 
 
 v1.1.4 - 2013-03-09
@@ -161,8 +170,8 @@ v1.1.3 - 2013-01-05
 * Fix `#39`_: Add support for pickling LDAP-authenticated users.
 
 
-.. _#33: https://bitbucket.org/psagers/django-auth-ldap/issue/33/
-.. _#39: https://bitbucket.org/psagers/django-auth-ldap/issue/39/
+.. _#33: https://bitbucket.org/illocution/django-auth-ldap/issue/33/
+.. _#39: https://bitbucket.org/illocution/django-auth-ldap/issue/39/
 
 
 .. vim: ft=rst nospell tw=80

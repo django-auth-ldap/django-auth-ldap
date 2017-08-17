@@ -8,8 +8,11 @@ This version is supported on Python 2.7, 3.3, 3.4, 3.5, and 3.6; and Django >=
 <https://pypi.python.org/pypi/python-ldap>`_ >= 2.0; under Python 3, it uses
 `pyldap <https://pypi.python.org/pypi/pyldap>`_.
 
-Full documentation can be found at https://django-auth-ldap.readthedocs.io/;
-following is an example configuration, just to whet your appetite::
+* Repository: https://bitbucket.org/illocution/django-auth-ldap
+* Documentation: https://django-auth-ldap.readthedocs.io/
+* Mailing list: http://groups.google.com/group/django-auth-ldap
+
+Following is an example configuration, just to whet your appetite::
 
     import ldap
     from django_auth_ldap.config import LDAPSearch, GroupOfNamesType

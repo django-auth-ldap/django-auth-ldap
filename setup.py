@@ -4,18 +4,20 @@ import sys
 
 from setuptools import setup
 
+import django_auth_ldap
+
 
 PY3 = (sys.version_info[0] == 3)
 
 
 setup(
     name="django-auth-ldap",
-    version="1.2.14",
+    version=django_auth_ldap.version_string,
     description="Django LDAP authentication backend",
     long_description=open('README').read(),
-    url="http://bitbucket.org/psagers/django-auth-ldap/",
+    url="http://bitbucket.org/illocution/django-auth-ldap",
     author="Peter Sagerson",
-    author_email="psagers.pypi@ignorare.net",
+    author_email="psagers@ignorare.net",
     license="BSD",
     packages=["django_auth_ldap"],
     classifiers=[

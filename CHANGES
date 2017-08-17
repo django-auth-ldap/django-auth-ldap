@@ -1,5 +1,14 @@
-v1.2.14 - 2017-07-24 - Usr DN caching
--------------------------------------
+v1.2.15 - 2017-08-17 - Documentation improvements
+-------------------------------------------------
+
+- Fix `#83`_: Improved documentation for finding the official repository and
+  contributing.
+
+.. _#83: https://bitbucket.org/illocution/django-auth-ldap/issues/83/
+
+
+v1.2.14 - 2017-07-24 - User DN caching
+--------------------------------------
 
 - Fix `#82`_: Under search/bind mode, the user's DN will now be cached for
   performance.

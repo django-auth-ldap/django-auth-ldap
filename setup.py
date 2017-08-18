@@ -15,7 +15,7 @@ setup(
     version=django_auth_ldap.version_string,
     description="Django LDAP authentication backend",
     long_description=open('README').read(),
-    url="http://bitbucket.org/illocution/django-auth-ldap",
+    url="https://bitbucket.org/illocution/django-auth-ldap",
     author="Peter Sagerson",
     author_email="psagers@ignorare.net",
     license="BSD",

@@ -8,7 +8,7 @@ Install the package with pip:
     $ pip install django-auth-ldap
 
 Under Python 2, it requires `python-ldap`_ >= 2.0; under Python 3, it uses
-`pyldap`_. In both cases, you'll need the `OpenLDAP`_ libraries and headers
+`pyldap`_. In either case, you'll need the `OpenLDAP`_ libraries and headers
 available on your system.
 
 To use the auth backend in a Django project, add
@@ -36,10 +36,10 @@ models, but it does assume that a database is present.
 
     .. code-block:: python
 
-        AUTHENTICATION_BACKENDS = (
+        AUTHENTICATION_BACKENDS = [
             'django_auth_ldap.backend.LDAPBackend',
             'django.contrib.auth.backends.ModelBackend',
-        )
+        ]
 
 
 .. _`python-ldap`: https://pypi.python.org/pypi/python-ldap

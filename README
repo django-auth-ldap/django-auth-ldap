@@ -10,7 +10,7 @@ This version is supported on Python 2.7, 3.3, 3.4, 3.5, and 3.6; and Django >=
 
 * Repository: https://bitbucket.org/illocution/django-auth-ldap
 * Documentation: https://django-auth-ldap.readthedocs.io/
-* Mailing list: http://groups.google.com/group/django-auth-ldap
+* Mailing list: https://groups.google.com/group/django-auth-ldap
 
 Following is an example configuration, just to whet your appetite::
 

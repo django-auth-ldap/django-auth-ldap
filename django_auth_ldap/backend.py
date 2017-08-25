@@ -59,6 +59,7 @@ import django.conf
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
+from django.utils import six
 try:
     from django.utils.encoding import force_str
 except ImportError:  # Django < 1.5
@@ -82,12 +83,6 @@ except ImportError:
 
     def get_user_username(user):
         return user.username
-
-# Small compatibility hack
-try:
-    basestring
-except NameError:
-    basestring = str
 
 from django_auth_ldap.config import ConfigurationWarning, _LDAPConfig, LDAPGroupQuery, LDAPSearch
 
@@ -702,7 +697,7 @@ class _LDAPUser(object):
         """
         if isinstance(group_dns, LDAPGroupQuery):
             query = group_dns
-        elif isinstance(group_dns, basestring):
+        elif isinstance(group_dns, six.string_types):
             query = LDAPGroupQuery(group_dns)
         elif isinstance(group_dns, (list, tuple)) and len(group_dns) > 0:
             query = reduce(operator.or_, map(LDAPGroupQuery, group_dns))
@@ -740,7 +735,7 @@ class _LDAPUser(object):
             else:
                 raise malformed_mirror_groups_except()
 
-            if not all(isinstance(value, basestring) for value in mge):
+            if not all(isinstance(value, six.string_types) for value in mge):
                 raise malformed_mirror_groups_except()
             elif bool(mg):
                 warnings.warn(ConfigurationWarning("Ignoring {} in favor of {}".format(
@@ -757,7 +752,7 @@ class _LDAPUser(object):
             else:
                 raise malformed_mirror_groups()
 
-            if isinstance(mg, (set, frozenset)) and (not all(isinstance(value, basestring) for value in mg)):
+            if isinstance(mg, (set, frozenset)) and (not all(isinstance(value, six.string_types) for value in mg)):
                 raise malformed_mirror_groups()
 
     def _mirror_groups(self):

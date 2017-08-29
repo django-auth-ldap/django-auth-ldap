@@ -1,25 +1,18 @@
 from django.conf import settings
+from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 
 
-# Support for testing Django 1.5's custom user models.
-try:
-    from django.contrib.auth.models import AbstractBaseUser
-except ImportError:
-    from django.contrib.auth.models import User
+class TestUser(AbstractBaseUser):
+    identifier = models.CharField(max_length=40, unique=True, db_index=True)
 
-    TestUser = User
-else:
-    class TestUser(AbstractBaseUser):
-        identifier = models.CharField(max_length=40, unique=True, db_index=True)
+    USERNAME_FIELD = 'identifier'
 
-        USERNAME_FIELD = 'identifier'
+    def get_full_name(self):
+        return self.identifier
 
-        def get_full_name(self):
-            return self.identifier
-
-        def get_short_name(self):
-            return self.identifier
+    def get_short_name(self):
+        return self.identifier
 
 
 class TestProfile(models.Model):

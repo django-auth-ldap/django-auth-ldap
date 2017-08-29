@@ -11,13 +11,6 @@ like to override this behavior. See
 :meth:`~django_auth_ldap.backend.LDAPBackend.get_user_model` if you'd like to
 substitute a proxy model.
 
-.. note::
-
-    Prior to Django 1.5, user objects were always instances of
-    :class:`~django.contrib.auth.models.User`. Current versions of Django
-    support custom user models via the :setting:`AUTH_USER_MODEL` setting. As of
-    version 1.1.4, django-auth-ldap will respect custom user models.
-
 The only required field for a user is the username, which we obviously have. The
 default :class:`~django.contrib.auth.models.User` model can be picky about the
 characters allowed in usernames, so

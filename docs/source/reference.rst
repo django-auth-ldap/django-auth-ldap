@@ -615,11 +615,9 @@ Backend
 
         Returns the user model that
         :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_create_user` will
-        instantiate. In Django 1.5, custom user models will be respected; in
-        earlier versions, the model defaults to
-        :class:`django.contrib.auth.models.User`. Subclasses would most likely
-        override this in order to substitute a :ref:`proxy model
-        <proxy-models>`.
+        instantiate. By default, custom user models will be respected.
+        Subclasses would most likely override this in order to substitute a
+        :ref:`proxy model <proxy-models>`.
 
     .. method:: get_or_create_user(self, username, ldap_user)
 

@@ -43,11 +43,7 @@ from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 import django.db.models.signals
 from django.test import TestCase
-
-try:
-    from django.utils.encoding import force_str
-except ImportError:  # Django < 1.5
-    from django.utils.encoding import smart_str as force_str
+from django.utils.encoding import force_str
 
 try:
     from django.utils import unittest

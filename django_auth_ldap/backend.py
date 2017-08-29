@@ -54,35 +54,20 @@ import sys
 import traceback
 import warnings
 
-from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 import django.conf
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 from django.utils import six
-try:
-    from django.utils.encoding import force_str
-except ImportError:  # Django < 1.5
-    from django.utils.encoding import smart_str as force_str
+from django.utils.encoding import force_str
 
 # Django 1.7 Removed custom profiles
 try:
     from django.contrib.auth.models import SiteProfileNotAvailable
 except ImportError:
     SiteProfileNotAvailable = Exception
-
-# Support Django 1.5's custom user models
-try:
-    from django.contrib.auth import get_user_model
-
-    def get_user_username(user):
-        return user.get_username()
-except ImportError:
-    def get_user_model():
-        return User
-
-    def get_user_username(user):
-        return user.username
 
 from django_auth_ldap.config import ConfigurationWarning, _LDAPConfig, LDAPGroupQuery, LDAPSearch
 
@@ -312,7 +297,7 @@ class _LDAPUser(object):
 
     def _set_authenticated_user(self, user):
         self._user = user
-        self._username = self.backend.django_to_ldap_username(get_user_username(user))
+        self._username = self.backend.django_to_ldap_username(user.get_username())
 
         user.ldap_user = self
         user.ldap_username = self._username
@@ -594,8 +579,8 @@ class _LDAPUser(object):
             self._user.save()
 
         # We populate the profile after the user model is saved to give the
-        # client a chance to create the profile. Custom user models in Django
-        # 1.5 probably won't have a get_profile method.
+        # client a chance to create the profile. Starting with Django 1.7, user
+        # models won't have a get_profile method.
         if should_populate and self._should_populate_profile():
             self._populate_and_save_user_profile()
 
@@ -636,7 +621,7 @@ class _LDAPUser(object):
             profile = self._user.get_profile()
             save_profile = False
 
-            logger.debug("Populating Django user profile for %s", get_user_username(self._user))
+            logger.debug("Populating Django user profile for %s", self._user.get_username())
 
             save_profile = self._populate_profile_from_attributes(profile) or save_profile
             save_profile = self._populate_profile_from_group_memberships(profile) or save_profile
@@ -648,7 +633,7 @@ class _LDAPUser(object):
             if save_profile:
                 profile.save()
         except (SiteProfileNotAvailable, ObjectDoesNotExist):
-            logger.debug("Django user %s does not have a profile to populate", get_user_username(self._user))
+            logger.debug("Django user %s does not have a profile to populate", self._user.get_username())
 
     def _populate_profile_from_attributes(self, profile):
         """

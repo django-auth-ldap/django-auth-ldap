@@ -225,8 +225,8 @@ class LDAPSearch(object):
             filterargs = tuple(self.ldap.filter.escape_filter_chars(value)
                                for value in filterargs)
         elif isinstance(filterargs, dict):
-            filterargs = dict((key, self.ldap.filter.escape_filter_chars(value))
-                              for key, value in filterargs.items())
+            filterargs = {key: self.ldap.filter.escape_filter_chars(value)
+                          for key, value in filterargs.items()}
         else:
             raise TypeError("filterargs must be a tuple or dict.")
 
@@ -542,14 +542,14 @@ class NestedMemberDNGroupType(LDAPGroupType):
         pruned.
         """
         group_info_map = {}  # Maps group_dn to group_info of groups we've found
-        member_dn_set = set([ldap_user.dn])  # Member DNs to search with next
+        member_dn_set = {ldap_user.dn}  # Member DNs to search with next
         handled_dn_set = set()  # Member DNs that we've already searched with
 
         while len(member_dn_set) > 0:
             group_infos = self.find_groups_with_any_member(member_dn_set,
                                                            group_search,
                                                            ldap_user.connection)
-            new_group_info_map = dict([(info[0], info) for info in group_infos])
+            new_group_info_map = {info[0]: info for info in group_infos}
             group_info_map.update(new_group_info_map)
             handled_dn_set.update(member_dn_set)
 

@@ -335,9 +335,9 @@ class LDAPTest(TestCase):
 
     def test_default_settings(self):
         class MyBackend(backend.LDAPBackend):
-            default_settings = dict(
-                USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
-            )
+            default_settings = {
+                'USER_DN_TEMPLATE': 'uid=%(user)s,ou=people,o=test',
+            }
         self.backend = MyBackend()
 
         user_count = User.objects.count()
@@ -916,7 +916,7 @@ class LDAPTest(TestCase):
 
         self.assertTrue(alice is None)
         self.assertTrue(bob is not None)
-        self.assertEqual(bob.ldap_user.group_names, set(['other_gon']))
+        self.assertEqual(bob.ldap_user.group_names, {'other_gon'})
 
     def test_nested_group_union(self):
         self._init_settings(
@@ -934,7 +934,7 @@ class LDAPTest(TestCase):
 
         self.assertTrue(alice is None)
         self.assertTrue(bob is not None)
-        self.assertEqual(bob.ldap_user.group_names, set(['other_gon']))
+        self.assertEqual(bob.ldap_user.group_names, {'other_gon'})
 
     def test_denied_group(self):
         self._init_settings(
@@ -965,7 +965,7 @@ class LDAPTest(TestCase):
 
         self.assertEqual(
             alice.ldap_user.group_dns,
-            set((g[0].lower() for g in [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon]))
+            {g[0].lower() for g in [self.active_gon, self.staff_gon, self.superuser_gon, self.nested_gon]}
         )
 
     def test_group_names(self):
@@ -976,7 +976,7 @@ class LDAPTest(TestCase):
         )
         alice = self.backend.authenticate(username='alice', password='password')
 
-        self.assertEqual(alice.ldap_user.group_names, set(['active_gon', 'staff_gon', 'superuser_gon', 'nested_gon']))
+        self.assertEqual(alice.ldap_user.group_names, {'active_gon', 'staff_gon', 'superuser_gon', 'nested_gon'})
 
     def test_dn_group_membership(self):
         self._init_settings(
@@ -1129,8 +1129,8 @@ class LDAPTest(TestCase):
         alice = User.objects.create(username='alice')
         alice = self.backend.get_user(alice.pk)
 
-        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
-        self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
+        self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
 
@@ -1164,8 +1164,8 @@ class LDAPTest(TestCase):
         alice = User.objects.create(username='alice')
         alice = self.backend.get_user(alice.pk)
 
-        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
-        self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
+        self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
 
@@ -1184,8 +1184,8 @@ class LDAPTest(TestCase):
         alice = User.objects.create(username='alice')
         alice = self.backend.get_user(alice.pk)
 
-        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
-        self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
+        self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
 
@@ -1202,8 +1202,8 @@ class LDAPTest(TestCase):
         alice = User.objects.create(username='alice')
         alice = self.backend.get_user(alice.pk)
 
-        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
-        self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
+        self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
 
@@ -1238,7 +1238,7 @@ class LDAPTest(TestCase):
             alice = self.backend.get_user(alice_id)
             self.assertEqual(
                 self.backend.get_group_permissions(alice),
-                set(["auth.add_user", "auth.change_user"])
+                {"auth.add_user", "auth.change_user"}
             )
 
             bob = self.backend.get_user(bob_id)
@@ -1280,8 +1280,8 @@ class LDAPTest(TestCase):
 
         self.assertEqual(
             set(Group.objects.all().values_list('name', flat=True)),
-            set(['active_gon', 'staff_gon', 'superuser_gon', 'nested_gon',
-                 'parent_gon', 'circular_gon'])
+            {'active_gon', 'staff_gon', 'superuser_gon', 'nested_gon',
+             'parent_gon', 'circular_gon'}
         )
         self.assertEqual(set(alice.groups.all()), set(Group.objects.all()))
 
@@ -1396,7 +1396,7 @@ class LDAPTest(TestCase):
 
         alice = User.objects.create(username='alice')
 
-        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
 
     def test_authorize_external_unknown(self):
         self._init_settings(
@@ -1579,8 +1579,8 @@ class LDAPTest(TestCase):
         alice.ldap_user.backend.settings = alice0.ldap_user.backend.settings
 
         self.assertTrue(alice is not None)
-        self.assertEqual(self.backend.get_group_permissions(alice), set(["auth.add_user", "auth.change_user"]))
-        self.assertEqual(self.backend.get_all_permissions(alice), set(["auth.add_user", "auth.change_user"]))
+        self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
+        self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
 

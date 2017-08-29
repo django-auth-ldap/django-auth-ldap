@@ -110,8 +110,8 @@ class LDAPBackend(object):
         """
         Exclude certain cached properties from pickling.
         """
-        return dict((k, v) for (k, v) in self.__dict__.items()
-                    if k not in ['_settings', '_ldap'])
+        return {k: v for k, v in self.__dict__.items()
+                if k not in ['_settings', '_ldap']}
 
     def _get_settings(self):
         if self._settings is None:
@@ -292,8 +292,8 @@ class _LDAPUser(object):
         Most of our properties are cached from the LDAP server. We only want to
         pickle a few crucial things.
         """
-        return dict((k, v) for (k, v) in self.__dict__.items()
-                    if k in ['backend', '_username', '_user'])
+        return {k: v for k, v in self.__dict__.items()
+                if k in ['backend', '_username', '_user']}
 
     def _set_authenticated_user(self, user):
         self._user = user
@@ -790,7 +790,7 @@ class _LDAPUser(object):
         perms = perms.values_list('content_type__app_label', 'codename')
         perms = perms.order_by()
 
-        self._group_permissions = set(["%s.%s" % (ct, name) for ct, name in perms])
+        self._group_permissions = {"%s.%s" % (ct, name) for ct, name in perms}
 
     def _get_groups(self):
         """
@@ -889,10 +889,10 @@ class _LDAPUserGroups(object):
 
         if self._group_names is None:
             group_infos = self._get_group_infos()
-            self._group_names = set(
+            self._group_names = {
                 self._group_type.group_name_from_info(group_info)
                 for group_info in group_infos
-            )
+            }
             self._cache_attr("_group_names")
 
         return self._group_names
@@ -925,7 +925,7 @@ class _LDAPUserGroups(object):
         """
         if self._group_dns is None:
             group_infos = self._get_group_infos()
-            self._group_dns = set(group_info[0] for group_info in group_infos)
+            self._group_dns = {group_info[0] for group_info in group_infos}
 
         return self._group_dns
 

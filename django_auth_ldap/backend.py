@@ -54,14 +54,15 @@ import sys
 import traceback
 import warnings
 
+import django.conf
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-import django.conf
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 from django.utils import six
 from django.utils.encoding import force_str
+
 from django_auth_ldap.config import ConfigurationWarning, _LDAPConfig, LDAPGroupQuery, LDAPSearch
 
 

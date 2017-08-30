@@ -41,18 +41,10 @@ and arguments are included for completeness.
         "email": "mail"
     }
 
-    AUTH_LDAP_PROFILE_ATTR_MAP = {
-        "employee_number": "employeeNumber"
-    }
-
     AUTH_LDAP_USER_FLAGS_BY_GROUP = {
         "is_active": "cn=active,ou=django,ou=groups,dc=example,dc=com",
         "is_staff": "cn=staff,ou=django,ou=groups,dc=example,dc=com",
         "is_superuser": "cn=superuser,ou=django,ou=groups,dc=example,dc=com"
-    }
-
-    AUTH_LDAP_PROFILE_FLAGS_BY_GROUP = {
-        "is_awesome": "cn=awesome,ou=django,ou=groups,dc=example,dc=com",
     }
 
     # This is the default, but I like to be explicit.

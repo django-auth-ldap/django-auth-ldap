@@ -42,35 +42,27 @@ Populating Users
 ----------------
 
 You can perform arbitrary population of your user models by adding listeners to
-a pair of :mod:`Django signals <django:django.dispatch>`:
-:data:`django_auth_ldap.backend.populate_user` and
-:data:`django_auth_ldap.backend.populate_user_profile`. These are sent after the
+the :mod:`Django signal <django:django.dispatch>`:
+:data:`django_auth_ldap.backend.populate_user`. This signal is sent after the
 user object has been created and any configured attribute mapping has been
 applied (see below). You can use this to propagate information from the LDAP
-directory to the user and profile objects any way you like. The user instance
-will be saved automatically after the signal handlers are run.
+directory to the user object any way you like. The user instance will be saved
+automatically after the signal handlers are run.
 
 If you need an attribute that isn't included by default in the LDAP search
 results, see :setting:`AUTH_LDAP_USER_ATTRLIST`.
-
-.. note::
-
-    Django 1.7 and later do not directly support user profiles. In these
-    versions, :data:`~django_auth_ldap.backend.populate_user_profile` will not
-    be sent.
 
 
 Easy Attributes
 ---------------
 
 If you just want to copy a few attribute values directly from the user's LDAP
-directory entry to their Django user, a pair of settings,
-:setting:`AUTH_LDAP_USER_ATTR_MAP` and :setting:`AUTH_LDAP_PROFILE_ATTR_MAP`,
-make it easy. These are dictionaries that map user and profile model keys,
-respectively, to (case-insensitive) LDAP attribute names::
+directory entry to their Django user, the setting,
+:setting:`AUTH_LDAP_USER_ATTR_MAP`, makes it easy. This is a dictionary that
+maps user model keys, respectively, to (case-insensitive) LDAP attribute
+names::
 
     AUTH_LDAP_USER_ATTR_MAP = {"first_name": "givenName", "last_name": "sn"}
-    AUTH_LDAP_PROFILE_ATTR_MAP = {"home_directory": "homeDirectory"}
 
 Only string fields can be mapped to attributes. Boolean fields can be defined by
 group membership::
@@ -84,18 +76,9 @@ group membership::
         "is_superuser": "cn=superuser,ou=groups,dc=example,dc=com"
     }
 
-    AUTH_LDAP_PROFILE_FLAGS_BY_GROUP = {
-        "is_awesome": ["cn=awesome,ou=groups,dc=example,dc=com"]
-    }
-
-Values in these dictionaries may be simple DNs (as strings), lists or tuples of
+Values in this dictionary may be simple DNs (as strings), lists or tuples of
 DNs, or :class:`~django_auth_ldap.config.LDAPGroupQuery` instances. Lists are
 converted to queries joined by ``|``.
-
-.. note::
-
-    Django 1.7 and later do not directly support user profiles. In these
-    versions, LDAPBackend will ignore the profile-related settings.
 
 Remember that if these settings don't do quite what you want, you can always use
 the signals described in the previous section to implement your own logic.

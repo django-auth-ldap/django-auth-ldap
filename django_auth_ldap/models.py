@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 
@@ -13,13 +12,3 @@ class TestUser(AbstractBaseUser):
 
     def get_short_name(self):
         return self.identifier
-
-
-class TestProfile(models.Model):
-    """
-    A user profile model for use by unit tests. This has nothing to do with the
-    authentication backend itself.
-    """
-    user = models.OneToOneField(settings.AUTH_USER_MODEL)
-    is_special = models.BooleanField(default=False)
-    populated = models.BooleanField(default=False)

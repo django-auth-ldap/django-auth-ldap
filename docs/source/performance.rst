@@ -16,11 +16,11 @@ order of impact.
        :setting:`AUTH_LDAP_MIRROR_GROUPS` and relying on
        :class:`~django.contrib.auth.backends.ModelBackend` to supply group
        permissions.
-    #. **Don't access user.ldap_user.***. These properties are only cached
-       on a per-request basis. If you can propagate LDAP attributes to a
-       :class:`~django.contrib.auth.models.User` or profile object, they will
-       only be updated at login. ``user.ldap_user.attrs`` triggers an LDAP
-       connection for every request in which it's accessed. If you're not using
+    #. **Don't access user.ldap_user.***. These properties are only cached on a
+       per-request basis. If you can propagate LDAP attributes to a
+       :class:`~django.contrib.auth.models.User`, they will only be updated at
+       login. ``user.ldap_user.attrs`` triggers an LDAP connection for every
+       request in which it's accessed. If you're not using
        :setting:`AUTH_LDAP_USER_DN_TEMPLATE`, then accessing
        ``user.ldap_user.dn`` will also trigger an LDAP connection.
     #. **Use simpler group types**. Some grouping mechanisms are more expensive

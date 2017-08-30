@@ -62,13 +62,6 @@ from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 from django.utils import six
 from django.utils.encoding import force_str
-
-# Django 1.7 Removed custom profiles
-try:
-    from django.contrib.auth.models import SiteProfileNotAvailable
-except ImportError:
-    SiteProfileNotAvailable = Exception
-
 from django_auth_ldap.config import ConfigurationWarning, _LDAPConfig, LDAPGroupQuery, LDAPSearch
 
 
@@ -77,9 +70,8 @@ logger = _LDAPConfig.get_logger()
 
 # Exported signals
 
-# Allows clients to perform custom user/profile population.
+# Allows clients to perform custom user population.
 populate_user = django.dispatch.Signal(providing_args=["user", "ldap_user"])
-populate_user_profile = django.dispatch.Signal(providing_args=["profile", "ldap_user"])
 
 # Allows clients to inspect and perform special handling of LDAPError
 # exceptions. Exceptions raised by handlers will be propagated out.
@@ -578,12 +570,6 @@ class _LDAPUser(object):
         if save_user:
             self._user.save()
 
-        # We populate the profile after the user model is saved to give the
-        # client a chance to create the profile. Starting with Django 1.7, user
-        # models won't have a get_profile method.
-        if should_populate and self._should_populate_profile():
-            self._populate_and_save_user_profile()
-
     def _populate_user(self):
         """
         Populates our User object with information from the LDAP directory.
@@ -607,69 +593,6 @@ class _LDAPUser(object):
 
             value = query.resolve(self)
             setattr(self._user, field, value)
-
-    def _should_populate_profile(self):
-        return ((django.VERSION < (1, 7)) and
-                (getattr(django.conf.settings, 'AUTH_PROFILE_MODULE', None) is not None) and
-                hasattr(self._user, 'get_profile'))
-
-    def _populate_and_save_user_profile(self):
-        """
-        Populates a User profile object with fields from the LDAP directory.
-        """
-        try:
-            profile = self._user.get_profile()
-            save_profile = False
-
-            logger.debug("Populating Django user profile for %s", self._user.get_username())
-
-            save_profile = self._populate_profile_from_attributes(profile) or save_profile
-            save_profile = self._populate_profile_from_group_memberships(profile) or save_profile
-
-            signal_responses = populate_user_profile.send(self.backend.__class__, profile=profile, ldap_user=self)
-            if len(signal_responses) > 0:
-                save_profile = True
-
-            if save_profile:
-                profile.save()
-        except (SiteProfileNotAvailable, ObjectDoesNotExist):
-            logger.debug("Django user %s does not have a profile to populate", self._user.get_username())
-
-    def _populate_profile_from_attributes(self, profile):
-        """
-        Populate the given profile object from AUTH_LDAP_PROFILE_ATTR_MAP.
-        Returns True if the profile was modified.
-        """
-        save_profile = False
-
-        for field, attr in self.settings.PROFILE_ATTR_MAP.items():
-            try:
-                # user_attrs is a hash of lists of attribute values
-                setattr(profile, field, self.attrs[attr][0])
-                save_profile = True
-            except Exception:
-                logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
-
-        return save_profile
-
-    def _populate_profile_from_group_memberships(self, profile):
-        """
-        Populate the given profile object from AUTH_LDAP_PROFILE_FLAGS_BY_GROUP.
-        Returns True if the profile was modified.
-        """
-        save_profile = False
-
-        for field, group_dns in self.settings.PROFILE_FLAGS_BY_GROUP.items():
-            try:
-                query = self._normalize_group_dns(group_dns)
-            except ValueError as e:
-                raise ImproperlyConfigured("{}: {}", self.settings._name('PROFILE_FLAGS_BY_GROUP'), e)
-
-            value = query.resolve(self)
-            setattr(profile, field, value)
-            save_profile = True
-
-        return save_profile
 
     def _normalize_group_dns(self, group_dns):
         """
@@ -987,8 +910,6 @@ class LDAPSettings(object):
         'MIRROR_GROUPS': None,
         'MIRROR_GROUPS_EXCEPT': None,
         'PERMIT_EMPTY_PASSWORD': False,
-        'PROFILE_ATTR_MAP': {},
-        'PROFILE_FLAGS_BY_GROUP': {},
         'REQUIRE_GROUP': None,
         'SERVER_URI': 'ldap://localhost',
         'START_TLS': False,

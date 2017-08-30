@@ -28,6 +28,7 @@
 from copy import deepcopy
 import logging
 import pickle
+import unittest
 import warnings
 
 import ldap
@@ -36,27 +37,14 @@ try:
 except ImportError:
     mockldap = None
 
-import django
-from django.conf import settings
 from django.contrib.auth.models import User, Permission, Group
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
-import django.db.models.signals
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.utils.encoding import force_str
 
-try:
-    from django.utils import unittest
-except ImportError:
-    import unittest
-
-try:
-    from django.test.utils import override_settings
-except ImportError:
-    def override_settings(*args, **kwargs):
-        return lambda v: v
-
-from django_auth_ldap.models import TestUser, TestProfile
+from django_auth_ldap.models import TestUser
 from django_auth_ldap import backend
 from django_auth_ldap.config import LDAPGroupQuery
 from django_auth_ldap.config import LDAPSearch, LDAPSearchUnion
@@ -265,9 +253,6 @@ class LDAPTest(TestCase):
         cls.configure_logger()
         cls.mockldap = mockldap.MockLdap(cls.directory)
 
-        warnings.filterwarnings(
-            'ignore', message='.*?AUTH_PROFILE_MODULE', category=DeprecationWarning, module='django_auth_ldap'
-        )
         warnings.filterwarnings(
             'ignore', category=UnicodeWarning, module='mockldap.ldapobject'
         )
@@ -733,31 +718,6 @@ class LDAPTest(TestCase):
 
         backend.populate_user.disconnect(handle_populate_user)
 
-    @unittest.skipIf(django.VERSION >= (1, 7), "Skip profile tests in Django>=1.7")
-    def test_signal_populate_user_profile(self):
-        settings.AUTH_PROFILE_MODULE = 'django_auth_ldap.TestProfile'
-
-        self._init_settings(
-            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
-        )
-
-        def handle_user_saved(sender, **kwargs):
-            if kwargs['created']:
-                TestProfile.objects.create(user=kwargs['instance'])
-
-        def handle_populate_user_profile(sender, **kwargs):
-            self.assertTrue('profile' in kwargs and 'ldap_user' in kwargs)
-            kwargs['profile'].populated = True
-
-        django.db.models.signals.post_save.connect(handle_user_saved, sender=User)
-        backend.populate_user_profile.connect(handle_populate_user_profile)
-        user = self.backend.authenticate(username='alice', password='password')
-
-        self.assertTrue(user.get_profile().populated)
-
-        backend.populate_user_profile.disconnect(handle_populate_user_profile)
-        django.db.models.signals.post_save.disconnect(handle_user_saved, sender=User)
-
     def test_signal_ldap_error(self):
         self._init_settings(
             BIND_DN='uid=bob,ou=people,o=test',
@@ -1091,31 +1051,6 @@ class LDAPTest(TestCase):
         nobody = self.backend.authenticate(username='nobody', password='password')
 
         self.assertTrue(not nobody.is_active)
-
-    @unittest.skipIf(django.VERSION >= (1, 7), "Skip profile tests in Django>=1.7")
-    def test_profile_flags(self):
-        settings.AUTH_PROFILE_MODULE = 'django_auth_ldap.TestProfile'
-
-        self._init_settings(
-            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
-            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
-            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
-            PROFILE_FLAGS_BY_GROUP={
-                'is_special': ["cn=superuser_gon,ou=groups,o=test"]
-            }
-        )
-
-        def handle_user_saved(sender, **kwargs):
-            if kwargs['created']:
-                TestProfile.objects.create(user=kwargs['instance'])
-
-        django.db.models.signals.post_save.connect(handle_user_saved, sender=User)
-
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
-
-        self.assertTrue(alice.get_profile().is_special)
-        self.assertTrue(not bob.get_profile().is_special)
 
     def test_dn_group_permissions(self):
         self._init_settings(

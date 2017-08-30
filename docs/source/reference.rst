@@ -217,37 +217,6 @@ at a reduced level of access. If you need to make use of this LDAP feature, you
 can change this setting to ``True``.
 
 
-.. setting:: AUTH_LDAP_PROFILE_ATTR_MAP
-
-AUTH_LDAP_PROFILE_ATTR_MAP
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Default: ``{}``
-
-A mapping from user profile field names to LDAP attribute names. A user's
-profile will be populated from his LDAP attributes at login.
-
-This is ignored in Django 1.7 and later.
-
-
-.. setting:: AUTH_LDAP_PROFILE_FLAGS_BY_GROUP
-
-AUTH_LDAP_PROFILE_FLAGS_BY_GROUP
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Default: ``{}``
-
-A mapping from boolean profile field names to distinguished names of LDAP
-groups. The corresponding field in a user's profile is set to ``True`` or
-``False`` according to whether the user is a member of the group.
-
-Values may be strings for simple group membership tests or
-:class:`~django_auth_ldap.config.LDAPGroupQuery` instances for more complex
-cases.
-
-This is ignored in Django 1.7 and later.
-
-
 .. setting:: AUTH_LDAP_REQUIRE_GROUP
 
 AUTH_LDAP_REQUIRE_GROUP
@@ -562,18 +531,6 @@ Backend
     :class:`~django.contrib.auth.models.User` object and ``ldap_user`` is the
     same as ``user.ldap_user``. The sender is the
     :class:`~django_auth_ldap.backend.LDAPBackend` class.
-
-.. data:: populate_user_profile
-
-    Like :data:`~django_auth_ldap.backend.populate_user`, but sent for the user
-    profile object. This will only be sent if the user has an existing profile.
-    As with :data:`~django_auth_ldap.backend.populate_user`, it is sent after the
-    backend has finished setting properties and before the object is saved. This
-    signal has two keyword arguments: ``profile`` is the user profile object and
-    ``ldap_user`` is the same as ``user.ldap_user``. The sender is the
-    :class:`~django_auth_ldap.backend.LDAPBackend` class.
-
-    This is not sent in Django 1.7 and later.
 
 .. data:: ldap_error
 

@@ -1,10 +1,6 @@
-# For older versions of Djano
-DATABASE_ENGINE = 'sqlite3'
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
     }
 }
 
@@ -17,8 +13,6 @@ USE_L10N = False
 USE_TZ = True
 
 SECRET_KEY = 'nt56v8)moa)37ta5z7dd=if-@y#k@l7+t8lct*c8m730lpd=so'
-
-ROOT_URLCONF = 'urls'
 
 INSTALLED_APPS = (
     'django.contrib.auth',

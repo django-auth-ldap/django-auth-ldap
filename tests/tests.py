@@ -49,7 +49,8 @@ from django_auth_ldap.config import GroupOfNamesType
 from django_auth_ldap.config import LDAPGroupQuery
 from django_auth_ldap.config import LDAPSearch, LDAPSearchUnion
 from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType, NISGroupType
-from django_auth_ldap.models import TestUser
+
+from .models import TestUser
 
 
 class TestSettings(backend.LDAPSettings):
@@ -386,7 +387,7 @@ class LDAPTest(TestCase):
         user = self.backend.authenticate(username='Alice', password='password')
         user = deepcopy(user)
 
-    @override_settings(AUTH_USER_MODEL='django_auth_ldap.TestUser')
+    @override_settings(AUTH_USER_MODEL='tests.TestUser')
     def test_auth_custom_user(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -396,7 +397,7 @@ class LDAPTest(TestCase):
 
         self.assertTrue(isinstance(user, TestUser))
 
-    @override_settings(AUTH_USER_MODEL='django_auth_ldap.TestUser')
+    @override_settings(AUTH_USER_MODEL='tests.TestUser')
     def test_get_custom_user(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',

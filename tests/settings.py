@@ -19,7 +19,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
 
-    'django_auth_ldap',
+    'tests',
 )
 
 MIDDLEWARE_CLASSES = []

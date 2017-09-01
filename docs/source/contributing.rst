@@ -35,8 +35,7 @@ To run the tests:
 
 .. code-block:: none
 
-    $ cd test
-    $ python manage.py test django_auth_ldap
+    $ django-admin test --settings tests.settings
 
 To run the full test suite in a range of environments, run `tox`_ from the root
 of the project:

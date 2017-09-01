@@ -27,6 +27,8 @@ This is an ldap.dn replacement for old versions of python-ldap. It contains
 (often naive) implementations of the methods we care about.
 """
 
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 def escape_dn_chars(dn):
     "Old versions of python-ldap won't get DN escaping. Use with care."

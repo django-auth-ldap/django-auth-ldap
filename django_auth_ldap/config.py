@@ -22,13 +22,14 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 """
 This module contains classes that will be needed for configuration of LDAP
 authentication. Unlike backend.py, this is safe to import into settings.py.
 Please see the docstring on the backend module for more information, including
 notes on naming conventions.
 """
+
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import ldap
 import logging
@@ -107,7 +108,7 @@ class LDAPSearch(object):
     documented for configuration purposes. Internal clients may use the other
     methods to refine and execute the search.
     """
-    def __init__(self, base_dn, scope, filterstr=u'(objectClass=*)', attrlist=None):
+    def __init__(self, base_dn, scope, filterstr='(objectClass=*)', attrlist=None):
         """
         These parameters are the same as the first three parameters to
         ldap.search_s.
@@ -132,9 +133,9 @@ class LDAPSearch(object):
         for name, value in term_dict.items():
             if escape:
                 value = self.ldap.filter.escape_filter_chars(value)
-            term_strings.append(u'(%s=%s)' % (name, value))
+            term_strings.append('({}={})'.format(name, value))
 
-        filterstr = u'(&%s)' % ''.join(term_strings)
+        filterstr = '(&{})'.format(''.join(term_strings))
 
         return self.__class__(self.base_dn, self.scope, filterstr)
 
@@ -144,7 +145,7 @@ class LDAPSearch(object):
         string. The caller is responsible for passing in a properly escaped
         string.
         """
-        filterstr = u'(&%s%s)' % (self.filterstr, filterstr)
+        filterstr = '(&{}{})'.format(self.filterstr, filterstr)
 
         return self.__class__(self.base_dn, self.scope, filterstr)
 
@@ -169,8 +170,11 @@ class LDAPSearch(object):
                                           self.attrlist)
         except ldap.LDAPError as e:
             results = []
-            logger.error(u"search_s('%s', %d, '%s') raised %s" %
-                         (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
+            logger.error(
+                "search_s('{}', {}, '{}') raised {}".format(
+                    self.base_dn, self.scope, filterstr, pprint.pformat(e)
+                )
+            )
 
         return self._process_results(results)
 
@@ -188,13 +192,17 @@ class LDAPSearch(object):
 
         try:
             filterstr = self.filterstr % filterargs
-            msgid = connection.search(force_str(self.base_dn),
-                                      self.scope, force_str(filterstr),
-                                      self.attrlist)
+            msgid = connection.search(
+                force_str(self.base_dn), self.scope, force_str(filterstr),
+                self.attrlist
+            )
         except ldap.LDAPError as e:
             msgid = None
-            logger.error(u"search('%s', %d, '%s') raised %s" %
-                         (self.base_dn, self.scope, filterstr, pprint.pformat(e)))
+            logger.error(
+                "search('{}', {}, '{}') raised {}".format(
+                    self.base_dn, self.scope, filterstr, pprint.pformat(e)
+                )
+            )
 
         return msgid
 
@@ -208,7 +216,7 @@ class LDAPSearch(object):
                 results = []
         except ldap.LDAPError as e:
             results = []
-            logger.error(u"result(%d) raised %s" % (msgid, pprint.pformat(e)))
+            logger.error("result({}) raised {}".format(msgid, pprint.pformat(e)))
 
         return self._process_results(results)
 
@@ -244,9 +252,12 @@ class LDAPSearch(object):
         results = [(r[0].lower(), r[1]) for r in results]
 
         result_dns = [result[0] for result in results]
-        logger.debug(u"search_s('%s', %d, '%s') returned %d objects: %s" %
-                     (self.base_dn, self.scope, self.filterstr, len(result_dns),
-                      "; ".join(result_dns)))
+        logger.debug(
+            "search_s('{}', {}, '{}') returned {} objects: {}".format(
+                self.base_dn, self.scope, self.filterstr, len(result_dns),
+                "; ".join(result_dns)
+            )
+        )
 
         return results
 
@@ -406,12 +417,12 @@ class PosixGroupType(LDAPGroupType):
 
             if 'gidNumber' in ldap_user.attrs:
                 user_gid = ldap_user.attrs['gidNumber'][0]
-                filterstr = u'(|(gidNumber=%s)(memberUid=%s))' % (
+                filterstr = '(|(gidNumber={})(memberUid={}))'.format(
                     self.ldap.filter.escape_filter_chars(user_gid),
                     self.ldap.filter.escape_filter_chars(user_uid)
                 )
             else:
-                filterstr = u'(memberUid=%s)' % (
+                filterstr = '(memberUid={})'.format(
                     self.ldap.filter.escape_filter_chars(user_uid),
                 )
 
@@ -489,9 +500,9 @@ class NISGroupType(LDAPGroupType):
     def user_groups(self, ldap_user, group_search):
         try:
             user_uid = ldap_user.attrs['uid'][0]
-            filterstr = u'(|(nisNetgroupTriple=%s)(nisNetgroupTriple=%s))' % (
-                self.ldap.filter.escape_filter_chars('(,%s,)' % user_uid),
-                self.ldap.filter.escape_filter_chars('(-,%s,-)' % user_uid)
+            filterstr = '(|(nisNetgroupTriple={})(nisNetgroupTriple={}))'.format(
+                self.ldap.filter.escape_filter_chars('(,{},)'.format(user_uid)),
+                self.ldap.filter.escape_filter_chars('(-,{},-)'.format(user_uid))
             )
             search = group_search.search_with_additional_term_string(filterstr)
             groups = search.execute(ldap_user.connection)
@@ -505,13 +516,13 @@ class NISGroupType(LDAPGroupType):
             result = ldap_user.connection.compare_s(
                 force_str(group_dn),
                 force_str('nisNetgroupTriple'),
-                force_str('(,%s,)' % (user_uid))
+                force_str('(,{},)'.format(user_uid))
             )
             if result == 0:
                 result = ldap_user.connection.compare_s(
                     force_str(group_dn),
                     force_str('nisNetgroupTriple'),
-                    force_str('(-,%s,-)' % (user_uid))
+                    force_str('(-,{},-)'.format(user_uid))
                 )
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE, KeyError, IndexError):
             result = 0
@@ -561,11 +572,11 @@ class NestedMemberDNGroupType(LDAPGroupType):
 
     def find_groups_with_any_member(self, member_dn_set, group_search, connection):
         terms = [
-            u"(%s=%s)" % (self.member_attr, self.ldap.filter.escape_filter_chars(dn))
+            "({0}={1})".format(self.member_attr, self.ldap.filter.escape_filter_chars(dn))
             for dn in member_dn_set
         ]
 
-        filterstr = u"(|%s)" % "".join(terms)
+        filterstr = "(|{0})".format("".join(terms))
         search = group_search.search_with_additional_term_string(filterstr)
 
         return search.execute(connection)

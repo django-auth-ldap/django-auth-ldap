@@ -45,6 +45,8 @@ information will be user_dn or user_info.
 Additional classes can be found in the config module next to this one.
 """
 
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import copy
 from functools import reduce
 import ldap
@@ -144,7 +146,7 @@ class LDAPBackend(object):
             ldap_user = _LDAPUser(self, username=username.strip())
             user = ldap_user.authenticate(password)
         else:
-            logger.debug('Rejecting empty password for %s' % username)
+            logger.debug('Rejecting empty password for {}'.format(username))
             user = None
 
         return user
@@ -321,16 +323,20 @@ class _LDAPUser(object):
 
             user = self._user
         except self.AuthenticationFailed as e:
-            logger.debug(u"Authentication failed for %s: %s" % (self._username, e))
+            logger.debug("Authentication failed for {}: {}".format(self._username, e))
         except ldap.LDAPError as e:
             results = ldap_error.send(self.backend.__class__,
                                       context='authenticate', exception=e)
             if len(results) == 0:
-                logger.warning(u"Caught LDAPError while authenticating %s: %s",
-                               self._username, pprint.pformat(e))
+                logger.warning(
+                    "Caught LDAPError while authenticating {}: {}".format(
+                        self._username, pprint.pformat(e)
+                    )
+                )
         except Exception:
-            logger.exception(u"Caught Exception while authenticating %s",
-                             self._username)
+            logger.exception(
+                "Caught Exception while authenticating {}".format(self._username)
+            )
             raise
 
         return user
@@ -351,8 +357,11 @@ class _LDAPUser(object):
                                               context='get_group_permissions',
                                               exception=e)
                     if len(results) == 0:
-                        logger.warning("Caught LDAPError loading group permissions: %s",
-                                       pprint.pformat(e))
+                        logger.warning(
+                            "Caught LDAPError loading group permissions: {}".format(
+                                pprint.pformat(e)
+                            )
+                        )
 
         return self._group_permissions
 
@@ -373,11 +382,17 @@ class _LDAPUser(object):
             results = ldap_error.send(self.backend.__class__,
                                       context='populate_user', exception=e)
             if len(results) == 0:
-                logger.warning(u"Caught LDAPError while authenticating %s: %s",
-                               self._username, pprint.pformat(e))
+                logger.warning(
+                    "Caught LDAPError while authenticating {}: {}".format(
+                        self._username, pprint.pformat(e)
+                    )
+                )
         except Exception as e:
-            logger.error(u"Caught Exception while authenticating %s: %s",
-                         self._username, pprint.pformat(e))
+            logger.error(
+                "Caught Exception while authenticating {}: {}".format(
+                    self._username, pprint.pformat(e)
+                )
+            )
             logger.error(''.join(traceback.format_tb(sys.exc_info()[2])))
             raise
 
@@ -548,12 +563,12 @@ class _LDAPUser(object):
         should_populate = force_populate or self.settings.ALWAYS_UPDATE_USER or created
 
         if created:
-            logger.debug("Created Django user %s", username)
+            logger.debug("Created Django user {}".format(username))
             self._user.set_unusable_password()
             save_user = True
 
         if should_populate:
-            logger.debug("Populating Django user %s", username)
+            logger.debug("Populating Django user {}".format(username))
             self._populate_user()
             save_user = True
 
@@ -583,7 +598,7 @@ class _LDAPUser(object):
             try:
                 setattr(self._user, field, self.attrs[attr][0])
             except Exception:
-                logger.warning("%s does not have a value for the attribute %s", self.dn, attr)
+                logger.warning("{} does not have a value for the attribute {}".format(self.dn, attr))
 
     def _populate_user_from_group_memberships(self):
         for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.items():
@@ -714,7 +729,7 @@ class _LDAPUser(object):
         perms = perms.values_list('content_type__app_label', 'codename')
         perms = perms.order_by()
 
-        self._group_permissions = {"%s.%s" % (ct, name) for ct, name in perms}
+        self._group_permissions = {"{}.{}".format(ct, name) for ct, name in perms}
 
     def _get_groups(self):
         """
@@ -838,8 +853,9 @@ class _LDAPUserGroups(object):
         if is_member is None:
             is_member = (group_dn in self.get_group_dns())
 
-        logger.debug("%s is%sa member of %s", self._ldap_user.dn,
-                     is_member and " " or " not ", group_dn)
+        logger.debug("{} is{}a member of {}".format(
+            self._ldap_user.dn, is_member and " " or " not ", group_dn
+        ))
 
         return is_member
 
@@ -882,7 +898,7 @@ class _LDAPUserGroups(object):
         DN for maximum compatibility.
         """
         dn = self._ldap_user.dn.replace(' ', '%20')
-        key = u'auth_ldap.%s.%s.%s' % (self.__class__.__name__, attr_name, dn)
+        key = 'auth_ldap.{}.{}.{}'.format(self.__class__.__name__, attr_name, dn)
 
         return key
 

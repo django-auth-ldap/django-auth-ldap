@@ -204,18 +204,25 @@ class LDAPBackend(object):
     def get_or_create_user(self, username, ldap_user):
         """
         This must return a (User, created) 2-tuple for the given LDAP user.
+
         username is the Django-friendly username of the user. ldap_user.dn is
-        the user's DN and ldap_user.attrs contains all of their LDAP attributes.
+        the user's DN and ldap_user.attrs contains all of their LDAP
+        attributes.
+
+        The returned User object may be an unsaved model instance.
+
         """
         model = self.get_user_model()
-        username_field = getattr(model, 'USERNAME_FIELD', 'username')
 
-        kwargs = {
-            username_field + '__iexact': username,
-            'defaults': {username_field: username.lower()}
-        }
+        try:
+            user = model.objects.get(**{model.USERNAME_FIELD + '__iexact': username})
+        except model.DoesNotExist:
+            user = model(**{model.USERNAME_FIELD: username.lower()})
+            created = True
+        else:
+            created = False
 
-        return model.objects.get_or_create(**kwargs)
+        return (user, created)
 
     def ldap_to_django_username(self, username):
         return username
@@ -578,10 +585,6 @@ class _LDAPUser(object):
             self._populate_user()
             save_user = True
 
-        if bool(self.settings.MIRROR_GROUPS) or bool(self.settings.MIRROR_GROUPS_EXCEPT):
-            self._normalize_mirror_settings()
-            self._mirror_groups()
-
         # Give the client a chance to finish populating the user just before
         # saving.
         if should_populate:
@@ -591,6 +594,11 @@ class _LDAPUser(object):
 
         if save_user:
             self._user.save()
+
+        # This has to wait until we're sure the user has a pk.
+        if bool(self.settings.MIRROR_GROUPS) or bool(self.settings.MIRROR_GROUPS_EXCEPT):
+            self._normalize_mirror_settings()
+            self._mirror_groups()
 
     def _populate_user(self):
         """

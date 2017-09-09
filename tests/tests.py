@@ -392,6 +392,7 @@ class LDAPTest(TestCase):
     def test_auth_custom_user(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={'uid_number': 'uidNumber'},
         )
 
         user = self.backend.authenticate(username='Alice', password='password')
@@ -402,6 +403,7 @@ class LDAPTest(TestCase):
     def test_get_custom_user(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={'uid_number': 'uidNumber'},
         )
 
         user = self.backend.authenticate(username='Alice', password='password')

@@ -6,6 +6,7 @@ from django.db import models
 
 class TestUser(AbstractBaseUser):
     identifier = models.CharField(max_length=40, unique=True, db_index=True)
+    uid_number = models.IntegerField()
 
     USERNAME_FIELD = 'identifier'
 

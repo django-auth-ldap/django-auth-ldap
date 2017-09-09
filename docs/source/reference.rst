@@ -589,15 +589,18 @@ Backend
         :meth:`~django_auth_ldap.backend.LDAPBackend.ldap_to_django_username`.
         You can get information about the LDAP user via ``ldap_user.dn`` and
         ``ldap_user.attrs``. The return value must be the same as
-        :meth:`~django.db.models.query.QuerySet.get_or_create`: an (instance,
-        created) two-tuple.
+        :meth:`~django.db.models.query.QuerySet.get_or_create`--an (instance,
+        created) two-tuple--although the instance does not need to be saved yet.
 
-        The default implementation calls ``<model>.objects.get_or_create()``,
-        using a case-insensitive query and creating new users with lowercase
-        usernames. The user model is obtained from
-        :meth:`~django_auth_ldap.backend.LDAPBackend.get_user_model`. A subclass
-        may override this to associate LDAP users to Django users any way it
-        likes.
+        The default implementation looks for the username with a
+        case-insensitive query; if it's not found, the model returned by
+        :meth:`~django_auth_ldap.backend.LDAPBackend.get_user_model` will be
+        created with the lowercased username. New users will not be saved to the
+        database until after the :data:`django_auth_ldap.backend.populate_user`
+        signal has been sent.
+
+        A subclass may override this to associate LDAP users to Django users any
+        way it likes.
 
     .. method:: ldap_to_django_username(username)
 

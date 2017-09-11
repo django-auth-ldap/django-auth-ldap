@@ -52,6 +52,7 @@ from functools import reduce
 import ldap
 import operator
 import pprint
+import re
 import sys
 import traceback
 import warnings
@@ -470,7 +471,7 @@ class _LDAPUser(object):
         if self._using_simple_bind_mode():
             self._user_dn = self._construct_simple_user_dn()
         else:
-            cache_key = 'django_auth_ldap.user_dn.{}'.format(self._username)
+            cache_key = valid_cache_key('django_auth_ldap.user_dn.{}'.format(self._username))
             self._user_dn = cache_get_or_set(
                 cache, cache_key, self._search_for_user_dn,
                 self.settings.GROUP_CACHE_TIMEOUT
@@ -897,8 +898,10 @@ class _LDAPUserGroups(object):
         Memcache keys can't have spaces in them, so we'll remove them from the
         DN for maximum compatibility.
         """
-        dn = self._ldap_user.dn.replace(' ', '%20')
-        key = 'auth_ldap.{}.{}.{}'.format(self.__class__.__name__, attr_name, dn)
+        dn = self._ldap_user.dn
+        key = valid_cache_key(
+            'auth_ldap.{}.{}.{}'.format(self.__class__.__name__, attr_name, dn)
+        )
 
         return key
 
@@ -952,6 +955,15 @@ class LDAPSettings(object):
 
     def _name(self, suffix):
         return (self._prefix + suffix)
+
+
+def valid_cache_key(key):
+    """
+    Sanitizes a cache key for memcached.
+    """
+    key = re.sub(r'\s+', '+', key)[:250]
+
+    return key
 
 
 def cache_get_or_set(cache, key, default, timeout=None):

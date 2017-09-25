@@ -24,6 +24,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from copy import deepcopy
 import logging
@@ -90,14 +91,14 @@ class LDAPTest(TestCase):
         "givenName": ["Robert"],
         "sn": ["Barker"]
     })
-    dressler = (force_str(u"uid=dreßler,ou=people,o=test"), {
-        "uid": [force_str(u"dreßler")],
+    dressler = (force_str("uid=dreßler,ou=people,o=test"), {
+        "uid": [force_str("dreßler")],
         "objectClass": ["person", "organizationalPerson", "inetOrgPerson", "posixAccount"],
         "userPassword": ["password"],
         "uidNumber": ["1002"],
         "gidNumber": ["50"],
         "givenName": ["Wolfgang"],
-        "sn": [force_str(u"Dreßler")]
+        "sn": [force_str("Dreßler")]
     })
     nobody = ("uid=nobody,ou=people,o=test", {
         "uid": ["nobody"],
@@ -629,10 +630,10 @@ class LDAPTest(TestCase):
             USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'}
         )
 
-        user = self.backend.authenticate(username=u'dreßler', password='password')
+        user = self.backend.authenticate(username='dreßler', password='password')
         self.assertTrue(user is not None)
-        self.assertEqual(user.username, u'dreßler')
-        self.assertEqual(user.last_name, u'Dreßler')
+        self.assertEqual(user.username, 'dreßler')
+        self.assertEqual(user.last_name, 'Dreßler')
 
     def test_cidict(self):
         self._init_settings(
@@ -1359,14 +1360,14 @@ class LDAPTest(TestCase):
         bob = self.backend.populate_user('bob')
 
         self.assertTrue(alice is not None)
-        self.assertEqual(alice.first_name, u"")
-        self.assertEqual(alice.last_name, u"")
+        self.assertEqual(alice.first_name, "")
+        self.assertEqual(alice.last_name, "")
         self.assertTrue(alice.is_active)
         self.assertTrue(not alice.is_staff)
         self.assertTrue(not alice.is_superuser)
         self.assertTrue(bob is not None)
-        self.assertEqual(bob.first_name, u"")
-        self.assertEqual(bob.last_name, u"")
+        self.assertEqual(bob.first_name, "")
+        self.assertEqual(bob.last_name, "")
         self.assertTrue(bob.is_active)
         self.assertTrue(not bob.is_staff)
         self.assertTrue(not bob.is_superuser)
@@ -1392,14 +1393,14 @@ class LDAPTest(TestCase):
         bob = self.backend.populate_user('bob')
 
         self.assertTrue(alice is not None)
-        self.assertEqual(alice.first_name, u"Alice")
-        self.assertEqual(alice.last_name, u"Adams")
+        self.assertEqual(alice.first_name, "Alice")
+        self.assertEqual(alice.last_name, "Adams")
         self.assertTrue(alice.is_active)
         self.assertTrue(alice.is_staff)
         self.assertTrue(alice.is_superuser)
         self.assertTrue(bob is not None)
-        self.assertEqual(bob.first_name, u"Robert")
-        self.assertEqual(bob.last_name, u"Barker")
+        self.assertEqual(bob.first_name, "Robert")
+        self.assertEqual(bob.last_name, "Barker")
         self.assertTrue(not bob.is_active)
         self.assertTrue(not bob.is_staff)
         self.assertTrue(not bob.is_superuser)
@@ -1466,7 +1467,7 @@ class LDAPTest(TestCase):
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
         )
 
-        alice = self.backend.authenticate(username=u'alice', password=u'')
+        alice = self.backend.authenticate(username='alice', password='')
 
         self.assertEqual(alice, None)
         self.assertEqual(self.ldapobj.methods_called(), [])
@@ -1477,7 +1478,7 @@ class LDAPTest(TestCase):
             PERMIT_EMPTY_PASSWORD=True,
         )
 
-        alice = self.backend.authenticate(username=u'alice', password=u'')
+        alice = self.backend.authenticate(username='alice', password='')
 
         self.assertEqual(alice, None)
         self.assertEqual(
@@ -1491,7 +1492,7 @@ class LDAPTest(TestCase):
             PERMIT_EMPTY_PASSWORD=True,
         )
 
-        alice = self.backend.authenticate(username=u'alice', password=None)
+        alice = self.backend.authenticate(username='alice', password=None)
 
         self.assertEqual(alice, None)
         self.assertEqual(
@@ -1508,7 +1509,7 @@ class LDAPTest(TestCase):
         )
         self._init_groups()
 
-        alice0 = self.backend.authenticate(username=u'alice', password=u'password')
+        alice0 = self.backend.authenticate(username='alice', password='password')
 
         pickled = pickle.dumps(alice0, pickle.HIGHEST_PROTOCOL)
         alice = pickle.loads(pickled)

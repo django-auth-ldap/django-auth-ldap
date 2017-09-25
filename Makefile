@@ -1,20 +1,24 @@
+# This Makefile is a minor convenience for the maintainer. Nothing to see here.
+
 python2 = python2.7
-python3 = python3.5
-
-.PHONY: full sdist wheel sign upload upload_docs clean
+python3 = python3.6
 
 
+.PHONY: full
 full: clean sdist wheel
 
+.PHONY: sdist
 sdist:
 	python setup.py sdist
 
+.PHONY: wheel
 wheel:
 	-rm -r build
 	$(python2) setup.py bdist_wheel
 	-rm -r build
 	$(python3) setup.py bdist_wheel
 
+.PHONY: sign
 sign:
 	for f in dist/*.gz dist/*.whl; do \
 	    if [ ! -e "$${f}.asc" ]; then \
@@ -22,15 +26,10 @@ sign:
 	    fi \
 	done
 
+.PHONY: upload
 upload: sign
 	twine upload dist/*
 
-docs:
-	@cd docs
-	make html zip
-
-upload_docs: docs
-	python setup.py upload_docs --upload-dir docs/build/html
-
+.PHONY: clean
 clean:
 	-rm -r build dist *.egg-info

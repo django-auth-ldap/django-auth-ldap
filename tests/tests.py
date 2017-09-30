@@ -33,12 +33,8 @@ import unittest
 import warnings
 
 import ldap
-try:
-    import mockldap
-except ImportError:
-    mockldap = None
 
-from django.contrib.auth.models import User, Permission, Group
+from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
@@ -46,12 +42,18 @@ from django.test.utils import override_settings
 from django.utils.encoding import force_str
 
 from django_auth_ldap import backend
-from django_auth_ldap.config import GroupOfNamesType
-from django_auth_ldap.config import LDAPGroupQuery
-from django_auth_ldap.config import LDAPSearch, LDAPSearchUnion
-from django_auth_ldap.config import PosixGroupType, MemberDNGroupType, NestedMemberDNGroupType, NISGroupType
+from django_auth_ldap.config import (
+    GroupOfNamesType, LDAPGroupQuery, LDAPSearch, LDAPSearchUnion, MemberDNGroupType, NestedMemberDNGroupType,
+    NISGroupType, PosixGroupType
+)
 
 from .models import TestUser
+
+
+try:
+    import mockldap
+except ImportError:
+    mockldap = None
 
 
 class TestSettings(backend.LDAPSettings):

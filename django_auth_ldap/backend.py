@@ -49,13 +49,14 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import copy
 from functools import reduce
-import ldap
 import operator
 import pprint
 import re
 import sys
 import traceback
 import warnings
+
+import ldap
 
 import django.conf
 from django.contrib.auth import get_user_model
@@ -66,7 +67,7 @@ import django.dispatch
 from django.utils import six
 from django.utils.encoding import force_str
 
-from django_auth_ldap.config import ConfigurationWarning, _LDAPConfig, LDAPGroupQuery, LDAPSearch
+from django_auth_ldap.config import ConfigurationWarning, LDAPGroupQuery, LDAPSearch, _LDAPConfig
 
 
 logger = _LDAPConfig.get_logger()

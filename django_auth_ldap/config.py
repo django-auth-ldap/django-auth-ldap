@@ -31,9 +31,10 @@ notes on naming conventions.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import ldap
 import logging
 import pprint
+
+import ldap
 
 from django.utils.encoding import force_str
 from django.utils.tree import Node

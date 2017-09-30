@@ -29,7 +29,6 @@ Under Python 2, it requires `python-ldap
     performance
     example
     reference
-    contributing
     changes
 
 

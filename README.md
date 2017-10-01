@@ -51,7 +51,7 @@ There's no harm in creating an issue and then submitting a pull request to
 resolve it. This can be a good way to start a conversation and can serve as an
 anchor point if the initial pull request turns out not to be the best approach.
 
-Here are a few specific dos and don'ts to help us all save some time.
+Here are a few dos and don'ts to help us all save some time.
 
 * **Don't** move fast and break stuff.
 
@@ -59,12 +59,14 @@ Here are a few specific dos and don'ts to help us all save some time.
   problems with minimal collatoral effects.
 
 * **Do** feel free to do a bit of syntactic cleanup, especially when it comes to
-  leaving behind obsolete Python or Django versions.
+  leaving behind obsolete Python or Django versions. This project goes back at
+  least to Python 2.3 and Django 1.0; youngins may find some lingering
+  anachronisms disorienting.
 
 * **Don't** do a bunch of semantic cleanup without a clear and compelling
   reason. The phrase "I don't see how this could break anything" is a confession
-  of the ignorance and uncertainty under which we all labor, not a proof by lack
-  of imagination.
+  of the ignorance and uncertainty under which we all labor, not a proof of
+  correctness.
 
 * **Do** reach out if you'd like a feature or change and you're not sure how to
   proceed.
@@ -109,11 +111,11 @@ master branch).
     % hg push -B new-feature
 
 Local Mercurial clones and Bitbucket forks are all (typically)
-[non-publishing][hg-non-publishing] repositories. This means that new changesets
-remain in draft mode and can be modified in a safe and principled manner with
-the [evolve][hg-evolve-ext] extension. The author makes heavy use of [changeset
-evolution][hg-evolution] and frequently uses it to process pull requests while
-keeping the history clean and linear.
+[non-publishing][hg-non-publishing] repositories. This means that new
+changesets remain in draft mode and can be modified in a safe and principled
+manner with the [evolve][hg-evolve-ext] extension. I make heavy use of
+[changeset evolution][hg-evolution] and frequently rely it to process pull
+requests while keeping the history clean and linear.
 
 If you're setting up Mercurial for the first time, I recommend you make sure you
 have the latest version and install [hg-evolve][pypi-evolve] with it. Here's a

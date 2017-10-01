@@ -1,25 +1,33 @@
-..
-    UNRELEASED
-    ----------
+1.3.0b2 - Pre-release
+---------------------
 
-    - **Backwards incompatible**: Removed support for obsolete versions of
-      Django (<=1.7, plus 1.9).
+- **Backwards incompatible**: Removed support for obsolete versions of
+  Django (<=1.7, plus 1.9).
 
-    - Fix `#58`_: Support creating new custom user models with ``NOT NULL``
-      fields. ``LDAPBackend.get_or_create_user()`` was renamed
-      ``LDAPBackend.get_or_build_user()`` and no longer saves a newly created
-      user but instead simply instantiates it. This allows ``NOT NULL`` fields
-      to be populated by ``USER_ATTR_MAP`` or
-      :data:`django_auth_ldap.backend.populate_user` before saving to avoid an
-      ``IntegrityError``. The user is still saved in
-      ``LDAPBackend._get_or_create()``. Overriding
-      ``LDAPBackend.get_or_create_user()`` is deprecated, but remains for
-      backwards compatibility. It will be removed in a future version.
+- Fix `#58`_: Delay saving new users as long as possible. This will allow
+  :setting:`AUTH_LDAP_USER_ATTR_MAP` to populate required fields before creating
+  a new Django user.
 
-    .. _#58: https://bitbucket.org/illocution/django-auth-ldap/issues/58/
+  ``LDAPBackend.get_or_create_user()`` is now
+  :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_build_user` to avoid
+  confusion. The old name may still be overridden for now.
 
-v1.2.15 - 2017-08-17 - Documentation improvements
--------------------------------------------------
+.. _#58: https://bitbucket.org/illocution/django-auth-ldap/issues/58/
+
+
+1.2.16 - 2017-09-30 - Minor fixes
+---------------------------------
+
+- Fix `#86`_: Better cache key sanitizing.
+
+- Improved handling of LDAPError. A case existed where the error would not get
+  caught while loading group permissions.
+
+.. _#86: https://bitbucket.org/illocution/django-auth-ldap/issues/86/
+
+
+1.2.15 - 2017-08-17 - Documentation improvements
+------------------------------------------------
 
 - Fix `#83`_: Improved documentation for finding the official repository and
   contributing.
@@ -27,8 +35,8 @@ v1.2.15 - 2017-08-17 - Documentation improvements
 .. _#83: https://bitbucket.org/illocution/django-auth-ldap/issues/83/
 
 
-v1.2.14 - 2017-07-24 - User DN caching
---------------------------------------
+1.2.14 - 2017-07-24 - User DN caching
+-------------------------------------
 
 - Fix `#82`_: Under search/bind mode, the user's DN will now be cached for
   performance.
@@ -36,8 +44,8 @@ v1.2.14 - 2017-07-24 - User DN caching
 .. _#82: https://bitbucket.org/illocution/django-auth-ldap/issues/82/
 
 
-v1.2.13 - 2017-06-19 - Selective group mirroring
-------------------------------------------------
+1.2.13 - 2017-06-19 - Selective group mirroring
+-----------------------------------------------
 
 - Support selective group mirroring with :setting:`AUTH_LDAP_MIRROR_GROUPS` and
   :setting:`AUTH_LDAP_MIRROR_GROUPS_EXCEPT`.
@@ -47,23 +55,23 @@ v1.2.13 - 2017-06-19 - Selective group mirroring
 .. _#73: https://bitbucket.org/illocution/django-auth-ldap/issues/73/
 
 
-v1.2.12 - 2017-05-20 - Complex group queries
---------------------------------------------
+1.2.12 - 2017-05-20 - Complex group queries
+-------------------------------------------
 
 - Support for complex group queries via
   :class:`~django_auth_ldap.config.LDAPGroupQuery`.
 
 
-v1.2.11 - 2017-04-22 - Testing and debugging cleanup
-----------------------------------------------------
+1.2.11 - 2017-04-22 - Testing and debugging cleanup
+---------------------------------------------------
 
 - Some more descriptive object representations.
 
 - Improved tox.ini organization.
 
 
-v1.2.9 - 2017-02-14 - Fix python-ldap incompatibility
------------------------------------------------------
+1.2.9 - 2017-02-14 - Fix python-ldap incompatibility
+----------------------------------------------------
 
 - Fix `#65`_: Ignore python-ldap documentation and accept
   :data:`ldap.RES_SEARCH_ENTRY` from :meth:`ldap.LDAPObject.result`.
@@ -71,21 +79,21 @@ v1.2.9 - 2017-02-14 - Fix python-ldap incompatibility
 .. _#65: https://bitbucket.org/illocution/django-auth-ldap/issues/65/
 
 
-v1.2.8 - 2016-04-18 - AUTH_LDAP_USER_ATTRLIST
----------------------------------------------
+1.2.8 - 2016-04-18 - AUTH_LDAP_USER_ATTRLIST
+--------------------------------------------
 
 - Add :setting:`AUTH_LDAP_USER_ATTRLIST` to override the set of attributes
   requested from the LDAP server.
 
 
-v1.2.7 - 2015-09-29 - Python 3
-------------------------------
+1.2.7 - 2015-09-29 - Python 3
+-----------------------------
 
 - Support Python 3 with `pyldap <https://pypi.python.org/pypi/pyldap>`_.
 
 
-v1.2.6 - 2015-03-29
--------------------
+1.2.6 - 2015-03-29
+------------------
 
 - Performance improvements to group mirroring (from
   `Denver Janke <https://bitbucket.org/denverjanke>`_).
@@ -97,21 +105,21 @@ v1.2.6 - 2015-03-29
   per-subclass default settings.
 
 
-v1.2.5 - 2015-01-30
--------------------
+1.2.5 - 2015-01-30
+------------------
 
 - Fix interaction between :setting:`AUTH_LDAP_AUTHORIZE_ALL_USERS` and
   :setting:`AUTH_LDAP_USER_SEARCH`.
 
 
-v1.2.4 - 2014-12-28 - nisNetgroup support
------------------------------------------
+1.2.4 - 2014-12-28 - nisNetgroup support
+----------------------------------------
 
 - Add support for nisNetgroup groups (thanks to Christopher Bartz).
 
 
-v1.2.3 - 2014-11-18
--------------------
+1.2.3 - 2014-11-18
+------------------
 
 - Fix `#50`_: Improved escaping for filter strings.
 
@@ -121,21 +129,21 @@ v1.2.3 - 2014-11-18
 .. _#50: https://bitbucket.org/illocution/django-auth-ldap/issue/50/
 
 
-v1.2.2 - 2014-09-22
--------------------
+1.2.2 - 2014-09-22
+------------------
 
 - Include test harness in source distribution. Some package maintainers find
   this helpful.
 
 
-v1.2.1 - 2014-08-24
--------------------
+1.2.1 - 2014-08-24
+------------------
 
 - More verbose log messages for authentication failures.
 
 
-v1.2 - 2014-04-10
------------------
+1.2 - 2014-04-10
+----------------
 
 - django-auth-ldap now provides experimental Python 3 support. Python 2.5 was
   dropped.
@@ -150,8 +158,8 @@ v1.2 - 2014-04-10
   Thanks to `Aymeric Augustin <https://myks.org/en/>`_ for making this happen.
 
 
-v1.1.8 - 2014-02-01
--------------------
+1.1.8 - 2014-02-01
+------------------
 
 * Fix `#43`_: Update :class:`~django_auth_ldap.config.LDAPSearchUnion` to work for
   group searches in addition to user searches.
@@ -161,15 +169,15 @@ v1.1.8 - 2014-02-01
 .. _#43: https://bitbucket.org/illocution/django-auth-ldap/issue/43/
 
 
-v1.1.7 - 2013-11-19
--------------------
+1.1.7 - 2013-11-19
+------------------
 
 * Bug fix: :setting:`AUTH_LDAP_GLOBAL_OPTIONS` could be ignored in some cases
   (such as :func:`~django_auth_ldap.backend.LDAPBackend.populate_user`).
 
 
-v1.1.5 - 2013-10-25
--------------------
+1.1.5 - 2013-10-25
+------------------
 
 * Fix `#41`_: Support POSIX group permissions with no gidNumber attribute.
 
@@ -179,14 +187,14 @@ v1.1.5 - 2013-10-25
 .. _#41: https://bitbucket.org/illocution/django-auth-ldap/issue/41/
 
 
-v1.1.4 - 2013-03-09
--------------------
+1.1.4 - 2013-03-09
+------------------
 
 * Add support for Django 1.5's custom user models.
 
 
-v1.1.3 - 2013-01-05
--------------------
+1.1.3 - 2013-01-05
+------------------
 
 * Fix `#33`_: Reject empty passwords by default.
 

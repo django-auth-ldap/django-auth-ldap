@@ -602,6 +602,16 @@ Backend
         A subclass may override this to associate LDAP users to Django users any
         way it likes.
 
+    .. method:: get_or_create_user(self, username, ldap_user)
+
+        .. warning::
+
+            Deprecated. This is supported for backwards-compatibility, but will
+            be removed in a future version.
+
+        Like :meth:`get_or_build_user`, but always returns a saved model
+        instance. If you're overriding this, please convert to the new method.
+
     .. method:: ldap_to_django_username(username)
 
         Returns a valid Django username based on the given LDAP username (which

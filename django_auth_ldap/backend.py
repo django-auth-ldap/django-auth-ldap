@@ -202,9 +202,9 @@ class LDAPBackend(object):
     # Hooks for subclasses
     #
 
-    def get_or_create_user(self, username, ldap_user):
+    def get_or_build_user(self, username, ldap_user):
         """
-        This must return a (User, created) 2-tuple for the given LDAP user.
+        This must return a (User, built) 2-tuple for the given LDAP user.
 
         username is the Django-friendly username of the user. ldap_user.dn is
         the user's DN and ldap_user.attrs contains all of their LDAP
@@ -213,17 +213,49 @@ class LDAPBackend(object):
         The returned User object may be an unsaved model instance.
 
         """
+        if self.__class__.get_or_create_user != LDAPBackend.get_or_create_user:
+            # Older deprecated method overridden, defer to it instead.
+            warnings.warn(
+                "Method LDAPBacked.get_or_create_user() is deprecated and will "
+                "be removed in a future version. Override "
+                "LDAPBacked.get_or_build_user() instead. "
+                "LDAPBacked.get_or_build_user() does not need to save newly "
+                "built users.",
+                DeprecationWarning,
+            )
+            return self.get_or_create_user(username, ldap_user)
+
         model = self.get_user_model()
 
         try:
             user = model.objects.get(**{model.USERNAME_FIELD + '__iexact': username})
         except model.DoesNotExist:
             user = model(**{model.USERNAME_FIELD: username.lower()})
-            created = True
+            built = True
         else:
-            created = False
+            built = False
 
-        return (user, created)
+        return user, built
+
+    def get_or_create_user(self, username, ldap_user):
+        """
+        This must return a (User, created) 2-tuple for the given LDAP user.
+        username is the Django-friendly username of the user. ldap_user.dn is
+        the user's DN and ldap_user.attrs contains all of their LDAP
+        attributes.
+
+        Deprecated, but remains for backwards compatibility. Remove in a future
+        release.
+        """
+        model = self.get_user_model()
+        username_field = model.USERNAME_FIELD
+
+        kwargs = {
+            username_field + '__iexact': username,
+            'defaults': {username_field: username.lower()}
+        }
+
+        return model.objects.get_or_create(**kwargs)
 
     def ldap_to_django_username(self, username):
         return username
@@ -570,14 +602,14 @@ class _LDAPUser(object):
 
         username = self.backend.ldap_to_django_username(self._username)
 
-        self._user, created = self.backend.get_or_create_user(username, self)
+        self._user, built = self.backend.get_or_build_user(username, self)
         self._user.ldap_user = self
         self._user.ldap_username = self._username
 
-        should_populate = force_populate or self.settings.ALWAYS_UPDATE_USER or created
+        should_populate = force_populate or self.settings.ALWAYS_UPDATE_USER or built
 
-        if created:
-            logger.debug("Created Django user {}".format(username))
+        if built:
+            logger.debug("Creating Django user {}".format(username))
             self._user.set_unusable_password()
             save_user = True
 

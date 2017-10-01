@@ -1534,6 +1534,32 @@ class LDAPTest(TestCase):
             [('search_s', ('ou=people,o=test', ldap.SCOPE_SUBTREE, '(uid=alice)', ['*', '+']), {})]
         )
 
+    def test_get_or_create_user_deprecated(self):
+        class MyBackend(backend.LDAPBackend):
+            def get_or_create_user(self, username, ldap_user):
+                return super(MyBackend, self).get_or_create_user(username, ldap_user)
+
+        self.backend = MyBackend()
+        self._init_settings(USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test')
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.backend.authenticate(username='alice', password='password')
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, DeprecationWarning)
+
+    def test_custom_backend_without_get_or_create_no_warning(self):
+        class MyBackend(backend.LDAPBackend):
+            pass
+
+        self.backend = MyBackend()
+        self._init_settings(USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test')
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.backend.authenticate(username='alice', password='password')
+        self.assertEqual(len(w), 0)
+
     #
     # Utilities
     #

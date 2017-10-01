@@ -6,12 +6,15 @@
       Django (<=1.7, plus 1.9).
 
     - Fix `#58`_: Support creating new custom user models with ``NOT NULL``
-      fields. ``LDAPBackend.get_or_create()`` no longer saves a newly created
+      fields. ``LDAPBackend.get_or_create_user()`` was renamed
+      ``LDAPBackend.get_or_build_user()`` and no longer saves a newly created
       user but instead simply instantiates it. This allows ``NOT NULL`` fields
       to be populated by ``USER_ATTR_MAP`` or
       :data:`django_auth_ldap.backend.populate_user` before saving to avoid an
       ``IntegrityError``. The user is still saved in
-      ``LDAPBackend._get_or_create()``.
+      ``LDAPBackend._get_or_create()``. Overriding
+      ``LDAPBackend.get_or_create_user()`` is deprecated, but remains for
+      backwards compatibility. It will be removed in a future version.
 
     .. _#58: https://bitbucket.org/illocution/django-auth-ldap/issues/58/
 

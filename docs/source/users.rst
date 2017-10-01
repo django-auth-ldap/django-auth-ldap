@@ -6,7 +6,7 @@ tightly bound to a user model. When a user logs in, we have to create a model
 object to represent them in the database. Because the LDAP search is
 case-insensitive, the default implementation also searches for existing Django
 users with an iexact query and new users are created with lowercase usernames.
-See :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_create_user` if you'd
+See :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_build_user` if you'd
 like to override this behavior. See
 :meth:`~django_auth_ldap.backend.LDAPBackend.get_user_model` if you'd like to
 substitute a proxy model.

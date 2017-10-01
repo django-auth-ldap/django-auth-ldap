@@ -144,7 +144,7 @@ class LDAPBackend(object):
     def authenticate(self, request=None, username=None, password=None, **kwargs):
         if bool(password) or self.settings.PERMIT_EMPTY_PASSWORD:
             ldap_user = _LDAPUser(self, username=username.strip())
-            user = ldap_user.authenticate(password)
+            user = self.authenticate_ldap(ldap_user, password)
         else:
             logger.debug('Rejecting empty password for {}'.format(username))
             user = None
@@ -199,6 +199,9 @@ class LDAPBackend(object):
     #
     # Hooks for subclasses
     #
+
+    def authenticate_ldap(self, ldap_user, password):
+        return ldap_user.authenticate(password)
 
     def get_or_build_user(self, username, ldap_user):
         """

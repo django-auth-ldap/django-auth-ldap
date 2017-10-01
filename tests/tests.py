@@ -1645,6 +1645,17 @@ class LDAPTest(TestCase):
             self.backend.authenticate(username='alice', password='password')
         self.assertEqual(len(w), 0)
 
+    def test_override_authenticate_access_ldap_user(self):
+        class MyBackend(backend.LDAPBackend):
+            def authenticate_ldap(self, ldap_user, password):
+                ldap_user.foo = 'bar'
+                return super(MyBackend, self).authenticate_ldap(ldap_user, password)
+
+        self.backend = MyBackend()
+        self._init_settings(USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test')
+        user = self.backend.authenticate(username='alice', password='password')
+        self.assertEqual(user.ldap_user.foo, 'bar')
+
     #
     # Utilities
     #

@@ -15,6 +15,10 @@
 - Support querying by a field other than the username field with
   :setting:`AUTH_LDAP_USER_QUERY_FIELD`.
 
+- New method :meth:`~django_auth_ldap.backend.LDAPBackend.authenticate_ldap()`
+  to provide subclasses access to the LDAP attributes and other properties of
+  the LDAP user object during authentication or failure.
+
 .. _#58: https://bitbucket.org/illocution/django-auth-ldap/issues/58/
 
 

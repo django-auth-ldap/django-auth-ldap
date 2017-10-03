@@ -53,6 +53,7 @@ class _LDAPConfig(object):
 
     _ldap_configured = False
 
+    @classmethod
     def get_ldap(cls, global_options=None):
         """
         Returns the ldap module. The unit test harness will assign a mock object
@@ -80,8 +81,8 @@ class _LDAPConfig(object):
             cls._ldap_configured = True
 
         return cls.ldap
-    get_ldap = classmethod(get_ldap)
 
+    @classmethod
     def get_logger(cls):
         """
         Initializes and returns our logger instance.
@@ -95,7 +96,6 @@ class _LDAPConfig(object):
             cls.logger.addHandler(NullHandler())
 
         return cls.logger
-    get_logger = classmethod(get_logger)
 
 
 # Our global logger

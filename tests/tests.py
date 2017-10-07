@@ -697,7 +697,7 @@ class LDAPTest(TestCase):
         self.assertEqual(user.email, '')
 
     @override_settings(AUTH_USER_MODEL='tests.TestUser')
-    def test_populate_user_with_buggy_setter_raises_exception(self):
+    def test_authenticate_with_buggy_setter_raises_exception(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
             USER_ATTR_MAP={
@@ -708,6 +708,19 @@ class LDAPTest(TestCase):
 
         with self.assertRaisesMessage(Exception, 'Oops...'):
             self.backend.authenticate(username='alice', password='password')
+
+    @override_settings(AUTH_USER_MODEL='tests.TestUser')
+    def test_populate_user_with_buggy_setter_raises_exception(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={
+                'first_name': 'givenName',
+                'uid_number': 'uidNumber',
+            },
+        )
+
+        with self.assertRaisesMessage(Exception, 'Oops...'):
+            self.backend.populate_user('alice')
 
     def test_populate_with_attrlist(self):
         self._init_settings(
@@ -768,7 +781,7 @@ class LDAPTest(TestCase):
 
         backend.populate_user.disconnect(handle_populate_user)
 
-    def test_signal_ldap_error(self):
+    def test_auth_signal_ldap_error(self):
         self._init_settings(
             BIND_DN='uid=bob,ou=people,o=test',
             BIND_PASSWORD='bogus',
@@ -785,6 +798,19 @@ class LDAPTest(TestCase):
         with self.assertRaises(ldap.LDAPError):
             self.backend.authenticate(username='alice', password='password')
         backend.ldap_error.disconnect(handle_ldap_error)
+
+    def test_populate_signal_ldap_error(self):
+        self._init_settings(
+            BIND_DN='uid=bob,ou=people,o=test',
+            BIND_PASSWORD='bogus',
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
+            )
+        )
+
+        user = self.backend.populate_user('alice')
+
+        self.assertIsNone(user)
 
     def test_no_update_existing(self):
         self._init_settings(
@@ -1118,6 +1144,22 @@ class LDAPTest(TestCase):
         self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
         self.assertTrue(self.backend.has_module_perms(alice, "auth"))
+
+    def test_group_permissions_ldap_error(self):
+        self._init_settings(
+            BIND_DN='uid=bob,ou=people,o=test',
+            BIND_PASSWORD='bogus',
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+            FIND_GROUP_PERMS=True
+        )
+        self._init_groups()
+
+        alice = User.objects.create(username='alice')
+        alice = self.backend.get_user(alice.pk)
+
+        self.assertEqual(self.backend.get_group_permissions(alice), set())
 
     def test_empty_group_permissions(self):
         self._init_settings(

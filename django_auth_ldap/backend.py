@@ -228,21 +228,21 @@ class LDAPBackend(object):
         if self.settings.USER_QUERY_FIELD:
             query_field = self.settings.USER_QUERY_FIELD
             query_value = ldap_user.attrs[self.settings.USER_ATTR_MAP[query_field]][0]
+            lookup = query_field
         else:
-            query_field = '{}__iexact'.format(model.USERNAME_FIELD)
-            query_value = username
+            query_field = model.USERNAME_FIELD
+            query_value = username.lower()
+            lookup = '{}__iexact'.format(query_field)
 
         try:
-            user = model.objects.get(**{query_field: query_value})
+            user = model.objects.get(**{lookup: query_value})
         except model.DoesNotExist:
-            user = model()
-            if not self.settings.USER_QUERY_FIELD:
-                setattr(user, model.USERNAME_FIELD, username.lower())
+            user = model(**{query_field: query_value})
             built = True
         else:
             built = False
 
-        return user, built
+        return (user, built)
 
     def get_or_create_user(self, username, ldap_user):
         """
@@ -384,9 +384,9 @@ class _LDAPUser(object):
                         self._username, pprint.pformat(e)
                     )
                 )
-        except Exception:
-            logger.exception(
-                "Caught Exception while authenticating {}".format(self._username)
+        except Exception as e:
+            logger.warning(
+                "{} while authenticating {}".format(e, self._username)
             )
             raise
 
@@ -441,10 +441,8 @@ class _LDAPUser(object):
                     )
                 )
         except Exception as e:
-            logger.error(
-                "Caught Exception while authenticating {}: {}".format(
-                    self._username, pprint.pformat(e)
-                )
+            logger.warning(
+                "{} while authenticating {}".format(e, self._username)
             )
             raise
 

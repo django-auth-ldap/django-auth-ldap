@@ -15,3 +15,11 @@ class TestUser(AbstractBaseUser):
 
     def get_short_name(self):
         return self.identifier
+
+    def get_first_name(self):
+        return 'Alice'
+
+    def set_first_name(self, value):
+        raise Exception('Oops...')
+
+    first_name = property(get_first_name, set_first_name)

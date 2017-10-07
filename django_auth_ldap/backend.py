@@ -52,8 +52,6 @@ from functools import reduce
 import operator
 import pprint
 import re
-import sys
-import traceback
 import warnings
 
 import ldap
@@ -439,7 +437,6 @@ class _LDAPUser(object):
                     self._username, pprint.pformat(e)
                 )
             )
-            logger.error(''.join(traceback.format_tb(sys.exc_info()[2])))
             raise
 
         return user
@@ -643,9 +640,11 @@ class _LDAPUser(object):
     def _populate_user_from_attributes(self):
         for field, attr in self.settings.USER_ATTR_MAP.items():
             try:
-                setattr(self._user, field, self.attrs[attr][0])
-            except Exception:
+                value = self.attrs[attr][0]
+            except LookupError:
                 logger.warning("{} does not have a value for the attribute {}".format(self.dn, attr))
+            else:
+                setattr(self._user, field, value)
 
     def _populate_user_from_group_memberships(self):
         for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.items():

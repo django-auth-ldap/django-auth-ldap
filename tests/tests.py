@@ -666,6 +666,35 @@ class LDAPTest(TestCase):
             ['initialize', 'simple_bind_s', 'simple_bind_s', 'search_s']
         )
 
+    def test_populate_user_with_missing_attribute(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={
+                'first_name': 'givenName',
+                'last_name': 'sn',
+                'email': 'mail',
+            }
+        )
+
+        user = self.backend.authenticate(username='alice', password='password')
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(user.first_name, 'Alice')
+        self.assertEqual(user.last_name, 'Adams')
+        self.assertEqual(user.email, '')
+
+    @override_settings(AUTH_USER_MODEL='tests.TestUser')
+    def test_populate_user_with_buggy_setter_raises_exception(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={
+                'first_name': 'givenName',
+                'uid_number': 'uidNumber',
+            },
+        )
+
+        with self.assertRaisesMessage(Exception, 'Oops...'):
+            self.backend.authenticate(username='alice', password='password')
+
     def test_populate_with_attrlist(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',

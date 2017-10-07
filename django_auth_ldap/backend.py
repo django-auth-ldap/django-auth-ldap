@@ -225,10 +225,19 @@ class LDAPBackend(object):
 
         model = self.get_user_model()
 
+        if self.settings.USER_QUERY_FIELD:
+            query_field = self.settings.USER_QUERY_FIELD
+            query_value = ldap_user.attrs[self.settings.USER_ATTR_MAP[query_field]][0]
+        else:
+            query_field = '{}__iexact'.format(model.USERNAME_FIELD)
+            query_value = username
+
         try:
-            user = model.objects.get(**{model.USERNAME_FIELD + '__iexact': username})
+            user = model.objects.get(**{query_field: query_value})
         except model.DoesNotExist:
-            user = model(**{model.USERNAME_FIELD: username.lower()})
+            user = model()
+            if not self.settings.USER_QUERY_FIELD:
+                setattr(user, model.USERNAME_FIELD, username.lower())
             built = True
         else:
             built = False
@@ -978,6 +987,7 @@ class LDAPSettings(object):
         'REQUIRE_GROUP': None,
         'SERVER_URI': 'ldap://localhost',
         'START_TLS': False,
+        'USER_QUERY_FIELD': None,
         'USER_ATTRLIST': None,
         'USER_ATTR_MAP': {},
         'USER_DN_TEMPLATE': None,

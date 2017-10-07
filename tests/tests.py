@@ -413,6 +413,20 @@ class LDAPTest(TestCase):
 
         self.assertIsInstance(user, TestUser)
 
+    @override_settings(AUTH_USER_MODEL='tests.TestUser')
+    def test_get_custom_field(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            USER_ATTR_MAP={
+                'uid_number': 'uidNumber',
+            },
+            USER_QUERY_FIELD='uid_number',
+        )
+        alice = TestUser.objects.create(identifier='abcdef', uid_number=1000)
+        user = self.backend.authenticate(username='Alice', password='password')
+        self.assertIsInstance(user, TestUser)
+        self.assertEqual(user.pk, alice.pk)
+
     def test_new_user_whitespace(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'

@@ -12,6 +12,9 @@
   :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_build_user` to avoid
   confusion. The old name may still be overridden for now.
 
+- Support querying by a field other than the username field with
+  :setting:`AUTH_LDAP_USER_QUERY_FIELD`.
+
 .. _#58: https://bitbucket.org/illocution/django-auth-ldap/issues/58/
 
 

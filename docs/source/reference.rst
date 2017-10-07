@@ -255,6 +255,19 @@ LDAP port. There are a number of configuration options that can be given to
 to disable certificate verification, perhaps to allow self-signed certificates.
 
 
+.. setting:: AUTH_LDAP_USER_QUERY_FIELD
+
+AUTH_LDAP_USER_QUERY_FIELD
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+The field on the user model used to query the authenticating user in the
+database. If unset, uses the value of ``USERNAME_FIELD`` of the model class.
+When set, the value used to query is obtained through the
+:setting:`AUTH_LDAP_USER_ATTR_MAP`.
+
+
 .. setting:: AUTH_LDAP_USER_ATTRLIST
 
 AUTH_LDAP_USER_ATTRLIST

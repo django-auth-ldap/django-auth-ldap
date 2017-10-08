@@ -108,26 +108,26 @@ class LDAPBackend(object):
         return {k: v for k, v in self.__dict__.items()
                 if k not in ['_settings', '_ldap']}
 
-    def _get_settings(self):
+    @property
+    def settings(self):
         if self._settings is None:
             self._settings = LDAPSettings(self.settings_prefix,
                                           self.default_settings)
 
         return self._settings
 
-    def _set_settings(self, settings):
+    @settings.setter
+    def settings(self, settings):
         self._settings = settings
 
-    settings = property(_get_settings, _set_settings)
-
-    def _get_ldap(self):
+    @property
+    def ldap(self):
         if self._ldap is None:
             options = getattr(django.conf.settings, 'AUTH_LDAP_GLOBAL_OPTIONS', None)
 
             self._ldap = _LDAPConfig.get_ldap(options)
 
         return self._ldap
-    ldap = property(_get_ldap)
 
     def get_user_model(self):
         """
@@ -347,13 +347,13 @@ class _LDAPUser(object):
         user.ldap_user = self
         user.ldap_username = self._username
 
-    def _get_ldap(self):
+    @property
+    def ldap(self):
         return self.backend.ldap
-    ldap = property(_get_ldap)
 
-    def _get_settings(self):
+    @property
+    def settings(self):
         return self.backend.settings
-    settings = property(_get_settings)
 
     #
     # Entry points
@@ -452,34 +452,34 @@ class _LDAPUser(object):
     # Public properties (callbacks). These are all lazy for performance reasons.
     #
 
-    def _get_user_dn(self):
+    @property
+    def dn(self):
         if self._user_dn is None:
             self._load_user_dn()
 
         return self._user_dn
-    dn = property(_get_user_dn)
 
-    def _get_user_attrs(self):
+    @property
+    def attrs(self):
         if self._user_attrs is None:
             self._load_user_attrs()
 
         return self._user_attrs
-    attrs = property(_get_user_attrs)
 
-    def _get_group_dns(self):
+    @property
+    def group_dns(self):
         return self._get_groups().get_group_dns()
-    group_dns = property(_get_group_dns)
 
-    def _get_group_names(self):
+    @property
+    def group_names(self):
         return self._get_groups().get_group_names()
-    group_names = property(_get_group_names)
 
-    def _get_bound_connection(self):
+    @property
+    def connection(self):
         if not self._connection_bound:
             self._bind()
 
         return self._get_connection()
-    connection = property(_get_bound_connection)
 
     #
     # Authentication

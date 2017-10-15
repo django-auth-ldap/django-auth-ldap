@@ -1,7 +1,6 @@
-include README LICENSE CHANGES
+include README.md LICENSE CHANGES
 include tox.ini
 
 recursive-include docs *
 recursive-include tests *
 prune docs/build
-global-exclude *.pyc .DS_Store .workon

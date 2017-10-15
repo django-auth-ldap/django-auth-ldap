@@ -1,4 +1,4 @@
-1.3.0b2 - Pre-release
+1.3.0b3 - Pre-release
 ---------------------
 
 - **Backwards incompatible**: Removed support for obsolete versions of
@@ -15,9 +15,9 @@
 - Support querying by a field other than the username field with
   :setting:`AUTH_LDAP_USER_QUERY_FIELD`.
 
-- New method :meth:`~django_auth_ldap.backend.LDAPBackend.authenticate_ldap()`
-  to provide subclasses access to the LDAP attributes and other properties of
-  the LDAP user object during authentication or failure.
+- New method
+  :meth:`~django_auth_ldap.backend.LDAPBackend.authenticate_ldap_user()` to
+  provide pre- and post-authenication hooks.
 
 .. _#58: https://bitbucket.org/illocution/django-auth-ldap/issues/58/
 

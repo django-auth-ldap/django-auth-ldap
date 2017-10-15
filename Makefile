@@ -1,9 +1,5 @@
 # This Makefile is a minor convenience for the maintainer. Nothing to see here.
 
-python2 = python2.7
-python3 = python3.6
-
-
 .PHONY: full
 full: clean sdist wheel
 
@@ -13,10 +9,7 @@ sdist:
 
 .PHONY: wheel
 wheel:
-	-rm -r build
-	$(python2) setup.py bdist_wheel
-	-rm -r build
-	$(python3) setup.py bdist_wheel
+	python setup.py bdist_wheel
 
 .PHONY: sign
 sign:

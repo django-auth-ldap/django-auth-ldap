@@ -2,14 +2,9 @@
 
 from __future__ import unicode_literals
 
-import sys
-
 from setuptools import setup
 
 import django_auth_ldap
-
-
-PY3 = (sys.version_info[0] == 3)
 
 
 long_description = """\
@@ -117,8 +112,9 @@ setup(
     ],
     keywords=["django", "ldap", "authentication", "auth"],
     install_requires=[
-        "django",
-        "pyldap" if PY3 else "python-ldap >= 2.0",
+        'django >= 1.8',
+        'pyldap; python_version >= "3.0"',
+        'python-ldap >= 2.0; python_version < "3.0"',
     ],
     setup_requires=[
         "setuptools >= 0.6c11",

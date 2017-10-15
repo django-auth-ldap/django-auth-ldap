@@ -102,6 +102,31 @@ efficient) equivalent::
     AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
 
 
+.. _customizing-authentication:
+
+Customizing Authentication
+--------------------------
+
+.. versionadded:: 1.3
+
+It is possible to further customize the authentication process by subclassing
+:class:`~django_auth_ldap.backend.LDAPBackend` and overriding
+:meth:`~django_auth_ldap.backend.LDAPBackend.authenticate_ldap_user`. The first
+argument is the unauthenticated :ref:`ldap_user <ldap_user>`, the second is the
+supplied password. The intent is to give subclasses a simple pre- and
+post-authentication hook.
+
+If a subclass decides to proceed with the authentication, it must call the
+inherited implementation. It may then return either the authenticated user or
+``None``. The behavior of any other return value--such as substituting a
+different user object--is undefined. :doc:`users` has more on managing Django
+user objects.
+
+Obviously, it is always safe to access ``ldap_user.dn`` before authenticating
+the user. Accessing ``ldap_user.attrs`` and others should be safe unless you're
+relying on special binding behavior, such as
+:setting:`AUTH_LDAP_BIND_AS_AUTHENTICATING_USER`.
+
 Notes
 -----
 

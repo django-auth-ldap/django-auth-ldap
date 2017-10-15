@@ -594,14 +594,10 @@ Backend
         Subclasses would most likely override this in order to substitute a
         :ref:`proxy model <proxy-models>`.
 
-    .. method:: authenticate_ldap(self, ldap_user, password)
+    .. method:: authenticate_ldap_user(self, ldap_user, password)
 
-       Given an LDAP user object and password, authenticate the user user and
-       return a Django user object.
-
-       This can be overridden by subclasses to provide access to the LDAP
-       attributes and other properties of the LDAP user object during
-       authentication or failure.
+       Given an LDAP user object and password, authenticates the user and
+       returns a Django user object. See :ref:`customizing-authentication`.
 
     .. method:: get_or_build_user(self, username, ldap_user)
 

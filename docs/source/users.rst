@@ -113,6 +113,8 @@ found in LDAP.
         raise Exception('No user named alice')
 
 
+.. _ldap_user:
+
 Direct Attribute Access
 -----------------------
 

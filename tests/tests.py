@@ -1647,9 +1647,9 @@ class LDAPTest(TestCase):
 
     def test_override_authenticate_access_ldap_user(self):
         class MyBackend(backend.LDAPBackend):
-            def authenticate_ldap(self, ldap_user, password):
+            def authenticate_ldap_user(self, ldap_user, password):
                 ldap_user.foo = 'bar'
-                return super(MyBackend, self).authenticate_ldap(ldap_user, password)
+                return super(MyBackend, self).authenticate_ldap_user(ldap_user, password)
 
         self.backend = MyBackend()
         self._init_settings(USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test')

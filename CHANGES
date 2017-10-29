@@ -19,6 +19,8 @@
   :meth:`~django_auth_ldap.backend.LDAPBackend.authenticate_ldap_user()` to
   provide pre- and post-authenication hooks.
 
+- Add support for Django 2.0.
+
 .. _#58: https://bitbucket.org/illocution/django-auth-ldap/issues/58/
 
 

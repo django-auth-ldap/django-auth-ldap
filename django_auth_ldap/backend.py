@@ -56,6 +56,7 @@ import warnings
 
 import ldap
 
+import django
 import django.conf
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
@@ -771,7 +772,10 @@ class _LDAPUser(object):
             new_groups = [Group.objects.get_or_create(name=name)[0] for name
                           in target_group_names if name not in existing_group_names]
 
-            self._user.groups = existing_groups + new_groups
+            if django.VERSION < (1, 11):
+                self._user.groups = existing_groups + new_groups
+            else:
+                self._user.groups.set(existing_groups + new_groups)
 
     #
     # Group information

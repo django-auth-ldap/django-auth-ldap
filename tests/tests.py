@@ -732,8 +732,6 @@ class LDAPTest(TestCase):
         user = self.backend.authenticate(username='alice', password='password')
 
         self.assertEqual(user.username, 'alice')
-        self.assertEqual(user.first_name, 'Alice')
-        self.assertEqual(user.last_name, 'Adams')
 
         # init, bind as user, bind anonymous, lookup user attrs
         self.assertEqual(

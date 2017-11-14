@@ -629,12 +629,9 @@ class _LDAPUser(object):
             self._populate_user()
             save_user = True
 
-        # Give the client a chance to finish populating the user just before
-        # saving.
-        if should_populate:
-            signal_responses = populate_user.send(self.backend.__class__, user=self._user, ldap_user=self)
-            if len(signal_responses) > 0:
-                save_user = True
+            # Give the client a chance to finish populating the user just
+            # before saving.
+            populate_user.send(self.backend.__class__, user=self._user, ldap_user=self)
 
         if save_user:
             self._user.save()

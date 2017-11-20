@@ -1,5 +1,7 @@
-1.3.0b3 - Pre-release
----------------------
+1.3.0 - 2017-11-20 - Various improvements and cleanup
+-----------------------------------------------------
+
+This release driven primarily by https://bitbucket.org/jdufresne/.
 
 - **Backwards incompatible**: Removed support for obsolete versions of
   Django (<=1.7, plus 1.9).

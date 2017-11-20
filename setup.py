@@ -89,7 +89,7 @@ setup(
     license="BSD",
     packages=["django_auth_ldap"],
     classifiers=[
-        "Development Status :: 4 - Beta",
+        'Development Status :: 5 - Production/Stable',
         "Environment :: Web Environment",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",

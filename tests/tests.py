@@ -34,7 +34,6 @@ import warnings
 
 import ldap
 
-import django
 from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
@@ -1335,10 +1334,7 @@ class LDAPTest(TestCase):
         for name in ('mirror{}'.format(i) for i in range(1, 5)):
             groups[name] = Group.objects.create(name=name)
         alice = self.backend.populate_user('alice')
-        if django.VERSION < (1, 11):
-            alice.groups = [groups['mirror2'], groups['mirror4']]
-        else:
-            alice.groups.set([groups['mirror2'], groups['mirror4']])
+        alice.groups.set([groups['mirror2'], groups['mirror4']])
 
         alice = self.backend.authenticate(username='alice', password='password')
 
@@ -1360,10 +1356,7 @@ class LDAPTest(TestCase):
         for name in ('mirror{}'.format(i) for i in range(1, 5)):
             groups[name] = Group.objects.create(name=name)
         alice = self.backend.populate_user('alice')
-        if django.VERSION < (1, 11):
-            alice.groups = [groups['mirror1'], groups['mirror3']]
-        else:
-            alice.groups.set([groups['mirror1'], groups['mirror3']])
+        alice.groups.set([groups['mirror1'], groups['mirror3']])
 
         alice = self.backend.authenticate(username='alice', password='password')
 
@@ -1385,10 +1378,7 @@ class LDAPTest(TestCase):
         for name in ('mirror{}'.format(i) for i in range(1, 5)):
             groups[name] = Group.objects.create(name=name)
         alice = self.backend.populate_user('alice')
-        if django.VERSION < (1, 11):
-            alice.groups = [groups['mirror2'], groups['mirror4']]
-        else:
-            alice.groups.set([groups['mirror2'], groups['mirror4']])
+        alice.groups.set([groups['mirror2'], groups['mirror4']])
 
         alice = self.backend.authenticate(username='alice', password='password')
 
@@ -1410,10 +1400,7 @@ class LDAPTest(TestCase):
         for name in ('mirror{}'.format(i) for i in range(1, 5)):
             groups[name] = Group.objects.create(name=name)
         alice = self.backend.populate_user('alice')
-        if django.VERSION < (1, 11):
-            alice.groups = [groups['mirror1'], groups['mirror3']]
-        else:
-            alice.groups.set([groups['mirror1'], groups['mirror3']])
+        alice.groups.set([groups['mirror1'], groups['mirror3']])
 
         alice = self.backend.authenticate(username='alice', password='password')
 

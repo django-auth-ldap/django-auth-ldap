@@ -5,9 +5,9 @@ service. Configuration can be as simple as a single distinguished name template,
 but there are many rich configuration options for working with users, groups,
 and permissions.
 
-This version is supported on Python 2.7 and 3.4+; and Django 1.8 and 1.10+.
-Under Python 2, it requires [python-ldap][] >= 2.0; under Python 3, it uses
-[pyldap][].
+This version is supported on Python 2.7 and 3.4+; and Django 1.11+. Under
+Python 2, it requires [python-ldap][] >= 2.0; under Python 3, it
+uses [pyldap][].
 
 * Repository: https://bitbucket.org/illocution/django-auth-ldap
 * Documentation: https://django-auth-ldap.readthedocs.io/

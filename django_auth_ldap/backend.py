@@ -56,7 +56,6 @@ import warnings
 
 import ldap
 
-import django
 import django.conf
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
@@ -528,8 +527,9 @@ class _LDAPUser(object):
             self._user_dn = self._construct_simple_user_dn()
         else:
             cache_key = valid_cache_key('django_auth_ldap.user_dn.{}'.format(self._username))
-            self._user_dn = cache_get_or_set(
-                cache, cache_key, self._search_for_user_dn,
+            self._user_dn = cache.get_or_set(
+                cache_key,
+                self._search_for_user_dn,
                 self.settings.GROUP_CACHE_TIMEOUT
             )
 
@@ -769,10 +769,7 @@ class _LDAPUser(object):
             new_groups = [Group.objects.get_or_create(name=name)[0] for name
                           in target_group_names if name not in existing_group_names]
 
-            if django.VERSION < (1, 11):
-                self._user.groups = existing_groups + new_groups
-            else:
-                self._user.groups.set(existing_groups + new_groups)
+            self._user.groups.set(existing_groups + new_groups)
 
     #
     # Group information
@@ -1024,15 +1021,3 @@ def valid_cache_key(key):
     key = re.sub(r'\s+', '+', key)[:250]
 
     return key
-
-
-def cache_get_or_set(cache, key, default, timeout=None):
-    """
-    Backport of Django 1.9's cache.get_or_set.
-    """
-    value = cache.get(key)
-    if value is None:
-        value = default() if callable(default) else default
-        cache.set(key, value, timeout)
-
-    return value

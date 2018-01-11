@@ -109,6 +109,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     keywords=["django", "ldap", "authentication", "auth"],
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     install_requires=[
         'Django >= 1.11',
         'pyldap; python_version >= "3.0"',

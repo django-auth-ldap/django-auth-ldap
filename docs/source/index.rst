@@ -11,10 +11,8 @@ and permissions.
 * Documentation: https://django-auth-ldap.readthedocs.io/
 * Mailing list: https://groups.google.com/group/django-auth-ldap
 
-This version is supported on Python 2.7 and 3.4+; and Django 1.11+.
-Under Python 2, it requires `python-ldap
-<https://pypi.python.org/pypi/python-ldap>`_ >= 2.0; under Python 3, it uses
-`pyldap <https://pypi.python.org/pypi/pyldap>`_.
+This version is supported on Python 2.7 and 3.4+; and Django 1.11+. It requires
+`python-ldap <https://pypi.python.org/pypi/python-ldap>`_ >= 3.0.
 
 .. toctree::
     :maxdepth: 2

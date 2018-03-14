@@ -105,7 +105,7 @@ html_theme = 'default'
 # to template names.
 #
 # This is required for the alabaster theme
-# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
+# refs: https://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 # html_sidebars = {
 #     '**': [
 #         'about.html',
@@ -177,8 +177,8 @@ texinfo_documents = [
 # intersphinx_mapping = {'https://docs.python.org/': None}
 
 intersphinx_mapping = {
-    'python': ('http://docs.python.org/', None),
+    'python': ('https://docs.python.org/', None),
     'django': ('https://docs.djangoproject.com/en/dev/',
                'https://docs.djangoproject.com/en/dev/_objects/'),
-    'pythonldap': ('http://python-ldap.org/doc/html/', None),
+    'pythonldap': ('https://python-ldap.org/en/latest/', None),
 }

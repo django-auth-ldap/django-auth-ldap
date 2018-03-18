@@ -63,14 +63,6 @@ class _LDAPConfig(object):
         """
         if cls.ldap is None:
             import ldap.filter
-
-            # Support for python-ldap < 2.0.6
-            try:
-                import ldap.dn
-            except ImportError:
-                from django_auth_ldap import dn
-                ldap.dn = dn
-
             cls.ldap = ldap
 
         # Apply global LDAP options once

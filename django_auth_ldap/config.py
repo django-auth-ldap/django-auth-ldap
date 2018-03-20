@@ -80,12 +80,8 @@ class _LDAPConfig(object):
         Initializes and returns our logger instance.
         """
         if cls.logger is None:
-            class NullHandler(logging.Handler):
-                def emit(self, record):
-                    pass
-
             cls.logger = logging.getLogger('django_auth_ldap')
-            cls.logger.addHandler(NullHandler())
+            cls.logger.addHandler(logging.NullHandler())
 
         return cls.logger
 

@@ -1,9 +1,15 @@
-UNRELEASED
-----------
+1.4.0 - 2018-03-22 - Cleanup and fixes
+--------------------------------------
+
+- Fix `#61`_: Honor the attrlist argument to :setting:`AUTH_LDAP_GROUP_SEARCH`
 
 - **Backwards incompatible**: Removed support for Django < 1.11.
+
 - Support for Python 2.7 and 3.4+ now handled by the same dependency,
   `python-ldap >= 3.0 <https://pypi.python.org/pypi/python-ldap>`_.
+
+.. _#61: https://bitbucket.org/illocution/django-auth-ldap/issues/58/
+
 
 1.3.0 - 2017-11-20 - Various improvements and cleanup
 -----------------------------------------------------

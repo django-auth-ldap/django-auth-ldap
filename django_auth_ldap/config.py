@@ -126,7 +126,7 @@ class LDAPSearch(object):
 
         filterstr = '(&{})'.format(''.join(term_strings))
 
-        return self.__class__(self.base_dn, self.scope, filterstr)
+        return self.__class__(self.base_dn, self.scope, filterstr, attrlist=self.attrlist)
 
     def search_with_additional_term_string(self, filterstr):
         """
@@ -136,7 +136,7 @@ class LDAPSearch(object):
         """
         filterstr = '(&{}{})'.format(self.filterstr, filterstr)
 
-        return self.__class__(self.base_dn, self.scope, filterstr)
+        return self.__class__(self.base_dn, self.scope, filterstr, attrlist=self.attrlist)
 
     def execute(self, connection, filterargs=(), escape=True):
         """

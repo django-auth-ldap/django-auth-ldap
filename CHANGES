@@ -1,3 +1,10 @@
+UNRELEASED
+----------
+
+- Removed NISGroupType class. It searched by attribute nisNetgroupTriple, which
+  has no defined EQAULITY rule.
+
+
 1.4.0 - 2018-03-22 - Cleanup and fixes
 --------------------------------------
 

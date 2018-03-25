@@ -37,7 +37,7 @@ import pprint
 import ldap
 import ldap.filter
 
-from django.utils.encoding import force_str
+from django.utils.encoding import force_text
 from django.utils.tree import Node
 
 
@@ -146,9 +146,9 @@ class LDAPSearch(object):
 
         try:
             filterstr = self.filterstr % filterargs
-            results = connection.search_s(force_str(self.base_dn),
+            results = connection.search_s(force_text(self.base_dn),
                                           self.scope,
-                                          force_str(filterstr),
+                                          force_text(filterstr),
                                           self.attrlist)
         except ldap.LDAPError as e:
             results = []
@@ -175,7 +175,7 @@ class LDAPSearch(object):
         try:
             filterstr = self.filterstr % filterargs
             msgid = connection.search(
-                force_str(self.base_dn), self.scope, force_str(filterstr),
+                force_text(self.base_dn), self.scope, force_text(filterstr),
                 self.attrlist
             )
         except ldap.LDAPError as e:
@@ -424,14 +424,14 @@ class PosixGroupType(LDAPGroupType):
             user_uid = ldap_user.attrs['uid'][0]
 
             try:
-                is_member = ldap_user.connection.compare_s(force_str(group_dn), 'memberUid', force_str(user_uid))
+                is_member = ldap_user.connection.compare_s(force_text(group_dn), 'memberUid', user_uid)
             except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                 is_member = False
 
             if not is_member:
                 try:
                     user_gid = ldap_user.attrs['gidNumber'][0]
-                    is_member = ldap_user.connection.compare_s(force_str(group_dn), 'gidNumber', force_str(user_gid))
+                    is_member = ldap_user.connection.compare_s(force_text(group_dn), 'gidNumber', user_gid)
                 except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                     is_member = False
         except (KeyError, IndexError):
@@ -465,9 +465,9 @@ class MemberDNGroupType(LDAPGroupType):
     def is_member(self, ldap_user, group_dn):
         try:
             result = ldap_user.connection.compare_s(
-                force_str(group_dn),
-                force_str(self.member_attr),
-                force_str(ldap_user.dn)
+                force_text(group_dn),
+                force_text(self.member_attr),
+                force_text(ldap_user.dn)
             )
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
             result = 0

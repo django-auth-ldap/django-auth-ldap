@@ -4,6 +4,12 @@ UNRELEASED
 - Removed NISGroupType class. It searched by attribute nisNetgroupTriple, which
   has no defined EQAULITY rule.
 
+- The python-ldap library is now initialized with ``bytes_mode=False``,
+  requiring all LDAP values to be handled as Unicode text (``str`` in Python 3
+  and ``unicode`` in Python 2), not bytes. For additional information, see the
+  python-ldap documentation on `bytes mode
+  <https://www.python-ldap.org/en/latest/bytes_mode.html>`_
+
 
 1.4.0 - 2018-03-22 - Cleanup and fixes
 --------------------------------------

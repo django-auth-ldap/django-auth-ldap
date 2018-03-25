@@ -400,14 +400,6 @@ Configuration
     .. method:: __init__(name_attr='cn')
 
 
-.. class:: NISGroupType
-
-    A concrete subclass of :class:`~django_auth_ldap.config.LDAPGroupType` that
-    handles the ``nisNetgroup`` object class.
-
-    .. method:: __init__(name_attr='cn')
-
-
 .. class:: MemberDNGroupType
 
     A concrete subclass of

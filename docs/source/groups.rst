@@ -12,7 +12,6 @@ subclasses can determine group membership for particular grouping mechanisms.
 Four built-in subclasses cover most grouping mechanisms:
 
     * :class:`~django_auth_ldap.config.PosixGroupType`
-    * :class:`~django_auth_ldap.config.NISGroupType`
     * :class:`~django_auth_ldap.config.MemberDNGroupType`
     * :class:`~django_auth_ldap.config.NestedMemberDNGroupType`
 

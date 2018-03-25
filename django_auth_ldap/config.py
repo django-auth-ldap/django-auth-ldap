@@ -482,43 +482,6 @@ class MemberDNGroupType(LDAPGroupType):
         return result
 
 
-class NISGroupType(LDAPGroupType):
-    """
-    A group type that handles nisNetgroup.
-    """
-    def user_groups(self, ldap_user, group_search):
-        try:
-            user_uid = ldap_user.attrs['uid'][0]
-            filterstr = '(|(nisNetgroupTriple={})(nisNetgroupTriple={}))'.format(
-                self.ldap.filter.escape_filter_chars('(,{},)'.format(user_uid)),
-                self.ldap.filter.escape_filter_chars('(-,{},-)'.format(user_uid))
-            )
-            search = group_search.search_with_additional_term_string(filterstr)
-            groups = search.execute(ldap_user.connection)
-        except (KeyError, IndexError):
-            pass
-        return groups
-
-    def is_member(self, ldap_user, group_dn):
-        try:
-            user_uid = ldap_user.attrs['uid'][0]
-            result = ldap_user.connection.compare_s(
-                force_str(group_dn),
-                force_str('nisNetgroupTriple'),
-                force_str('(,{},)'.format(user_uid))
-            )
-            if result == 0:
-                result = ldap_user.connection.compare_s(
-                    force_str(group_dn),
-                    force_str('nisNetgroupTriple'),
-                    force_str('(-,{},-)'.format(user_uid))
-                )
-        except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE, KeyError, IndexError):
-            result = 0
-
-        return result
-
-
 class NestedMemberDNGroupType(LDAPGroupType):
     """
     A group type that stores lists of members as distinguished names and

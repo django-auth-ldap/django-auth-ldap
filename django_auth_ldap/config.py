@@ -35,6 +35,7 @@ import logging
 import pprint
 
 import ldap
+import ldap.filter
 
 from django.utils.encoding import force_str
 from django.utils.tree import Node
@@ -48,7 +49,6 @@ class _LDAPConfig(object):
     """
     A private class that loads and caches some global objects.
     """
-    ldap = None
     logger = None
 
     _ldap_configured = False
@@ -56,23 +56,16 @@ class _LDAPConfig(object):
     @classmethod
     def get_ldap(cls, global_options=None):
         """
-        Returns the ldap module. The unit test harness will assign a mock object
-        to _LDAPConfig.ldap. It is imperative that the ldap module not be
-        imported anywhere else so that the unit tests will pass in the absence
-        of python-ldap.
+        Returns the configured ldap module.
         """
-        if cls.ldap is None:
-            import ldap.filter
-            cls.ldap = ldap
-
         # Apply global LDAP options once
         if (not cls._ldap_configured) and (global_options is not None):
             for opt, value in global_options.items():
-                cls.ldap.set_option(opt, value)
+                ldap.set_option(opt, value)
 
             cls._ldap_configured = True
 
-        return cls.ldap
+        return ldap
 
     @classmethod
     def get_logger(cls):

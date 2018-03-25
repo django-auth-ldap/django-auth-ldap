@@ -1,4 +1,4 @@
 -e .
-mockldap
+mock >= 2.0.0
 sphinx
 tox

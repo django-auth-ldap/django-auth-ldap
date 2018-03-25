@@ -116,6 +116,6 @@ setup(
         "setuptools >= 0.6c11",
     ],
     tests_require=[
-        "mockldap >= 0.2.7",
+        "mock >= 2.0.0",
     ]
 )

@@ -2,6 +2,12 @@ sudo: false
 language: python
 cache: pip
 
+addons:
+  apt:
+    packages:
+      - ldap-utils
+      - slapd
+
 matrix:
   include:
     - python: 2.7

@@ -1350,7 +1350,7 @@ class LDAPTest(TestCase):
 
     @mock.patch('ldap.ldapobject.SimpleLDAPObject.search_s')
     def test_search_attrlist(self, mock_search):
-        connection = self.backend.ldap.initialize(self.server.ldap_uri)
+        connection = self.backend.ldap.initialize(self.server.ldap_uri, bytes_mode=False)
         search = LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=alice)', ['*', '+'])
         search.execute(connection)
         mock_search.assert_called_once_with(

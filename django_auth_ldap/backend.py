@@ -63,7 +63,7 @@ from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 from django.utils import six
-from django.utils.encoding import force_str
+from django.utils.encoding import force_text
 
 from django_auth_ldap.config import ConfigurationWarning, LDAPGroupQuery, LDAPSearch, _LDAPConfig
 
@@ -819,8 +819,8 @@ class _LDAPUser(object):
         the life of this object. If False, then the caller only wishes to test
         the credentials, after which the connection will be considered unbound.
         """
-        self._get_connection().simple_bind_s(force_str(bind_dn),
-                                             force_str(bind_password))
+        self._get_connection().simple_bind_s(force_text(bind_dn),
+                                             force_text(bind_password))
 
         self._connection_bound = sticky
 
@@ -833,7 +833,7 @@ class _LDAPUser(object):
             if callable(uri):
                 uri = uri()
 
-            self._connection = self.backend.ldap.initialize(uri)
+            self._connection = self.backend.ldap.initialize(uri, bytes_mode=False)
 
             for opt, value in self.settings.CONNECTION_OPTIONS.items():
                 self._connection.set_option(opt, value)

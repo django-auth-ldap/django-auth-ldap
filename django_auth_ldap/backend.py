@@ -221,18 +221,6 @@ class LDAPBackend(object):
         The returned User object may be an unsaved model instance.
 
         """
-        if self.__class__.get_or_create_user != LDAPBackend.get_or_create_user:
-            # Older deprecated method overridden, defer to it instead.
-            warnings.warn(
-                "Method LDAPBacked.get_or_create_user() is deprecated and will "
-                "be removed in a future version. Override "
-                "LDAPBacked.get_or_build_user() instead. "
-                "LDAPBacked.get_or_build_user() does not need to save newly "
-                "built users.",
-                DeprecationWarning,
-            )
-            return self.get_or_create_user(username, ldap_user)
-
         model = self.get_user_model()
 
         if self.settings.USER_QUERY_FIELD:

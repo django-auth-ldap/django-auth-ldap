@@ -16,7 +16,7 @@ and permissions.
 This version is supported on Python 2.7 and 3.4+; and Django 1.11+. It requires
 `python-ldap <https://pypi.python.org/pypi/python-ldap>`_ >= 3.0.
 
-* Repository: https://bitbucket.org/illocution/django-auth-ldap
+* Repository: https://github.com/django-auth-ldap/django-auth-ldap
 * Documentation: https://django-auth-ldap.readthedocs.io/
 * Mailing list: https://groups.google.com/group/django-auth-ldap
 
@@ -81,7 +81,7 @@ setup(
     version=django_auth_ldap.version_string,
     description="Django LDAP authentication backend",
     long_description=long_description,
-    url="https://bitbucket.org/illocution/django-auth-ldap",
+    url="https://github.com/django-auth-ldap/django-auth-ldap",
     author="Peter Sagerson",
     author_email="psagers@ignorare.net",
     license="BSD",

@@ -7,7 +7,7 @@ service. Configuration can be as simple as a single distinguished name template,
 but there are many rich configuration options for working with users, groups,
 and permissions.
 
-* Repository: https://bitbucket.org/illocution/django-auth-ldap
+* Repository: https://github.com/django-auth-ldap/django-auth-ldap
 * Documentation: https://django-auth-ldap.readthedocs.io/
 * Mailing list: https://groups.google.com/group/django-auth-ldap
 

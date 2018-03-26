@@ -24,18 +24,20 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import, division, print_function, unicode_literals,
+)
 
 from copy import deepcopy
+import functools
 import io
 import logging
-import mock
 import os
 import pickle
 import warnings
-import functools
 
 import ldap
+import mock
 import slapdtest
 
 from django.contrib.auth.models import Group, Permission, User
@@ -46,8 +48,8 @@ from django.test.utils import override_settings
 
 from django_auth_ldap import backend
 from django_auth_ldap.config import (
-    GroupOfNamesType, LDAPGroupQuery, LDAPSearch, LDAPSearchUnion, MemberDNGroupType, NestedMemberDNGroupType,
-    PosixGroupType
+    GroupOfNamesType, LDAPGroupQuery, LDAPSearch, LDAPSearchUnion,
+    MemberDNGroupType, NestedMemberDNGroupType, PosixGroupType,
 )
 
 from .models import TestUser

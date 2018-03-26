@@ -45,7 +45,9 @@ information will be user_dn or user_info.
 Additional classes can be found in the config module next to this one.
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (
+    absolute_import, division, print_function, unicode_literals,
+)
 
 import copy
 from functools import reduce
@@ -65,7 +67,9 @@ import django.dispatch
 from django.utils import six
 from django.utils.encoding import force_text
 
-from django_auth_ldap.config import ConfigurationWarning, LDAPGroupQuery, LDAPSearch, _LDAPConfig
+from django_auth_ldap.config import (
+    ConfigurationWarning, LDAPGroupQuery, LDAPSearch, _LDAPConfig,
+)
 
 
 logger = _LDAPConfig.get_logger()

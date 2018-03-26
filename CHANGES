@@ -10,6 +10,9 @@ UNRELEASED
   python-ldap documentation on `bytes mode
   <https://www.python-ldap.org/en/latest/bytes_mode.html>`_
 
+- Removed deprecated function ``LDAPBackend.get_or_create_user()``. Use
+  :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_build_user` instead.
+
 
 1.4.0 - 2018-03-22 - Cleanup and fixes
 --------------------------------------

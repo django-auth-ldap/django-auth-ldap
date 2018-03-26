@@ -8,7 +8,7 @@ and permissions.
 This version is supported on Python 2.7 and 3.4+; and Django 1.11+. It requires
 [python-ldap][] >= 3.0.
 
-* Repository: https://bitbucket.org/illocution/django-auth-ldap
+* Repository: https://github.com/django-auth-ldap/django-auth-ldap
 * Documentation: https://django-auth-ldap.readthedocs.io/
 * Mailing list: https://groups.google.com/group/django-auth-ldap
 
@@ -91,76 +91,7 @@ This includes some static analysis to detect potential runtime errors and style
 issues.
 
 
-## Mercurial
-
-django-auth-ldap uses [Mercurial][hg] for source control. If you're more
-familiar with Git, Mercurial is similar in many ways, but there are a few
-important differences to keep in mind.
-
-Mercurial branches are more or less permanent and thus not very good for feature
-work or pull requests. If you want to work on multiple features at once, use
-[bookmarks][hg-bookmark] or [topics][hg-topic] instead (Bitbucket may not
-recognize topics yet). The default bookmark is called ``@`` (similar to git's
-master branch).
-
-    % hg up @
-    % hg bookmark new-feature
-    (make changes)
-    % hg ci
-    % hg push -B new-feature
-
-Local Mercurial clones and Bitbucket forks are all (typically)
-[non-publishing][hg-non-publishing] repositories. This means that new
-changesets remain in draft mode and can be modified in a safe and principled
-manner with the [evolve][hg-evolve-ext] extension. I make heavy use of
-[changeset evolution][hg-evolution] and frequently rely it to process pull
-requests while keeping the history clean and linear.
-
-If you're setting up Mercurial for the first time, I recommend you make sure you
-have the latest version and install [hg-evolve][pypi-evolve] with it. Here's a
-sample ~/.hgrc to get started:
-
-    [ui]
-    username = Your Name <youremail@example.com>
-    ignore = ~/.hgignore
-    style = phases
-
-    [extensions]
-    color =
-    evolve =
-    histedit =
-    rebase =
-    shelve =
-    topic =
-
-    [alias]
-    glog = log --graph
-
-You should also go to the Labs section of your bitbucket.org account settings
-and turn on evolution support.
-
-Changeset evolution is a big topic, but one of the most useful things to know is
-that it's safe to amend existing draft changesets even if they've already been
-shared with other non-publishing repositories:
-
-    % hg up @
-    % hg bookmark new-feature
-    (make changes)
-    % hg ci
-    % hg push -B new-feature
-    (incorporate feedback)
-    % hg amend
-    % hg push
-
-
 [python-ldap]: https://pypi.python.org/pypi/python-ldap
 [mailing list]: https://groups.google.com/group/django-auth-ldap 
-[issues]: https://bitbucket.org/illocution/django-auth-ldap/issues?status=new&status=open
+[issues]: https://github.com/django-auth-ldap/django-auth-ldap/issues
 [tox]: https://tox.readthedocs.io/
-[hg]: https://www.mercurial-scm.org/
-[hg-bookmark]: https://www.mercurial-scm.org/wiki/Bookmarks
-[hg-topic]: https://www.mercurial-scm.org/doc/evolution/tutorials/topic-tutorial.html
-[hg-non-publishing]: https://www.mercurial-scm.org/wiki/Phases#Publishing_Repository
-[hg-evolve-ext]: https://www.mercurial-scm.org/wiki/EvolveExtension
-[hg-evolution]: https://www.mercurial-scm.org/doc/evolution/
-[pypi-evolve]: https://pypi.python.org/pypi/hg-evolve

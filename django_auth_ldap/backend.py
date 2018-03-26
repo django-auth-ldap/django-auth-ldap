@@ -142,7 +142,7 @@ class LDAPBackend(object):
     #
 
     def authenticate(self, request=None, username=None, password=None, **kwargs):
-        if bool(password) or self.settings.PERMIT_EMPTY_PASSWORD:
+        if password or self.settings.PERMIT_EMPTY_PASSWORD:
             ldap_user = _LDAPUser(self, username=username.strip())
             user = self.authenticate_ldap_user(ldap_user, password)
         else:
@@ -554,7 +554,7 @@ class _LDAPUser(object):
             raise ImproperlyConfigured('AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance.')
 
         results = search.execute(self.connection, {'user': self._username})
-        if (results is not None) and (len(results) == 1):
+        if results is not None and len(results) == 1:
             (user_dn, self._user_attrs) = next(iter(results))
         else:
             user_dn = None
@@ -637,7 +637,7 @@ class _LDAPUser(object):
             self._user.save()
 
         # This has to wait until we're sure the user has a pk.
-        if bool(self.settings.MIRROR_GROUPS) or bool(self.settings.MIRROR_GROUPS_EXCEPT):
+        if self.settings.MIRROR_GROUPS or self.settings.MIRROR_GROUPS_EXCEPT:
             self._normalize_mirror_settings()
             self._mirror_groups()
 
@@ -718,7 +718,7 @@ class _LDAPUser(object):
 
             if not all(isinstance(value, six.string_types) for value in mge):
                 raise malformed_mirror_groups_except()
-            elif bool(mg):
+            elif mg:
                 warnings.warn(ConfigurationWarning("Ignoring {} in favor of {}".format(
                     self.settings._name("MIRROR_GROUPS"),
                     self.settings._name("MIRROR_GROUPS_EXCEPT")

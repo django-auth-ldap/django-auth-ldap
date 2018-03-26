@@ -59,7 +59,7 @@ class _LDAPConfig(object):
         Returns the configured ldap module.
         """
         # Apply global LDAP options once
-        if (not cls._ldap_configured) and (global_options is not None):
+        if not cls._ldap_configured and global_options is not None:
             for opt, value in global_options.items():
                 ldap.set_option(opt, value)
 

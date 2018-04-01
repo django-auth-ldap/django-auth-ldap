@@ -56,7 +56,7 @@ information from the LDAP directory to the user object any way you like. If you
 need the user object to exist in the database at this point, you can save it in
 your signal handler or override
 :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_build_user`. In either case,
-the user instance will be saved automatically after the signal handlers are run. 
+the user instance will be saved automatically after the signal handlers are run.
 
 If you need an attribute that isn't included by default in the LDAP search
 results, see :setting:`AUTH_LDAP_USER_ATTRLIST`.

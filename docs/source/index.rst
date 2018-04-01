@@ -9,7 +9,6 @@ and permissions.
 
 * Repository: https://github.com/django-auth-ldap/django-auth-ldap
 * Documentation: https://django-auth-ldap.readthedocs.io/
-* Mailing list: https://groups.google.com/group/django-auth-ldap
 
 This version is supported on Python 2.7 and 3.4+; and Django 1.11+. It requires
 `python-ldap <https://pypi.python.org/pypi/python-ldap>`_ >= 3.0.

@@ -84,6 +84,8 @@ setup(
     url="https://github.com/django-auth-ldap/django-auth-ldap",
     author="Peter Sagerson",
     author_email="psagers@ignorare.net",
+    maintainer="Jon Dufresne",
+    maintainer_email="jon.dufresne@gmail.com",
     license="BSD",
     packages=["django_auth_ldap"],
     classifiers=[

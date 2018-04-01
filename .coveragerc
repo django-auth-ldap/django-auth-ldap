@@ -1,2 +1,8 @@
 [run]
-source = django_auth_ldap
+source = .
+omit =
+    .tox/*
+    setup.py
+
+[report]
+show_missing = True

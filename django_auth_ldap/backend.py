@@ -1011,5 +1011,5 @@ def valid_cache_key(key, dn):
     """
     Sanitizes a cache key for memcached.
     """
-    return '{}.{}'.format(key, md5(dn).hexdigest())
+    return '{}.{}'.format(key, md5(dn.encode('utf-8')).hexdigest())
     

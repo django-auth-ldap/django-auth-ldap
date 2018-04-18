@@ -41,5 +41,5 @@ models, but it does assume that a database is present.
         ]
 
 
-.. _`python-ldap`: https://pypi.python.org/pypi/python-ldap
+.. _`python-ldap`: https://pypi.org/project/python-ldap/
 .. _`OpenLDAP`: https://www.openldap.org/

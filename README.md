@@ -46,6 +46,6 @@ This includes some static analysis to detect potential runtime errors and style
 issues.
 
 
-[python-ldap]: https://pypi.python.org/pypi/python-ldap
+[python-ldap]: https://pypi.org/project/python-ldap/
 [issues]: https://github.com/django-auth-ldap/django-auth-ldap/issues
 [tox]: https://tox.readthedocs.io/

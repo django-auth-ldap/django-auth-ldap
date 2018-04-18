@@ -22,7 +22,7 @@ UNRELEASED
 - **Backwards incompatible**: Removed support for Django < 1.11.
 
 - Support for Python 2.7 and 3.4+ now handled by the same dependency,
-  `python-ldap >= 3.0 <https://pypi.python.org/pypi/python-ldap>`_.
+  `python-ldap >= 3.0 <https://pypi.org/project/python-ldap/>`_.
 
 
 1.3.0 - 2017-11-20 - Various improvements and cleanup
@@ -114,7 +114,7 @@ This release driven primarily by https://bitbucket.org/jdufresne/.
 1.2.7 - 2015-09-29 - Python 3
 -----------------------------
 
-- Support Python 3 with `pyldap <https://pypi.python.org/pypi/pyldap>`_.
+- Support Python 3 with `pyldap <https://pypi.org/project/pyldap/>`_.
 
 
 1.2.6 - 2015-03-29

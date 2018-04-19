@@ -14,8 +14,8 @@ UNRELEASED
   :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_build_user` instead.
 
 
-1.4.0 - 2018-03-22 - Cleanup and fixes
---------------------------------------
+1.4.0 - 2018-03-22
+------------------
 
 - Honor the attrlist argument to :setting:`AUTH_LDAP_GROUP_SEARCH`
 
@@ -25,10 +25,8 @@ UNRELEASED
   `python-ldap >= 3.0 <https://pypi.org/project/python-ldap/>`_.
 
 
-1.3.0 - 2017-11-20 - Various improvements and cleanup
------------------------------------------------------
-
-This release driven primarily by https://bitbucket.org/jdufresne/.
+1.3.0 - 2017-11-20
+------------------
 
 - **Backwards incompatible**: Removed support for obsolete versions of
   Django (<=1.7, plus 1.9).
@@ -51,8 +49,8 @@ This release driven primarily by https://bitbucket.org/jdufresne/.
 - Add support for Django 2.0.
 
 
-1.2.16 - 2017-09-30 - Minor fixes
----------------------------------
+1.2.16 - 2017-09-30
+-------------------
 
 - Better cache key sanitizing.
 
@@ -60,21 +58,21 @@ This release driven primarily by https://bitbucket.org/jdufresne/.
   caught while loading group permissions.
 
 
-1.2.15 - 2017-08-17 - Documentation improvements
-------------------------------------------------
+1.2.15 - 2017-08-17
+-------------------
 
 - Improved documentation for finding the official repository and contributing.
 
 
-1.2.14 - 2017-07-24 - User DN caching
--------------------------------------
+1.2.14 - 2017-07-24
+-------------------
 
 - Under search/bind mode, the user's DN will now be cached for
   performance.
 
 
-1.2.13 - 2017-06-19 - Selective group mirroring
------------------------------------------------
+1.2.13 - 2017-06-19
+-------------------
 
 - Support selective group mirroring with :setting:`AUTH_LDAP_MIRROR_GROUPS` and
   :setting:`AUTH_LDAP_MIRROR_GROUPS_EXCEPT`.
@@ -82,37 +80,37 @@ This release driven primarily by https://bitbucket.org/jdufresne/.
 - Work around Django 1.11 bug with multiple authentication backends.
 
 
-1.2.12 - 2017-05-20 - Complex group queries
--------------------------------------------
+1.2.12 - 2017-05-20
+-------------------
 
 - Support for complex group queries via
   :class:`~django_auth_ldap.config.LDAPGroupQuery`.
 
 
-1.2.11 - 2017-04-22 - Testing and debugging cleanup
----------------------------------------------------
+1.2.11 - 2017-04-22
+-------------------
 
 - Some more descriptive object representations.
 
 - Improved tox.ini organization.
 
 
-1.2.9 - 2017-02-14 - Fix python-ldap incompatibility
-----------------------------------------------------
+1.2.9 - 2017-02-14
+------------------
 
 - Ignore python-ldap documentation and accept :data:`ldap.RES_SEARCH_ENTRY`
   from :meth:`ldap.LDAPObject.result`.
 
 
-1.2.8 - 2016-04-18 - AUTH_LDAP_USER_ATTRLIST
---------------------------------------------
+1.2.8 - 2016-04-18
+------------------
 
 - Add :setting:`AUTH_LDAP_USER_ATTRLIST` to override the set of attributes
   requested from the LDAP server.
 
 
-1.2.7 - 2015-09-29 - Python 3
------------------------------
+1.2.7 - 2015-09-29
+------------------
 
 - Support Python 3 with `pyldap <https://pypi.org/project/pyldap/>`_.
 
@@ -137,8 +135,8 @@ This release driven primarily by https://bitbucket.org/jdufresne/.
   :setting:`AUTH_LDAP_USER_SEARCH`.
 
 
-1.2.4 - 2014-12-28 - nisNetgroup support
-----------------------------------------
+1.2.4 - 2014-12-28
+------------------
 
 - Add support for nisNetgroup groups (thanks to Christopher Bartz).
 

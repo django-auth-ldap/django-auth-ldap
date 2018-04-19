@@ -3,6 +3,6 @@ from __future__ import (
 )
 
 
-version = (1, 4, 0)
+version = (1, 5, 0)
 version_qualifier = ''
 version_string = '.'.join(map(str, version)) + version_qualifier

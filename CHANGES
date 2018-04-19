@@ -1,5 +1,5 @@
-UNRELEASED
-----------
+1.5.0 - 2018-04-18
+------------------
 
 - django-auth-ldap is now hosted at
   https://github.com/django-auth-ldap/django-auth-ldap.

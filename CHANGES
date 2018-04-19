@@ -1,6 +1,9 @@
 UNRELEASED
 ----------
 
+- django-auth-ldap is now hosted at
+  https://github.com/django-auth-ldap/django-auth-ldap.
+
 - Removed NISGroupType class. It searched by attribute nisNetgroupTriple, which
   has no defined EQAULITY rule.
 

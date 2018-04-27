@@ -102,6 +102,7 @@ class LDAPTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(LDAPTest, cls).setUpClass()
         cls.configure_logger()
 
         here = os.path.dirname(__file__)
@@ -124,8 +125,10 @@ class LDAPTest(TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.server.stop()
+        super(LDAPTest, cls).tearDownClass()
 
     def setUp(self):
+        super(LDAPTest, self).setUp()
         cache.clear()
 
         self.backend = backend.LDAPBackend()

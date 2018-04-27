@@ -29,9 +29,9 @@ anchor point.
 ## Development
 
 To get set up for development, activate your virtualenv and use pip to install
-from requirements-dev.txt:
+from requirements.txt:
 
-    % pip install -r requirements-dev.txt
+    % pip install -r requirements.txt
 
 To run the tests:
 

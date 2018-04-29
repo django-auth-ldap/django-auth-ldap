@@ -101,8 +101,8 @@
 1.2.9 - 2017-02-14
 ------------------
 
-- Ignore python-ldap documentation and accept :data:`ldap.RES_SEARCH_ENTRY`
-  from :meth:`ldap.LDAPObject.result`.
+- Ignore python-ldap documentation and accept ``ldap.RES_SEARCH_ENTRY`` from
+  :meth:`ldap.LDAPObject.result`.
 
 
 1.2.8 - 2016-04-18
@@ -150,7 +150,7 @@
 - Improved escaping for filter strings.
 
 - Accept (and ignore) arbitrary keyword arguments to
-  :meth:`~django_auth_ldap.backend.LDAPBackend.authenticate`.
+  ``LDAPBackend.authenticate``.
 
 
 1.2.2 - 2014-09-22

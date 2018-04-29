@@ -13,7 +13,7 @@ substitute a proxy model.
 
 By default, lookups on existing users are done using the user model's
 :attr:`~django.contrib.auth.models.CustomUser.USERNAME_FIELD`. To lookup by a
-different field, use :setting:`AUTH_LDAP_USER_LOOKUP_FIELD`. When set, the
+different field, use :setting:`AUTH_LDAP_USER_QUERY_FIELD`. When set, the
 username field is ignored.
 
 When using the default for lookups, the only required field for a user is the
@@ -27,8 +27,8 @@ example, if your LDAP names have periods in them. You can subclass
 :class:`~django_auth_ldap.backend.LDAPBackend` to implement these hooks; by
 default the username is not modified. :class:`~django.contrib.auth.models.User`
 objects that are authenticated by
-:class:`~django_auth_ldap.backend.LDAPBackend` will have an
-:attr:`ldap_username` attribute with the original (LDAP) username.
+:class:`~django_auth_ldap.backend.LDAPBackend` will have an ``ldap_username``
+attribute with the original (LDAP) username.
 :attr:`~django.contrib.auth.models.User.username` (or
 :meth:`~django.contrib.auth.models.AbstractBaseUser.get_username`) will, of
 course, be the Django username.

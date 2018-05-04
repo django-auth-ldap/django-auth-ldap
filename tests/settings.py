@@ -17,7 +17,7 @@ USE_I18N = False
 USE_L10N = False
 USE_TZ = True
 
-SECRET_KEY = 'nt56v8)moa)37ta5z7dd=if-@y#k@l7+t8lct*c8m730lpd=so'
+SECRET_KEY = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
 
 INSTALLED_APPS = (
     'django.contrib.auth',

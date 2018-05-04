@@ -54,6 +54,18 @@ from django_auth_ldap.config import (
 from .models import TestUser
 
 
+def _override_settings(**settings):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapped_test(self, *args, **kwargs):
+            cm = override_settings(**settings)
+            cm.enable()
+            self.addCleanup(cm.disable)
+            return func(self, *args, **kwargs)
+        return wrapped_test
+    return decorator
+
+
 def spy_ldap(name):
     """
     Patch the python-ldap method. The patched method records all calls and
@@ -74,17 +86,6 @@ def spy_ldap(name):
                 return test(self, ldap_mock, *args, **kwargs)
         return wrapped_test
     return decorator
-
-
-class TestSettings(backend.LDAPSettings):
-    """
-    A replacement for backend.LDAPSettings that does not load settings
-    from django.conf.
-    """
-    def __init__(self, **kwargs):
-        for name, default in self.defaults.items():
-            value = kwargs.get(name, default)
-            setattr(self, name, value)
 
 
 class LDAPTest(TestCase):
@@ -188,17 +189,19 @@ class LDAPTest(TestCase):
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
 
-    @override_settings(AUTH_LDAP_USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'))
     def test_login_with_multiple_auth_backends(self):
-        with override_settings(AUTH_LDAP_SERVER_URI=self.server.ldap_uri):
-            auth = self.client.login(username='alice', password='password')
-            self.assertTrue(auth)
+        self._init_settings(
+            USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
+        )
+        auth = self.client.login(username='alice', password='password')
+        self.assertTrue(auth)
 
-    @override_settings(AUTH_LDAP_USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'))
     def test_bad_login_with_multiple_auth_backends(self):
-        with override_settings(AUTH_LDAP_SERVER_URI=self.server.ldap_uri):
-            auth = self.client.login(username='invalid', password='i_do_not_exist')
-            self.assertFalse(auth)
+        self._init_settings(
+            USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
+        )
+        auth = self.client.login(username='invalid', password='i_do_not_exist')
+        self.assertFalse(auth)
 
     @spy_ldap('simple_bind_s')
     def test_simple_bind_escaped(self, mock):
@@ -232,7 +235,7 @@ class LDAPTest(TestCase):
         user = self.backend.authenticate(None, username='Alice', password='password')
         user = deepcopy(user)
 
-    @override_settings(AUTH_USER_MODEL='tests.TestUser')
+    @_override_settings(AUTH_USER_MODEL='tests.TestUser')
     def test_auth_custom_user(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -243,7 +246,7 @@ class LDAPTest(TestCase):
 
         self.assertIsInstance(user, TestUser)
 
-    @override_settings(AUTH_USER_MODEL='tests.TestUser')
+    @_override_settings(AUTH_USER_MODEL='tests.TestUser')
     def test_get_custom_user(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -255,7 +258,7 @@ class LDAPTest(TestCase):
 
         self.assertIsInstance(user, TestUser)
 
-    @override_settings(AUTH_USER_MODEL='tests.TestUser')
+    @_override_settings(AUTH_USER_MODEL='tests.TestUser')
     def test_get_custom_field(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -508,7 +511,7 @@ class LDAPTest(TestCase):
         self.assertEqual(user.last_name, 'Adams')
         self.assertEqual(user.email, '')
 
-    @override_settings(AUTH_USER_MODEL='tests.TestUser')
+    @_override_settings(AUTH_USER_MODEL='tests.TestUser')
     def test_authenticate_with_buggy_setter_raises_exception(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -521,7 +524,7 @@ class LDAPTest(TestCase):
         with self.assertRaisesMessage(Exception, 'Oops...'):
             self.backend.authenticate(None, username='alice', password='password')
 
-    @override_settings(AUTH_USER_MODEL='tests.TestUser')
+    @_override_settings(AUTH_USER_MODEL='tests.TestUser')
     def test_populate_user_with_buggy_setter_raises_exception(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
@@ -1344,7 +1347,6 @@ class LDAPTest(TestCase):
 
         pickled = pickle.dumps(alice0, pickle.HIGHEST_PROTOCOL)
         alice = pickle.loads(pickled)
-        alice.ldap_user.backend.settings = alice0.ldap_user.backend.settings
 
         self.assertIsNotNone(alice)
         self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
@@ -1378,7 +1380,12 @@ class LDAPTest(TestCase):
 
     def _init_settings(self, **kwargs):
         kwargs.setdefault('SERVER_URI', self.server.ldap_uri)
-        self.backend.settings = TestSettings(**kwargs)
+        settings = {}
+        for key, value in kwargs.items():
+            settings['AUTH_LDAP_%s' % key] = value
+        cm = override_settings(**settings)
+        cm.enable()
+        self.addCleanup(cm.disable)
 
     def _init_groups(self):
         permissions = [

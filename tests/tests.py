@@ -143,7 +143,7 @@ class LDAPTest(TestCase):
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
             CONNECTION_OPTIONS={ldap.OPT_REFERRALS: 0}
         )
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(user.ldap_user.connection.get_option(ldap.OPT_REFERRALS), 0)
 
@@ -154,7 +154,7 @@ class LDAPTest(TestCase):
         )
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertFalse(user.has_usable_password())
         self.assertEqual(user.username, 'alice')
@@ -166,7 +166,7 @@ class LDAPTest(TestCase):
         )
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertFalse(user.has_usable_password())
         self.assertEqual(user.username, 'alice')
@@ -182,7 +182,7 @@ class LDAPTest(TestCase):
 
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertFalse(user.has_usable_password())
         self.assertEqual(user.username, 'alice')
@@ -207,7 +207,7 @@ class LDAPTest(TestCase):
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
 
-        user = self.backend.authenticate(username='alice,1', password='password')
+        user = self.backend.authenticate(None, username='alice,1', password='password')
 
         self.assertIsNone(user)
         mock.assert_called_once_with('uid=alice\\,1,ou=people,o=test', 'password')
@@ -218,7 +218,7 @@ class LDAPTest(TestCase):
         )
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username='Alice', password='password')
+        user = self.backend.authenticate(None, username='Alice', password='password')
 
         self.assertFalse(user.has_usable_password())
         self.assertEqual(user.username, 'alice')
@@ -229,7 +229,7 @@ class LDAPTest(TestCase):
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
 
-        user = self.backend.authenticate(username='Alice', password='password')
+        user = self.backend.authenticate(None, username='Alice', password='password')
         user = deepcopy(user)
 
     @override_settings(AUTH_USER_MODEL='tests.TestUser')
@@ -239,7 +239,7 @@ class LDAPTest(TestCase):
             USER_ATTR_MAP={'uid_number': 'uidNumber'},
         )
 
-        user = self.backend.authenticate(username='Alice', password='password')
+        user = self.backend.authenticate(None, username='Alice', password='password')
 
         self.assertIsInstance(user, TestUser)
 
@@ -250,7 +250,7 @@ class LDAPTest(TestCase):
             USER_ATTR_MAP={'uid_number': 'uidNumber'},
         )
 
-        user = self.backend.authenticate(username='Alice', password='password')
+        user = self.backend.authenticate(None, username='Alice', password='password')
         user = self.backend.get_user(user.id)
 
         self.assertIsInstance(user, TestUser)
@@ -265,7 +265,7 @@ class LDAPTest(TestCase):
             USER_QUERY_FIELD='uid_number',
         )
         alice = TestUser.objects.create(identifier='abcdef', uid_number=1000)
-        user = self.backend.authenticate(username='Alice', password='password')
+        user = self.backend.authenticate(None, username='Alice', password='password')
         self.assertIsInstance(user, TestUser)
         self.assertEqual(user.pk, alice.pk)
 
@@ -275,8 +275,8 @@ class LDAPTest(TestCase):
         )
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username=' alice', password='password')
-        user = self.backend.authenticate(username='alice ', password='password')
+        user = self.backend.authenticate(None, username=' alice', password='password')
+        user = self.backend.authenticate(None, username='alice ', password='password')
 
         self.assertFalse(user.has_usable_password())
         self.assertEqual(user.username, 'alice')
@@ -288,7 +288,7 @@ class LDAPTest(TestCase):
         )
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username='evil_alice', password='password')
+        user = self.backend.authenticate(None, username='evil_alice', password='password')
 
         self.assertIsNone(user)
         self.assertEqual(User.objects.count(), user_count)
@@ -299,7 +299,7 @@ class LDAPTest(TestCase):
         )
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username='alice', password='bogus')
+        user = self.backend.authenticate(None, username='alice', password='bogus')
 
         self.assertIsNone(user)
         self.assertEqual(User.objects.count(), user_count)
@@ -311,7 +311,7 @@ class LDAPTest(TestCase):
         User.objects.create(username='alice')
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         # Make sure we only created one user
         self.assertIsNotNone(user)
@@ -325,7 +325,7 @@ class LDAPTest(TestCase):
         )
         User.objects.create(username='alice')
 
-        user = self.backend.authenticate(username='Alice', password='password')
+        user = self.backend.authenticate(None, username='Alice', password='password')
 
         self.assertIsNotNone(user)
         self.assertEqual(user.username, 'alice')
@@ -345,7 +345,7 @@ class LDAPTest(TestCase):
         )
         user_count = User.objects.count()
 
-        user1 = self.backend.authenticate(username='alice', password='password')
+        user1 = self.backend.authenticate(None, username='alice', password='password')
         user2 = self.backend.get_user(user1.pk)
 
         self.assertEqual(User.objects.count(), user_count + 1)
@@ -364,7 +364,7 @@ class LDAPTest(TestCase):
         )
         user_count = User.objects.count()
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertIsNotNone(user)
         self.assertEqual(User.objects.count(), user_count + 1)
@@ -378,7 +378,7 @@ class LDAPTest(TestCase):
             )
         )
 
-        user = self.backend.authenticate(username='alice*', password='password')
+        user = self.backend.authenticate(None, username='alice*', password='password')
 
         self.assertIsNone(user)
         mock.assert_called_once_with(
@@ -392,7 +392,7 @@ class LDAPTest(TestCase):
             )
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertIsNone(user)
 
@@ -403,7 +403,7 @@ class LDAPTest(TestCase):
             )
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertIsNone(user)
 
@@ -414,7 +414,7 @@ class LDAPTest(TestCase):
             )
         )
 
-        user = self.backend.authenticate(username='alice', password='bogus')
+        user = self.backend.authenticate(None, username='alice', password='bogus')
 
         self.assertIsNone(user)
 
@@ -427,7 +427,7 @@ class LDAPTest(TestCase):
             )
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertIsNotNone(user)
         self.assertIsNotNone(user.ldap_user)
@@ -456,7 +456,7 @@ class LDAPTest(TestCase):
             )
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertIsNone(user)
 
@@ -466,7 +466,7 @@ class LDAPTest(TestCase):
             USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'}
         )
 
-        user = self.backend.authenticate(username='dreßler', password='password')
+        user = self.backend.authenticate(None, username='dreßler', password='password')
         self.assertIsNotNone(user)
         self.assertEqual(user.username, 'dreßler')
         self.assertEqual(user.last_name, 'Dreßler')
@@ -476,7 +476,7 @@ class LDAPTest(TestCase):
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
         )
 
-        user = self.backend.authenticate(username="alice", password="password")
+        user = self.backend.authenticate(None, username="alice", password="password")
 
         self.assertIsInstance(user.ldap_user.attrs, ldap.cidict.cidict)
 
@@ -486,7 +486,7 @@ class LDAPTest(TestCase):
             USER_ATTR_MAP={'first_name': 'givenName', 'last_name': 'sn'}
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(user.username, 'alice')
         self.assertEqual(user.first_name, 'Alice')
@@ -502,7 +502,7 @@ class LDAPTest(TestCase):
             }
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
         self.assertEqual(user.username, 'alice')
         self.assertEqual(user.first_name, 'Alice')
         self.assertEqual(user.last_name, 'Adams')
@@ -519,7 +519,7 @@ class LDAPTest(TestCase):
         )
 
         with self.assertRaisesMessage(Exception, 'Oops...'):
-            self.backend.authenticate(username='alice', password='password')
+            self.backend.authenticate(None, username='alice', password='password')
 
     @override_settings(AUTH_USER_MODEL='tests.TestUser')
     def test_populate_user_with_buggy_setter_raises_exception(self):
@@ -542,7 +542,7 @@ class LDAPTest(TestCase):
             USER_ATTRLIST=['*', '+'],
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(user.username, 'alice')
 
@@ -558,7 +558,7 @@ class LDAPTest(TestCase):
             BIND_AS_AUTHENTICATING_USER=True,
         )
 
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(user.username, 'alice')
         self.assertEqual(user.first_name, 'Alice')
@@ -575,7 +575,7 @@ class LDAPTest(TestCase):
             kwargs['user'].populate_user_handled = True
 
         backend.populate_user.connect(handle_populate_user)
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertTrue(user.populate_user_handled)
 
@@ -596,7 +596,7 @@ class LDAPTest(TestCase):
 
         backend.ldap_error.connect(handle_ldap_error)
         with self.assertRaises(ldap.LDAPError):
-            self.backend.authenticate(username='alice', password='password')
+            self.backend.authenticate(None, username='alice', password='password')
         backend.ldap_error.disconnect(handle_ldap_error)
 
     def test_populate_signal_ldap_error(self):
@@ -620,8 +620,8 @@ class LDAPTest(TestCase):
         )
         User.objects.create(username='alice', first_name='Alicia', last_name='Astro')
 
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertEqual(alice.first_name, 'Alicia')
         self.assertEqual(alice.last_name, 'Astro')
@@ -636,8 +636,8 @@ class LDAPTest(TestCase):
             REQUIRE_GROUP="cn=active_gon,ou=groups,o=test"
         )
 
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertIsNotNone(alice)
         self.assertIsNone(bob)
@@ -648,7 +648,7 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
         query = LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
         self.assertTrue(query.resolve(alice.ldap_user))
 
@@ -658,7 +658,7 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
         query = ~LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
         self.assertFalse(query.resolve(alice.ldap_user))
 
@@ -668,8 +668,8 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         query = (
             LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') |
@@ -684,8 +684,8 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         query = (
             LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') &
@@ -700,8 +700,8 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         query = (
             (
@@ -725,8 +725,8 @@ class LDAPTest(TestCase):
             REQUIRE_GROUP=query
         )
 
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertIsNotNone(alice)
         self.assertIsNone(bob)
@@ -742,8 +742,8 @@ class LDAPTest(TestCase):
             REQUIRE_GROUP="cn=other_gon,ou=moregroups,o=test"
         )
 
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertIsNone(alice)
         self.assertIsNotNone(bob)
@@ -760,8 +760,8 @@ class LDAPTest(TestCase):
             REQUIRE_GROUP="cn=other_gon,ou=moregroups,o=test"
         )
 
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertIsNone(alice)
         self.assertIsNotNone(bob)
@@ -775,8 +775,8 @@ class LDAPTest(TestCase):
             DENY_GROUP="cn=active_gon,ou=groups,o=test"
         )
 
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertIsNone(alice)
         self.assertIsNotNone(bob)
@@ -787,7 +787,7 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(
             alice.ldap_user.group_dns,
@@ -805,7 +805,7 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
         )
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(alice.ldap_user.group_names, {'active_gon', 'staff_gon', 'superuser_gon', 'nested_gon'})
 
@@ -822,8 +822,8 @@ class LDAPTest(TestCase):
             }
         )
 
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertTrue(alice.is_active)
         self.assertTrue(alice.is_staff)
@@ -845,7 +845,7 @@ class LDAPTest(TestCase):
         )
 
         with self.assertRaises(ImproperlyConfigured):
-            self.backend.authenticate(username='alice', password='password')
+            self.backend.authenticate(None, username='alice', password='password')
 
     def test_posix_membership(self):
         self._init_settings(
@@ -859,8 +859,8 @@ class LDAPTest(TestCase):
             }
         )
 
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertTrue(alice.is_active)
         self.assertTrue(alice.is_staff)
@@ -879,8 +879,8 @@ class LDAPTest(TestCase):
                 'is_staff': "cn=parent_gon,ou=groups,o=test",
             }
         )
-        alice = self.backend.authenticate(username='alice', password='password')
-        bob = self.backend.authenticate(username='bob', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
+        bob = self.backend.authenticate(None, username='bob', password='password')
 
         self.assertTrue(alice.is_active)
         self.assertTrue(alice.is_staff)
@@ -897,7 +897,7 @@ class LDAPTest(TestCase):
             }
         )
 
-        nobody = self.backend.authenticate(username='nobody', password='password')
+        nobody = self.backend.authenticate(None, username='nobody', password='password')
 
         self.assertFalse(nobody.is_active)
 
@@ -1039,7 +1039,7 @@ class LDAPTest(TestCase):
 
         self.assertEqual(Group.objects.count(), 0)
 
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(Group.objects.count(), 3)
         self.assertEqual(set(alice.groups.all()), set(Group.objects.all()))
@@ -1053,7 +1053,7 @@ class LDAPTest(TestCase):
             MIRROR_GROUPS=True,
         )
 
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(
             set(Group.objects.all().values_list('name', flat=True)),
@@ -1088,7 +1088,7 @@ class LDAPTest(TestCase):
         alice = self.backend.populate_user('alice')
         alice.groups.set([groups['mirror2'], groups['mirror4']])
 
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(
             set(alice.groups.values_list("name", flat=True)),
@@ -1110,7 +1110,7 @@ class LDAPTest(TestCase):
         alice = self.backend.populate_user('alice')
         alice.groups.set([groups['mirror1'], groups['mirror3']])
 
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(
             set(alice.groups.values_list("name", flat=True)),
@@ -1132,7 +1132,7 @@ class LDAPTest(TestCase):
         alice = self.backend.populate_user('alice')
         alice.groups.set([groups['mirror2'], groups['mirror4']])
 
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(
             set(alice.groups.values_list("name", flat=True)),
@@ -1154,7 +1154,7 @@ class LDAPTest(TestCase):
         alice = self.backend.populate_user('alice')
         alice.groups.set([groups['mirror1'], groups['mirror3']])
 
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertEqual(
             set(alice.groups.values_list("name", flat=True)),
@@ -1261,7 +1261,7 @@ class LDAPTest(TestCase):
             START_TLS=False,
         )
 
-        self.backend.authenticate(username='alice', password='password')
+        self.backend.authenticate(None, username='alice', password='password')
         mock.assert_not_called()
 
     @spy_ldap('start_tls_s')
@@ -1271,7 +1271,7 @@ class LDAPTest(TestCase):
             START_TLS=True,
         )
 
-        self.backend.authenticate(username='alice', password='password')
+        self.backend.authenticate(None, username='alice', password='password')
         mock.assert_called_once()
 
     def test_null_search_results(self):
@@ -1283,7 +1283,7 @@ class LDAPTest(TestCase):
                 "ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'
             )
         )
-        self.backend.authenticate(username='alice', password='password')
+        self.backend.authenticate(None, username='alice', password='password')
 
     def test_union_search(self):
         self._init_settings(
@@ -1292,7 +1292,7 @@ class LDAPTest(TestCase):
                 LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
             )
         )
-        alice = self.backend.authenticate(username='alice', password='password')
+        alice = self.backend.authenticate(None, username='alice', password='password')
 
         self.assertIsNotNone(alice)
 
@@ -1302,7 +1302,7 @@ class LDAPTest(TestCase):
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
         )
 
-        alice = self.backend.authenticate(username='alice', password='')
+        alice = self.backend.authenticate(None, username='alice', password='')
 
         self.assertIsNone(alice)
         mock.assert_not_called()
@@ -1314,7 +1314,7 @@ class LDAPTest(TestCase):
             PERMIT_EMPTY_PASSWORD=True,
         )
 
-        alice = self.backend.authenticate(username='alice', password='')
+        alice = self.backend.authenticate(None, username='alice', password='')
 
         self.assertIsNone(alice)
         mock.assert_called_once()
@@ -1326,7 +1326,7 @@ class LDAPTest(TestCase):
             PERMIT_EMPTY_PASSWORD=True,
         )
 
-        alice = self.backend.authenticate(username='alice', password=None)
+        alice = self.backend.authenticate(None, username='alice', password=None)
 
         self.assertIsNone(alice)
         mock.assert_called_once()
@@ -1340,7 +1340,7 @@ class LDAPTest(TestCase):
         )
         self._init_groups()
 
-        alice0 = self.backend.authenticate(username='alice', password='password')
+        alice0 = self.backend.authenticate(None, username='alice', password='password')
 
         pickled = pickle.dumps(alice0, pickle.HIGHEST_PROTOCOL)
         alice = pickle.loads(pickled)
@@ -1369,7 +1369,7 @@ class LDAPTest(TestCase):
 
         self.backend = MyBackend()
         self._init_settings(USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test')
-        user = self.backend.authenticate(username='alice', password='password')
+        user = self.backend.authenticate(None, username='alice', password='password')
         self.assertEqual(user.ldap_user.foo, 'bar')
 
     #

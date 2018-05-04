@@ -145,7 +145,7 @@ class LDAPBackend(object):
     # The Django auth backend API
     #
 
-    def authenticate(self, request=None, username=None, password=None, **kwargs):
+    def authenticate(self, request, username=None, password=None, **kwargs):
         if password or self.settings.PERMIT_EMPTY_PASSWORD:
             ldap_user = _LDAPUser(self, username=username.strip())
             user = self.authenticate_ldap_user(ldap_user, password)

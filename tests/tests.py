@@ -157,7 +157,7 @@ class LDAPTest(TestCase):
 
         user = self.backend.authenticate(None, username='alice', password='password')
 
-        self.assertFalse(user.has_usable_password())
+        self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
 
@@ -169,7 +169,7 @@ class LDAPTest(TestCase):
 
         user = self.backend.authenticate(None, username='alice', password='password')
 
-        self.assertFalse(user.has_usable_password())
+        self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
 
@@ -185,7 +185,7 @@ class LDAPTest(TestCase):
 
         user = self.backend.authenticate(None, username='alice', password='password')
 
-        self.assertFalse(user.has_usable_password())
+        self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
 
@@ -194,14 +194,14 @@ class LDAPTest(TestCase):
             USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
         )
         auth = self.client.login(username='alice', password='password')
-        self.assertTrue(auth)
+        self.assertIs(auth, True)
 
     def test_bad_login_with_multiple_auth_backends(self):
         self._init_settings(
             USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
         )
         auth = self.client.login(username='invalid', password='i_do_not_exist')
-        self.assertFalse(auth)
+        self.assertIs(auth, False)
 
     @spy_ldap('simple_bind_s')
     def test_simple_bind_escaped(self, mock):
@@ -223,7 +223,7 @@ class LDAPTest(TestCase):
 
         user = self.backend.authenticate(None, username='Alice', password='password')
 
-        self.assertFalse(user.has_usable_password())
+        self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
 
@@ -281,7 +281,7 @@ class LDAPTest(TestCase):
         user = self.backend.authenticate(None, username=' alice', password='password')
         user = self.backend.authenticate(None, username='alice ', password='password')
 
-        self.assertFalse(user.has_usable_password())
+        self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
 
@@ -580,7 +580,7 @@ class LDAPTest(TestCase):
         backend.populate_user.connect(handle_populate_user)
         user = self.backend.authenticate(None, username='alice', password='password')
 
-        self.assertTrue(user.populate_user_handled)
+        self.assertIs(user.populate_user_handled, True)
 
         backend.populate_user.disconnect(handle_populate_user)
 
@@ -653,7 +653,7 @@ class LDAPTest(TestCase):
         )
         alice = self.backend.authenticate(None, username='alice', password='password')
         query = LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
-        self.assertTrue(query.resolve(alice.ldap_user))
+        self.assertIs(query.resolve(alice.ldap_user), True)
 
     def test_negated_group_query(self):
         self._init_settings(
@@ -663,7 +663,7 @@ class LDAPTest(TestCase):
         )
         alice = self.backend.authenticate(None, username='alice', password='password')
         query = ~LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
-        self.assertFalse(query.resolve(alice.ldap_user))
+        self.assertIs(query.resolve(alice.ldap_user), False)
 
     def test_or_group_query(self):
         self._init_settings(
@@ -678,8 +678,8 @@ class LDAPTest(TestCase):
             LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') |
             LDAPGroupQuery('cn=bob_gon,ou=query_groups,o=test')
         )
-        self.assertTrue(query.resolve(alice.ldap_user))
-        self.assertTrue(query.resolve(bob.ldap_user))
+        self.assertIs(query.resolve(alice.ldap_user), True)
+        self.assertIs(query.resolve(bob.ldap_user), True)
 
     def test_and_group_query(self):
         self._init_settings(
@@ -694,8 +694,8 @@ class LDAPTest(TestCase):
             LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test') &
             LDAPGroupQuery('cn=mutual_gon,ou=query_groups,o=test')
         )
-        self.assertTrue(query.resolve(alice.ldap_user))
-        self.assertFalse(query.resolve(bob.ldap_user))
+        self.assertIs(query.resolve(alice.ldap_user), True)
+        self.assertIs(query.resolve(bob.ldap_user), False)
 
     def test_nested_group_query(self):
         self._init_settings(
@@ -713,8 +713,8 @@ class LDAPTest(TestCase):
             ) |
             LDAPGroupQuery('cn=bob_gon,ou=query_groups,o=test')
         )
-        self.assertTrue(query.resolve(alice.ldap_user))
-        self.assertTrue(query.resolve(bob.ldap_user))
+        self.assertIs(query.resolve(alice.ldap_user), True)
+        self.assertIs(query.resolve(bob.ldap_user), True)
 
     def test_require_group_as_group_query(self):
         query = (
@@ -828,12 +828,12 @@ class LDAPTest(TestCase):
         alice = self.backend.authenticate(None, username='alice', password='password')
         bob = self.backend.authenticate(None, username='bob', password='password')
 
-        self.assertTrue(alice.is_active)
-        self.assertTrue(alice.is_staff)
-        self.assertTrue(alice.is_superuser)
-        self.assertFalse(bob.is_active)
-        self.assertFalse(bob.is_staff)
-        self.assertFalse(bob.is_superuser)
+        self.assertIs(alice.is_active, True)
+        self.assertIs(alice.is_staff, True)
+        self.assertIs(alice.is_superuser, True)
+        self.assertIs(bob.is_active, False)
+        self.assertIs(bob.is_staff, False)
+        self.assertIs(bob.is_superuser, False)
 
     def test_user_flags_misconfigured(self):
         self._init_settings(
@@ -865,12 +865,12 @@ class LDAPTest(TestCase):
         alice = self.backend.authenticate(None, username='alice', password='password')
         bob = self.backend.authenticate(None, username='bob', password='password')
 
-        self.assertTrue(alice.is_active)
-        self.assertTrue(alice.is_staff)
-        self.assertTrue(alice.is_superuser)
-        self.assertFalse(bob.is_active)
-        self.assertFalse(bob.is_staff)
-        self.assertFalse(bob.is_superuser)
+        self.assertIs(alice.is_active, True)
+        self.assertIs(alice.is_staff, True)
+        self.assertIs(alice.is_superuser, True)
+        self.assertIs(bob.is_active, False)
+        self.assertIs(bob.is_staff, False)
+        self.assertIs(bob.is_superuser, False)
 
     def test_nested_dn_group_membership(self):
         self._init_settings(
@@ -885,10 +885,10 @@ class LDAPTest(TestCase):
         alice = self.backend.authenticate(None, username='alice', password='password')
         bob = self.backend.authenticate(None, username='bob', password='password')
 
-        self.assertTrue(alice.is_active)
-        self.assertTrue(alice.is_staff)
-        self.assertFalse(bob.is_active)
-        self.assertFalse(bob.is_staff)
+        self.assertIs(alice.is_active, True)
+        self.assertIs(alice.is_staff, True)
+        self.assertIs(bob.is_active, False)
+        self.assertIs(bob.is_staff, False)
 
     def test_posix_missing_attributes(self):
         self._init_settings(
@@ -902,7 +902,7 @@ class LDAPTest(TestCase):
 
         nobody = self.backend.authenticate(None, username='nobody', password='password')
 
-        self.assertFalse(nobody.is_active)
+        self.assertIs(nobody.is_active, False)
 
     def test_dn_group_permissions(self):
         self._init_settings(
@@ -918,8 +918,8 @@ class LDAPTest(TestCase):
 
         self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
-        self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
-        self.assertTrue(self.backend.has_module_perms(alice, "auth"))
+        self.assertIs(self.backend.has_perm(alice, "auth.add_user"), True)
+        self.assertIs(self.backend.has_module_perms(alice, "auth"), True)
 
     def test_group_permissions_ldap_error(self):
         self._init_settings(
@@ -951,8 +951,8 @@ class LDAPTest(TestCase):
 
         self.assertEqual(self.backend.get_group_permissions(bob), set())
         self.assertEqual(self.backend.get_all_permissions(bob), set())
-        self.assertFalse(self.backend.has_perm(bob, "auth.add_user"))
-        self.assertFalse(self.backend.has_module_perms(bob, "auth"))
+        self.assertIs(self.backend.has_perm(bob, "auth.add_user"), False)
+        self.assertIs(self.backend.has_module_perms(bob, "auth"), False)
 
     def test_posix_group_permissions(self):
         self._init_settings(
@@ -969,8 +969,8 @@ class LDAPTest(TestCase):
 
         self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
-        self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
-        self.assertTrue(self.backend.has_module_perms(alice, "auth"))
+        self.assertIs(self.backend.has_perm(alice, "auth.add_user"), True)
+        self.assertIs(self.backend.has_module_perms(alice, "auth"), True)
 
     def test_posix_group_permissions_no_gid(self):
         self._init_settings(
@@ -987,8 +987,8 @@ class LDAPTest(TestCase):
 
         self.assertEqual(self.backend.get_group_permissions(nonposix), {"auth.add_user", "auth.change_user"})
         self.assertEqual(self.backend.get_all_permissions(nonposix), {"auth.add_user", "auth.change_user"})
-        self.assertTrue(self.backend.has_perm(nonposix, "auth.add_user"))
-        self.assertTrue(self.backend.has_module_perms(nonposix, "auth"))
+        self.assertIs(self.backend.has_perm(nonposix, "auth.add_user"), True)
+        self.assertIs(self.backend.has_module_perms(nonposix, "auth"), True)
 
     def test_foreign_user_permissions(self):
         self._init_settings(
@@ -1205,15 +1205,15 @@ class LDAPTest(TestCase):
         self.assertIsNotNone(alice)
         self.assertEqual(alice.first_name, "")
         self.assertEqual(alice.last_name, "")
-        self.assertTrue(alice.is_active)
-        self.assertFalse(alice.is_staff)
-        self.assertFalse(alice.is_superuser)
+        self.assertIs(alice.is_active, True)
+        self.assertIs(alice.is_staff, False)
+        self.assertIs(alice.is_superuser, False)
         self.assertIsNotNone(bob)
         self.assertEqual(bob.first_name, "")
         self.assertEqual(bob.last_name, "")
-        self.assertTrue(bob.is_active)
-        self.assertFalse(bob.is_staff)
-        self.assertFalse(bob.is_superuser)
+        self.assertIs(bob.is_active, True)
+        self.assertIs(bob.is_staff, False)
+        self.assertIs(bob.is_superuser, False)
 
     def test_populate_without_auth(self):
         self._init_settings(
@@ -1238,15 +1238,15 @@ class LDAPTest(TestCase):
         self.assertIsNotNone(alice)
         self.assertEqual(alice.first_name, "Alice")
         self.assertEqual(alice.last_name, "Adams")
-        self.assertTrue(alice.is_active)
-        self.assertTrue(alice.is_staff)
-        self.assertTrue(alice.is_superuser)
+        self.assertIs(alice.is_active, True)
+        self.assertIs(alice.is_staff, True)
+        self.assertIs(alice.is_superuser, True)
         self.assertIsNotNone(bob)
         self.assertEqual(bob.first_name, "Robert")
         self.assertEqual(bob.last_name, "Barker")
-        self.assertFalse(bob.is_active)
-        self.assertFalse(bob.is_staff)
-        self.assertFalse(bob.is_superuser)
+        self.assertIs(bob.is_active, False)
+        self.assertIs(bob.is_staff, False)
+        self.assertIs(bob.is_superuser, False)
 
     def test_populate_bogus_user(self):
         self._init_settings(
@@ -1351,8 +1351,8 @@ class LDAPTest(TestCase):
         self.assertIsNotNone(alice)
         self.assertEqual(self.backend.get_group_permissions(alice), {"auth.add_user", "auth.change_user"})
         self.assertEqual(self.backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"})
-        self.assertTrue(self.backend.has_perm(alice, "auth.add_user"))
-        self.assertTrue(self.backend.has_module_perms(alice, "auth"))
+        self.assertIs(self.backend.has_perm(alice, "auth.add_user"), True)
+        self.assertIs(self.backend.has_module_perms(alice, "auth"), True)
 
     @mock.patch('ldap.ldapobject.SimpleLDAPObject.search_s')
     def test_search_attrlist(self, mock_search):

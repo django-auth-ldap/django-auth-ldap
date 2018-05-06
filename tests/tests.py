@@ -29,6 +29,7 @@ from __future__ import (
 )
 
 from copy import deepcopy
+import contextlib
 import functools
 import io
 import logging
@@ -92,6 +93,17 @@ def spy_ldap(name):
                 return test(self, ldap_mock, *args, **kwargs)
         return wrapped_test
     return decorator
+
+
+@contextlib.contextmanager
+def catch_signal(signal):
+    """Catch Django signal and return the mocked call."""
+    handler = mock.Mock()
+    signal.connect(handler)
+    try:
+        yield handler
+    finally:
+        signal.disconnect(handler)
 
 
 class LDAPTest(TestCase):
@@ -585,18 +597,14 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
-
-        def handle_populate_user(sender, **kwargs):
-            self.assertIn('user', kwargs)
-            self.assertIn('ldap_user', kwargs)
-            kwargs['user'].populate_user_handled = True
-
-        populate_user.connect(handle_populate_user)
-        user = authenticate(username='alice', password='password')
-
-        self.assertIs(user.populate_user_handled, True)
-
-        populate_user.disconnect(handle_populate_user)
+        with catch_signal(populate_user) as handler:
+            user = authenticate(username='alice', password='password')
+        handler.assert_called_once_with(
+            signal=populate_user,
+            sender=LDAPBackend,
+            user=user,
+            ldap_user=user.ldap_user,
+        )
 
     def test_auth_signal_ldap_error(self):
         self._init_settings(
@@ -608,13 +616,15 @@ class LDAPTest(TestCase):
         )
 
         def handle_ldap_error(sender, **kwargs):
-            self.assertEqual(kwargs['context'], 'authenticate')
             raise kwargs['exception']
 
-        ldap_error.connect(handle_ldap_error)
-        with self.assertRaises(ldap.LDAPError):
-            authenticate(username='alice', password='password')
-        ldap_error.disconnect(handle_ldap_error)
+        with catch_signal(ldap_error) as handler:
+            handler.side_effect = handle_ldap_error
+            with self.assertRaises(ldap.LDAPError):
+                authenticate(username='alice', password='password')
+        handler.assert_called_once()
+        _args, kwargs = handler.call_args
+        self.assertEqual(kwargs['context'], 'authenticate')
 
     def test_populate_signal_ldap_error(self):
         self._init_settings(

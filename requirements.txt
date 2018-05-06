@@ -1,4 +1,7 @@
--e .
+Django >= 1.11
+flake8
+isort
 mock >= 2.0.0
+python-ldap >= 3.0
 sphinx
 tox

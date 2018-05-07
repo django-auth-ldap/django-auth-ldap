@@ -53,9 +53,8 @@ and arguments are included for completeness.
     # Use LDAP group membership to calculate group permissions.
     AUTH_LDAP_FIND_GROUP_PERMS = True
 
-    # Cache group memberships for an hour to minimize LDAP traffic
-    AUTH_LDAP_CACHE_GROUPS = True
-    AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
+    # Cache user's DN and group memberships for an hour to minimize LDAP traffic
+    AUTH_LDAP_CACHE_TIMEOUT = 3600
 
 
     # Keep ModelBackend around for per-user permissions and maybe a local

@@ -72,16 +72,23 @@ Default: ``''`` (Empty string)
 The password to use with :setting:`AUTH_LDAP_BIND_DN`.
 
 
-.. setting:: AUTH_LDAP_CACHE_GROUPS
+.. setting:: AUTH_LDAP_CACHE_TIMEOUT
 
-AUTH_LDAP_CACHE_GROUPS
-~~~~~~~~~~~~~~~~~~~~~~
+AUTH_LDAP_CACHE_TIMEOUT
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``False``
+Default: ``0``
 
-If ``True``, LDAP group membership will be cached using Django's cache
-framework. The cache timeout can be customized with
-:setting:`AUTH_LDAP_GROUP_CACHE_TIMEOUT`.
+If this value is nonzero, the value determines (in seconds) the amount of time
+user's group memberships and distinguished name are cached. Value ``0`` (the
+default) disables caching entirely.
+
+.. versionchanged:: 1.6.0
+
+    Previously caching was controlled by the settings `AUTH_LDAP_CACHE_GROUPS`
+    (`True`/`False`) and `AUTH_LDAP_GROUP_CACHE_TIMEOUT` (in seconds). If
+    `AUTH_LDAP_CACHE_TIMEOUT` is unchanged, its value is derievd from these
+    deprecated settings.
 
 
 .. setting:: AUTH_LDAP_CONNECTION_OPTIONS
@@ -135,17 +142,6 @@ A dictionary of options to pass to ``ldap.set_option()``. Keys are
     Due to its global nature, this setting ignores the :doc:`settings prefix
     <multiconfig>`. Regardless of how many backends are installed, this setting
     is referenced once by its default name at the time we load the ldap module.
-
-
-.. setting:: AUTH_LDAP_GROUP_CACHE_TIMEOUT
-
-AUTH_LDAP_GROUP_CACHE_TIMEOUT
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Default: ``None``
-
-If :setting:`AUTH_LDAP_CACHE_GROUPS` is ``True``, this is the cache timeout for
-group memberships. If ``None``, the global cache timeout will be used.
 
 
 .. setting:: AUTH_LDAP_GROUP_SEARCH

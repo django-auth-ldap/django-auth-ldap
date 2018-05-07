@@ -1041,7 +1041,7 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
             FIND_GROUP_PERMS=True,
-            CACHE_GROUPS=True
+            CACHE_TIMEOUT=None
         )
         self._init_groups()
 

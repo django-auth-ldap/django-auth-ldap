@@ -99,7 +99,7 @@ A dictionary of options to pass to each connection to the LDAP server via
 .. setting:: AUTH_LDAP_DENY_GROUP
 
 AUTH_LDAP_DENY_GROUP
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 Default: ``None``
 
@@ -258,7 +258,7 @@ to disable certificate verification, perhaps to allow self-signed certificates.
 .. setting:: AUTH_LDAP_USER_QUERY_FIELD
 
 AUTH_LDAP_USER_QUERY_FIELD
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: ``None``
 
@@ -309,7 +309,7 @@ username. This must contain the placeholder ``%(user)s``.
 .. setting:: AUTH_LDAP_USER_FLAGS_BY_GROUP
 
 AUTH_LDAP_USER_FLAGS_BY_GROUP
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: ``{}``
 

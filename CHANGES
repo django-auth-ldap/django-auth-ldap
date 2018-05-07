@@ -5,6 +5,11 @@ UNRELEASED
   documentation.
 - Fixed group membership queries with DNs containing non-ascii characters on
   Python 2.7.
+- The setting :setting:`AUTH_LDAP_CACHE_TIMEOUT` now replaces deprecated
+  `AUTH_LDAP_CACHE_GROUPS` and `AUTH_LDAP_GROUP_CACHE_TIMEOUT`. In addition to
+  caching groups, it also controls caching of distinguished names (which were
+  previously cached by default). A compatibility shim is provided so the
+  deprecated settings will continue to work.
 
 1.5.0 - 2018-04-18
 ------------------

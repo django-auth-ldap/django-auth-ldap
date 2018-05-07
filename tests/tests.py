@@ -33,6 +33,7 @@ import io
 import logging
 import os
 import pickle
+import warnings
 
 import ldap
 import mock
@@ -1046,7 +1047,7 @@ class LDAPTest(TestCase):
             GROUP_SEARCH=LDAPSearch('ou=groups,o=test', ldap.SCOPE_SUBTREE),
             GROUP_TYPE=MemberDNGroupType(member_attr='member'),
             FIND_GROUP_PERMS=True,
-            CACHE_GROUPS=True
+            CACHE_TIMEOUT=3600
         )
         self._init_groups()
 
@@ -1422,6 +1423,58 @@ class LDAPTest(TestCase):
         backend = MyBackend()
         user = backend.authenticate(None, username='alice', password='password')
         self.assertEqual(user.ldap_user.foo, 'bar')
+
+    @spy_ldap('search_s')
+    def test_dn_not_cached(self, mock):
+        self._init_settings(
+            USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
+        )
+        for _ in range(2):
+            user = authenticate(username='alice', password='password')
+            self.assertIsNotNone(user)
+        # Should have executed once per auth.
+        self.assertEqual(mock.call_count, 2)
+        # DN is not cached.
+        self.assertIsNone(cache.get('django_auth_ldap.user_dn.alice'))
+
+    @spy_ldap('search_s')
+    def test_dn_cached(self, mock):
+        self._init_settings(
+            USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
+            CACHE_TIMEOUT=60,
+        )
+        for _ in range(2):
+            user = authenticate(username='alice', password='password')
+            self.assertIsNotNone(user)
+        # Should have executed only once.
+        self.assertEqual(mock.call_count, 1)
+        # DN is cached.
+        self.assertEqual(
+            cache.get('django_auth_ldap.user_dn.alice'),
+            'uid=alice,ou=people,o=test',
+        )
+
+    def test_deprecated_cache_groups(self):
+        self._init_settings(
+            USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, '(uid=%(user)s)'),
+            CACHE_GROUPS=True,
+        )
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            user = authenticate(username='alice', password='password')
+        self.assertIsNotNone(user)
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertEqual(
+            str(w[0].message),
+            'Found deprecated setting AUTH_LDAP_CACHE_GROUP. Use '
+            'AUTH_LDAP_CACHE_TIMEOUT instead.',
+        )
+        # DN is cached.
+        self.assertEqual(
+            cache.get('django_auth_ldap.user_dn.alice'),
+            'uid=alice,ou=people,o=test',
+        )
 
     #
     # Utilities

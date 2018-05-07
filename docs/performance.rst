@@ -11,7 +11,7 @@ order of impact.
    default behavior is to reload a user's group memberships on every request.
    This is the safest behavior, as any membership change takes effect
    immediately, but it is expensive. If possible, set
-   :setting:`AUTH_LDAP_CACHE_GROUPS` to ``True`` to remove most of this traffic.
+   :setting:`AUTH_LDAP_CACHE_TIMEOUT` to remove most of this traffic.
 
 #. **Don't access user.ldap_user.***. Except for ``ldap_user.dn``, these
    properties are only cached on a per-request basis. If you can propagate LDAP

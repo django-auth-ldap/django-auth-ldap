@@ -516,12 +516,15 @@ class _LDAPUser(object):
         if self._using_simple_bind_mode():
             self._user_dn = self._construct_simple_user_dn()
         else:
-            cache_key = valid_cache_key('django_auth_ldap.user_dn.{}'.format(self._username))
-            self._user_dn = cache.get_or_set(
-                cache_key,
-                self._search_for_user_dn,
-                self.settings.GROUP_CACHE_TIMEOUT
-            )
+            if self.settings.CACHE_TIMEOUT > 0:
+                cache_key = valid_cache_key('django_auth_ldap.user_dn.{}'.format(self._username))
+                self._user_dn = cache.get_or_set(
+                    cache_key,
+                    self._search_for_user_dn,
+                    self.settings.CACHE_TIMEOUT
+                )
+            else:
+                self._user_dn = self._search_for_user_dn()
 
     def _using_simple_bind_mode(self):
         return (self.settings.USER_DN_TEMPLATE is not None)
@@ -928,16 +931,16 @@ class _LDAPUserGroups(object):
         return self._group_infos
 
     def _load_cached_attr(self, attr_name):
-        if self.settings.CACHE_GROUPS:
+        if self.settings.CACHE_TIMEOUT > 0:
             key = self._cache_key(attr_name)
             value = cache.get(key)
             setattr(self, attr_name, value)
 
     def _cache_attr(self, attr_name):
-        if self.settings.CACHE_GROUPS:
+        if self.settings.CACHE_TIMEOUT > 0:
             key = self._cache_key(attr_name)
             value = getattr(self, attr_name, None)
-            cache.set(key, value, self.settings.GROUP_CACHE_TIMEOUT)
+            cache.set(key, value, self.settings.CACHE_TIMEOUT)
 
     def _cache_key(self, attr_name):
         """
@@ -966,11 +969,10 @@ class LDAPSettings(object):
         'BIND_AS_AUTHENTICATING_USER': False,
         'BIND_DN': '',
         'BIND_PASSWORD': '',
-        'CACHE_GROUPS': False,
         'CONNECTION_OPTIONS': {},
         'DENY_GROUP': None,
         'FIND_GROUP_PERMS': False,
-        'GROUP_CACHE_TIMEOUT': None,
+        'CACHE_TIMEOUT': 0,
         'GROUP_SEARCH': None,
         'GROUP_TYPE': None,
         'MIRROR_GROUPS': None,
@@ -999,6 +1001,19 @@ class LDAPSettings(object):
         for name, default in defaults.items():
             value = getattr(django.conf.settings, prefix + name, default)
             setattr(self, name, value)
+
+        # Compatibility with old caching settings.
+        if getattr(django.conf.settings, self._name('CACHE_GROUPS'), defaults.get('CACHE_GROUPS')):
+            warnings.warn(
+                'Found deprecated setting AUTH_LDAP_CACHE_GROUP. Use '
+                'AUTH_LDAP_CACHE_TIMEOUT instead.',
+                DeprecationWarning,
+            )
+            self.CACHE_TIMEOUT = getattr(
+                django.conf.settings,
+                self._name('GROUP_CACHE_TIMEOUT'),
+                defaults.get('GROUP_CACHE_TIMEOUT', 3600),
+            )
 
     def _name(self, suffix):
         return (self._prefix + suffix)

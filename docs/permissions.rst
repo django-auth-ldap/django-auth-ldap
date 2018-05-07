@@ -29,14 +29,12 @@ associate permissions yourself, generally through the admin interface.
 To minimize traffic to the LDAP server,
 :class:`~django_auth_ldap.backend.LDAPBackend` can make use of Django's cache
 framework to keep a copy of a user's LDAP group memberships. To enable this
-feature, set :setting:`AUTH_LDAP_CACHE_GROUPS` to ``True``. You can also set
-:setting:`AUTH_LDAP_GROUP_CACHE_TIMEOUT` to override the timeout of cache
-entries (in seconds).
+feature, set :setting:`AUTH_LDAP_CACHE_TIMEOUT`, which determines the timeout
+of cache entries in seconds.
 
 .. code-block:: python
 
-    AUTH_LDAP_CACHE_GROUPS = True
-    AUTH_LDAP_GROUP_CACHE_TIMEOUT = 300
+    AUTH_LDAP_CACHE_TIMEOUT = 3600
 
 
 Group Mirroring

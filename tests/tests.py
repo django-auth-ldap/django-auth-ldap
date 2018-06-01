@@ -28,8 +28,8 @@ from __future__ import (
     absolute_import, division, print_function, unicode_literals,
 )
 
-from copy import deepcopy
 import contextlib
+from copy import deepcopy
 import functools
 import io
 import logging

@@ -51,6 +51,7 @@ from __future__ import (
 
 import copy
 from functools import reduce
+from hashlib import md5
 import operator
 import pprint
 import re
@@ -518,7 +519,7 @@ class _LDAPUser(object):
         if self._using_simple_bind_mode():
             self._user_dn = self._construct_simple_user_dn()
         else:
-            cache_key = valid_cache_key('django_auth_ldap.user_dn.{}'.format(self._username))
+            cache_key = valid_cache_key('django_auth_ldap.user_dn', self._username)
             self._user_dn = cache.get_or_set(
                 cache_key,
                 self._search_for_user_dn,
@@ -948,7 +949,7 @@ class _LDAPUserGroups(object):
         """
         dn = self._ldap_user.dn
         key = valid_cache_key(
-            'auth_ldap.{}.{}.{}'.format(self.__class__.__name__, attr_name, dn)
+            'auth_ldap.{}.{}'.format(self.__class__.__name__, attr_name), dn
         )
 
         return key
@@ -1006,10 +1007,9 @@ class LDAPSettings(object):
         return (self._prefix + suffix)
 
 
-def valid_cache_key(key):
+def valid_cache_key(key, dn):
     """
     Sanitizes a cache key for memcached.
     """
-    key = re.sub(r'\s+', '+', key)[:250]
-
-    return key
+    return '{}.{}'.format(key, md5(dn.encode('utf-8')).hexdigest())
+    

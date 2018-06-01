@@ -28,8 +28,8 @@ from __future__ import (
     absolute_import, division, print_function, unicode_literals,
 )
 
-from copy import deepcopy
 import contextlib
+from copy import deepcopy
 import functools
 import io
 import logging
@@ -126,10 +126,7 @@ class LDAPTest(TestCase):
 
         here = os.path.dirname(__file__)
         cls.server = slapdtest.SlapdObject()
-        with open(os.path.join(here, 'slapd.conf')) as fp:
-            cls.server.slapd_conf_template = fp.read()
         cls.server.suffix = 'o=test'
-        cls.server.root_dn = 'cn=%s,%s' % (cls.server.root_cn, cls.server.suffix)
         cls.server.openldap_schema_files = [
             'core.schema',
             'cosine.schema',

@@ -677,6 +677,16 @@ class LDAPTest(TestCase):
         query = LDAPGroupQuery('cn=alice_gon,ou=query_groups,o=test')
         self.assertIs(query.resolve(alice.ldap_user), True)
 
+    def test_group_query_utf8(self):
+        self._init_settings(
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',
+            GROUP_SEARCH=LDAPSearch('ou=query_groups,o=test', ldap.SCOPE_SUBTREE, '(objectClass=groupOfNames)'),
+            GROUP_TYPE=MemberDNGroupType(member_attr='member'),
+        )
+        user = authenticate(username='dreßler', password='password')
+        query = LDAPGroupQuery('cn=dreßler_gon,ou=query_groups,o=test')
+        self.assertIs(query.resolve(user.ldap_user), True)
+
     def test_negated_group_query(self):
         self._init_settings(
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test',

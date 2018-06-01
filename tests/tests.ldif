@@ -154,6 +154,11 @@ cn: bob_gon
 objectClass: groupOfNames
 member: uid=bob,ou=people,o=test
 
+dn: cn=dreßler_gon,ou=query_groups,o=test
+cn: dreßler_gon
+objectClass: groupOfNames
+member: uid=dreßler,ou=people,o=test
+
 
 # groupOfNames objects for selective group mirroring.
 dn: cn=mirror1,ou=mirror_groups,o=test

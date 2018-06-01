@@ -426,14 +426,22 @@ class PosixGroupType(LDAPGroupType):
             user_uid = ldap_user.attrs['uid'][0]
 
             try:
-                is_member = ldap_user.connection.compare_s(force_text(group_dn), 'memberUid', user_uid)
+                is_member = ldap_user.connection.compare_s(
+                    force_text(group_dn),
+                    'memberUid',
+                    user_uid.encode('utf-8'),
+                )
             except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                 is_member = False
 
             if not is_member:
                 try:
                     user_gid = ldap_user.attrs['gidNumber'][0]
-                    is_member = ldap_user.connection.compare_s(force_text(group_dn), 'gidNumber', user_gid)
+                    is_member = ldap_user.connection.compare_s(
+                        force_text(group_dn),
+                        'gidNumber',
+                        user_gid.encode('utf-8'),
+                    )
                 except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                     is_member = False
         except (KeyError, IndexError):
@@ -469,7 +477,7 @@ class MemberDNGroupType(LDAPGroupType):
             result = ldap_user.connection.compare_s(
                 force_text(group_dn),
                 force_text(self.member_attr),
-                force_text(ldap_user.dn)
+                ldap_user.dn.encode('utf-8'),
             )
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
             result = 0

@@ -1,3 +1,9 @@
+UNRELEASED
+----------
+
+- Fixed group membership queries with DNs containing non-ascii characters on
+  Python 2.7.
+
 1.5.0 - 2018-04-18
 ------------------
 

@@ -1,6 +1,8 @@
 UNRELEASED
 ----------
 
+- Updated ``LDAPBackend.authenticate()`` signature to match Django's
+  documentation.
 - Fixed group membership queries with DNs containing non-ascii characters on
   Python 2.7.
 

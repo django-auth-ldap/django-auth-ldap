@@ -1,3 +1,13 @@
+1.6.0 - Unreleased
+------------------
+
+- The :setting:`AUTH_LDAP_CACHE_TIMEOUT` now replaces old
+  `AUTH_LDAP_CACHE_GROUPS` and `AUTH_LDAP_GROUP_CACHE_TIMEOUT`, it also
+  consistently controls caching of user distinguished name (previously was
+  cached by default since version 1.2.14), in addition to groups. Compatibility
+  is provided with the deprecated settings.
+
+
 1.5.0 - 2018-04-18
 ------------------
 

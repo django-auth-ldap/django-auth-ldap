@@ -1,5 +1,5 @@
-UNRELEASED
-----------
+1.6.0 - 2018-06-02
+------------------
 
 - Updated ``LDAPBackend.authenticate()`` signature to match Django's
   documentation.

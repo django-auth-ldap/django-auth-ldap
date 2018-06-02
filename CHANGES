@@ -1,3 +1,9 @@
+1.6.1 - 2018-06-02
+------------------
+
+- Renamed ``requirements.txt`` to ``dev-requirements.txt`` to fix Read the Docs
+  build.
+
 1.6.0 - 2018-06-02
 ------------------
 

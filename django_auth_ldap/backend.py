@@ -240,26 +240,6 @@ class LDAPBackend(object):
 
         return (user, built)
 
-    def get_or_create_user(self, username, ldap_user):
-        """
-        This must return a (User, created) 2-tuple for the given LDAP user.
-        username is the Django-friendly username of the user. ldap_user.dn is
-        the user's DN and ldap_user.attrs contains all of their LDAP
-        attributes.
-
-        Deprecated, but remains for backwards compatibility. Remove in a future
-        release.
-        """
-        model = self.get_user_model()
-        username_field = model.USERNAME_FIELD
-
-        kwargs = {
-            username_field + '__iexact': username,
-            'defaults': {username_field: username.lower()}
-        }
-
-        return model.objects.get_or_create(**kwargs)
-
     def ldap_to_django_username(self, username):
         return username
 

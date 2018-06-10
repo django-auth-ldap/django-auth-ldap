@@ -1,3 +1,8 @@
+UNRELEASED
+----------
+
+- Add support and testsing for Django 2.1. No code changes were required.
+
 1.6.1 - 2018-06-02
 ------------------
 

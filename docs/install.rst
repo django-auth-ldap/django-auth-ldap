@@ -12,8 +12,8 @@ headers available on your system.
 
 To use the auth backend in a Django project, add
 ``'django_auth_ldap.backend.LDAPBackend'`` to
-:django:setting:`AUTHENTICATION_BACKENDS`. Do not add anything to
-:django:setting:`INSTALLED_APPS`.
+:setting:`AUTHENTICATION_BACKENDS`. Do not add anything to
+:setting:`INSTALLED_APPS`.
 
 .. code-block:: python
 

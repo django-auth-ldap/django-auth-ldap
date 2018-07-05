@@ -200,7 +200,9 @@ UNRELEASED
   To sum up, django-auth-ldap works with Python 2.6, 2.7, 3.3 and 3.4.
 
   Since python-ldap isn't making progress toward Python 3, if you're using
-  Python 3, you need to install a fork::
+  Python 3, you need to install a fork:
+
+  .. code-block:: bash
 
       $ pip install git+https://github.com/rbarrois/python-ldap.git@py3
 

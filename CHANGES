@@ -70,7 +70,7 @@ UNRELEASED
   :setting:`AUTH_LDAP_USER_QUERY_FIELD`.
 
 - New method
-  :meth:`~django_auth_ldap.backend.LDAPBackend.authenticate_ldap_user()` to
+  :meth:`~django_auth_ldap.backend.LDAPBackend.authenticate_ldap_user` to
   provide pre- and post-authentication hooks.
 
 - Add support for Django 2.0.

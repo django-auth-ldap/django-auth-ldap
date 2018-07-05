@@ -99,8 +99,8 @@ AUTH_LDAP_CONNECTION_OPTIONS
 Default: ``{}``
 
 A dictionary of options to pass to each connection to the LDAP server via
-``LDAPObject.set_option()``. Keys are `ldap.OPT_*
-<https://python-ldap.org/en/latest/ldap.html#options>`_ constants.
+``LDAPObject.set_option()``. Keys are :ref:`ldap.OPT_* <ldap-options>`
+constants.
 
 
 .. setting:: AUTH_LDAP_DENY_GROUP
@@ -135,7 +135,7 @@ AUTH_LDAP_GLOBAL_OPTIONS
 Default: ``{}``
 
 A dictionary of options to pass to ``ldap.set_option()``. Keys are
-`ldap.OPT_* <https://python-ldap.org/en/latest/ldap.html#options>`_ constants.
+:ref:`ldap.OPT_* <ldap-options>` constants.
 
 .. note::
 

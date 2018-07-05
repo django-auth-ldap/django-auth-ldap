@@ -35,8 +35,7 @@ UNRELEASED
 - The python-ldap library is now initialized with ``bytes_mode=False``,
   requiring all LDAP values to be handled as Unicode text (``str`` in Python 3
   and ``unicode`` in Python 2), not bytes. For additional information, see the
-  python-ldap documentation on `bytes mode
-  <https://www.python-ldap.org/en/latest/bytes_mode.html>`_
+  python-ldap documentation on :ref:`bytes mode <text-bytes>`.
 
 - Removed deprecated function ``LDAPBackend.get_or_create_user()``. Use
   :meth:`~django_auth_ldap.backend.LDAPBackend.get_or_build_user` instead.

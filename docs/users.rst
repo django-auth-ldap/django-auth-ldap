@@ -69,12 +69,16 @@ If you just want to copy a few attribute values directly from the user's LDAP
 directory entry to their Django user, the setting,
 :setting:`AUTH_LDAP_USER_ATTR_MAP`, makes it easy. This is a dictionary that
 maps user model keys, respectively, to (case-insensitive) LDAP attribute
-names::
+names:
+
+.. code-block:: python
 
     AUTH_LDAP_USER_ATTR_MAP = {"first_name": "givenName", "last_name": "sn"}
 
 Only string fields can be mapped to attributes. Boolean fields can be defined by
-group membership::
+group membership:
+
+.. code-block:: python
 
     AUTH_LDAP_USER_FLAGS_BY_GROUP = {
         "is_active": "cn=active,ou=groups,dc=example,dc=com",

@@ -274,7 +274,9 @@ Default: ``None``
 A list of attribute names to load for the authenticated user. Normally, you can
 ignore this and the LDAP server will send back all of the attributes of the
 directory entry. One reason you might need to override this is to get
-operational attributes, which are not normally included::
+operational attributes, which are not normally included:
+
+.. code-block:: python
 
     AUTH_LDAP_USER_ATTRLIST = ['*', '+']
 

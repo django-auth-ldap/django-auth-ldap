@@ -28,7 +28,9 @@ caching is in order.
 If you need to configure any python-ldap options, you can set
 :setting:`AUTH_LDAP_GLOBAL_OPTIONS` and/or
 :setting:`AUTH_LDAP_CONNECTION_OPTIONS`. For example, disabling referrals is not
-uncommon::
+uncommon:
+
+.. code-block:: python
 
     import ldap
 
@@ -52,7 +54,9 @@ Because LDAP searches appear elsewhere in the configuration, the
 :class:`~django_auth_ldap.config.LDAPSearch` class is provided to encapsulate
 search information. In this case, the filter parameter should contain the
 placeholder ``%(user)s``. A simple configuration for the search/bind approach
-looks like this (some defaults included for completeness)::
+looks like this (some defaults included for completeness):
+
+.. code-block:: python
 
     import ldap
     from django_auth_ldap.config import LDAPSearch
@@ -97,7 +101,9 @@ To skip the search phase, set :setting:`AUTH_LDAP_USER_DN_TEMPLATE` to a
 template that will produce the authenticating user's DN directly. This template
 should have one placeholder, ``%(user)s``. If the first example had used
 ``ldap.SCOPE_ONELEVEL``, the following would be a more straightforward (and
-efficient) equivalent::
+efficient) equivalent:
+
+.. code-block:: python
 
     AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
 
@@ -155,7 +161,9 @@ sensitive information, such as passwords. When communicating with an LDAP server
 on localhost or on a local network, this might be fine. If you need a secure
 connection to the LDAP server, you can either use an ``ldaps://`` URL or enable
 the StartTLS extension. The latter is generally the preferred mechanism. To
-enable StartTLS, set :setting:`AUTH_LDAP_START_TLS` to ``True``::
+enable StartTLS, set :setting:`AUTH_LDAP_START_TLS` to ``True``:
+
+.. code-block:: python
 
     AUTH_LDAP_START_TLS = True
 

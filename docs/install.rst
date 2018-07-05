@@ -29,9 +29,9 @@ models, but it does assume that a database is present.
     :class:`~django_auth_ldap.backend.LDAPBackend` does not inherit from
     :class:`~django.contrib.auth.backends.ModelBackend`. It is possible to use
     :class:`~django_auth_ldap.backend.LDAPBackend` exclusively by configuring
-    :class:it to draw group membership from the LDAP server. However, if you
-    :class:would like to assign permissions to individual users or add users to
-    :class:groups within Django, you'll need to have both backends installed:
+    it to draw group membership from the LDAP server. However, if you would
+    like to assign permissions to individual users or add users to groups
+    within Django, you'll need to have both backends installed:
 
     .. code-block:: python
 

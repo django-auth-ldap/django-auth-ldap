@@ -172,7 +172,7 @@ class LDAPTest(TestCase):
     def test_callable_server_uri_with_request(self):
         request = RequestFactory().get('/')
         ldap_uri_func = mock.Mock(return_value=self.server.ldap_uri)
-        
+
         self._init_settings(
             SERVER_URI=ldap_uri_func,
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
@@ -184,7 +184,7 @@ class LDAPTest(TestCase):
         self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
-        ldap_uri_func.assert_called_with(request) 
+        ldap_uri_func.assert_called_with(request)
 
     def test_simple_bind(self):
         self._init_settings(

@@ -44,6 +44,7 @@ from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
+from django.test.client import RequestFactory
 from django.test.utils import override_settings
 
 from django_auth_ldap.backend import LDAPBackend, ldap_error, populate_user
@@ -156,17 +157,44 @@ class LDAPTest(TestCase):
         self.assertEqual(user.ldap_user.connection.get_option(ldap.OPT_REFERRALS), 0)
 
     def test_callable_server_uri(self):
+        request = RequestFactory().get('/')
+        cb_mock = mock.Mock(return_value=self.server.ldap_uri)
+
+        self._init_settings(
+            SERVER_URI=lambda request: cb_mock(request),
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+        user_count = User.objects.count()
+
+        user = authenticate(request=request, username='alice', password='password')
+
+        self.assertIs(user.has_usable_password(), False)
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(User.objects.count(), user_count + 1)
+        cb_mock.assert_called_with(request)
+
+    def test_deprecated_callable_server_uri(self):
         self._init_settings(
             SERVER_URI=lambda: self.server.ldap_uri,
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         user_count = User.objects.count()
 
-        user = authenticate(username='alice', password='password')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            user = authenticate(username='alice', password='password')
 
         self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertEqual(
+            str(w[0].message),
+            'Update AUTH_LDAP_SERVER_URI callable tests.tests.<lambda> to '
+            'accept a positional `request` argument. Support for callables '
+            'accepting no arguments will be removed in a future version.',
+        )
 
     def test_simple_bind(self):
         self._init_settings(

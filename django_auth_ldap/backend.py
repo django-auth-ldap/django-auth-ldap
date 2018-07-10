@@ -64,6 +64,7 @@ from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 from django.utils import six
 from django.utils.encoding import force_text
+from django.utils.inspect import func_supports_parameter
 
 from django_auth_ldap.config import (
     ConfigurationWarning, LDAPGroupQuery, LDAPSearch, _LDAPConfig,
@@ -145,7 +146,7 @@ class LDAPBackend(object):
 
     def authenticate(self, request, username=None, password=None, **kwargs):
         if password or self.settings.PERMIT_EMPTY_PASSWORD:
-            ldap_user = _LDAPUser(self, username=username.strip())
+            ldap_user = _LDAPUser(self, username=username.strip(), request=request)
             user = self.authenticate_ldap_user(ldap_user, password)
         else:
             logger.debug('Rejecting empty password for {}'.format(username))
@@ -275,7 +276,7 @@ class _LDAPUser(object):
     # Initialization
     #
 
-    def __init__(self, backend, username=None, user=None):
+    def __init__(self, backend, username=None, user=None, request=None):
         """
         A new LDAPUser must be initialized with either a username or an
         authenticated User object. If a user is given, the username will be
@@ -283,6 +284,7 @@ class _LDAPUser(object):
         """
         self.backend = backend
         self._username = username
+        self._request = request
 
         if user is not None:
             self._set_authenticated_user(user)
@@ -804,7 +806,17 @@ class _LDAPUser(object):
         if self._connection is None:
             uri = self.settings.SERVER_URI
             if callable(uri):
-                uri = uri()
+                if func_supports_parameter(uri, 'request'):
+                    uri = uri(self._request)
+                else:
+                    warnings.warn(
+                        'Update AUTH_LDAP_SERVER_URI callable %s.%s to accept '
+                        'a positional `request` argument. Support for callables '
+                        'accepting no arguments will be removed in a future '
+                        'version.' % (uri.__module__, uri.__name__),
+                        DeprecationWarning
+                    )
+                    uri = uri()
 
             self._connection = self.backend.ldap.initialize(uri, bytes_mode=False)
 

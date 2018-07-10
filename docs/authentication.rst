@@ -15,9 +15,10 @@ URIs to try in sequence.
     AUTH_LDAP_SERVER_URI = "ldap://ldap.example.com"
 
 If your server location is even more dynamic than this, you may provide a
-function (or any callable object) that returns the URI. You should assume that
-this will be called on every request, so if it's an expensive operation, some
-caching is in order.
+function (or any callable object) that returns the URI. The callable is passed
+a single positional argument: ``request``. You should assume that this will be
+called on every request, so if it's an expensive operation, some caching is in
+order.
 
 .. code-block:: python
 
@@ -37,6 +38,12 @@ uncommon:
     AUTH_LDAP_CONNECTION_OPTIONS = {
         ldap.OPT_REFERRALS: 0
     }
+
+.. versionchanged:: 1.7.0
+
+    When ``AUTH_LDAP_SERVER_URI`` is set to a callable, it is now passed a
+    positional ``request`` argument. Support for no arguments will continue for
+    backwards compatibility but will be removed in a future version.
 
 
 Search/Bind

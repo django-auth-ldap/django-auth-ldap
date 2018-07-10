@@ -233,7 +233,14 @@ AUTH_LDAP_SERVER_URI
 Default: ``'ldap://localhost'``
 
 The URI of the LDAP server. This can be any URI that is supported by your
-underlying LDAP libraries.
+underlying LDAP libraries. Can also be a callable that returns the URI. The
+callable is passed a single positional argument: ``request``.
+
+.. versionchanged:: 1.7.0
+
+    When ``AUTH_LDAP_SERVER_URI`` is set to a callable, it is now passed a
+    positional ``request`` argument. Support for no arguments will continue for
+    backwards compatibility but will be removed in a future version.
 
 
 .. setting:: AUTH_LDAP_START_TLS

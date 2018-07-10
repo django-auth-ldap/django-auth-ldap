@@ -64,6 +64,7 @@ from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 import django.dispatch
 from django.utils import six
 from django.utils.encoding import force_text
+from django.utils.inspect import get_func_args
 
 from django_auth_ldap.config import (
     ConfigurationWarning, LDAPGroupQuery, LDAPSearch, _LDAPConfig,
@@ -805,10 +806,16 @@ class _LDAPUser(object):
         if self._connection is None:
             uri = self.settings.SERVER_URI
             if callable(uri):
-                try:
-                    uri = uri(self._request)
-                except TypeError:
+                args = get_func_args(uri)
+                if 'request' not in args:
+                    warnings.warn(
+                        'Found a deprecated method signature for the AUTH_LDAP_SERVER_URI callback. '
+                        'From now on, the callback takes an additional request parameter.',
+                        DeprecationWarning
+                    )
                     uri = uri()
+                else:
+                    uri = uri(self._request)
 
             self._connection = self.backend.ldap.initialize(uri, bytes_mode=False)
 

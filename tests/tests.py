@@ -157,24 +157,11 @@ class LDAPTest(TestCase):
         self.assertEqual(user.ldap_user.connection.get_option(ldap.OPT_REFERRALS), 0)
 
     def test_callable_server_uri(self):
-        self._init_settings(
-            SERVER_URI=lambda: self.server.ldap_uri,
-            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
-        )
-        user_count = User.objects.count()
-
-        user = authenticate(username='alice', password='password')
-
-        self.assertIs(user.has_usable_password(), False)
-        self.assertEqual(user.username, 'alice')
-        self.assertEqual(User.objects.count(), user_count + 1)
-
-    def test_callable_server_uri_with_request(self):
         request = RequestFactory().get('/')
-        ldap_uri_func = mock.Mock(return_value=self.server.ldap_uri)
+        cb_mock = mock.Mock(return_value=self.server.ldap_uri)
 
         self._init_settings(
-            SERVER_URI=ldap_uri_func,
+            SERVER_URI=lambda request: cb_mock(request),
             USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
         )
         user_count = User.objects.count()
@@ -184,7 +171,27 @@ class LDAPTest(TestCase):
         self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, 'alice')
         self.assertEqual(User.objects.count(), user_count + 1)
-        ldap_uri_func.assert_called_with(request)
+        cb_mock.assert_called_with(request)
+
+    def test_deprecated_callable_server_uri(self):
+        self._init_settings(
+            SERVER_URI=lambda: self.server.ldap_uri,
+            USER_DN_TEMPLATE='uid=%(user)s,ou=people,o=test'
+        )
+        user_count = User.objects.count()
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            user = authenticate(username='alice', password='password')
+        self.assertIs(user.has_usable_password(), False)
+        self.assertEqual(user.username, 'alice')
+        self.assertEqual(User.objects.count(), user_count + 1)
+        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertEqual(
+            str(w[0].message),
+            'Found a deprecated method signature for the AUTH_LDAP_SERVER_URI callback. '
+            'From now on, the callback takes an additional request parameter.',
+        )
 
     def test_simple_bind(self):
         self._init_settings(

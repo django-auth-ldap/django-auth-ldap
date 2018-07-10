@@ -145,7 +145,7 @@ class LDAPBackend(object):
 
     def authenticate(self, request, username=None, password=None, **kwargs):
         if password or self.settings.PERMIT_EMPTY_PASSWORD:
-            ldap_user = _LDAPUser(self, username=username.strip())
+            ldap_user = _LDAPUser(self, username=username.strip(), request=request)
             user = self.authenticate_ldap_user(ldap_user, password)
         else:
             logger.debug('Rejecting empty password for {}'.format(username))
@@ -275,7 +275,7 @@ class _LDAPUser(object):
     # Initialization
     #
 
-    def __init__(self, backend, username=None, user=None):
+    def __init__(self, backend, username=None, user=None, request=None):
         """
         A new LDAPUser must be initialized with either a username or an
         authenticated User object. If a user is given, the username will be
@@ -283,6 +283,7 @@ class _LDAPUser(object):
         """
         self.backend = backend
         self._username = username
+        self._request = request
 
         if user is not None:
             self._set_authenticated_user(user)
@@ -804,7 +805,10 @@ class _LDAPUser(object):
         if self._connection is None:
             uri = self.settings.SERVER_URI
             if callable(uri):
-                uri = uri()
+                try:
+                    uri = uri(self._request)
+                except TypeError:
+                    uri = uri()
 
             self._connection = self.backend.ldap.initialize(uri, bytes_mode=False)
 

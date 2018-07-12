@@ -15,3 +15,19 @@ messages.
     logger = logging.getLogger('django_auth_ldap')
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
+
+Or if you're using Django's `LOGGING setting`_, you can add an entry to your
+logging config:
+
+.. _LOGGING setting: https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-LOGGING
+
+.. code-block:: python
+
+    LOGGING = {
+        'loggers': {
+            'django_auth_ldap': {
+                'level': 'DEBUG',
+                'handlers': ['console'],
+            },
+        },
+    }

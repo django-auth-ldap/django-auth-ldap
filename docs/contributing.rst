@@ -19,11 +19,11 @@ Development
 -----------
 
 To get set up for development, activate your virtualenv and use pip to install
-from ``requirements.txt``:
+from ``dev-requirements.txt``:
 
 .. code-block:: sh
 
-    $ pip install -r requirements.txt
+    $ pip install -r dev-requirements.txt
 
 To run the tests:
 

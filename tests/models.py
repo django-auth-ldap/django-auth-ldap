@@ -8,7 +8,7 @@ class TestUser(AbstractBaseUser):
     identifier = models.CharField(max_length=40, unique=True, db_index=True)
     uid_number = models.IntegerField()
 
-    USERNAME_FIELD = 'identifier'
+    USERNAME_FIELD = "identifier"
 
     def get_full_name(self):
         return self.identifier
@@ -17,9 +17,9 @@ class TestUser(AbstractBaseUser):
         return self.identifier
 
     def get_first_name(self):
-        return 'Alice'
+        return "Alice"
 
     def set_first_name(self, value):
-        raise Exception('Oops...')
+        raise Exception("Oops...")
 
     first_name = property(get_first_name, set_first_name)

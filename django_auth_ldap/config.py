@@ -49,6 +49,7 @@ class _LDAPConfig(object):
     """
     A private class that loads and caches some global objects.
     """
+
     logger = None
 
     _ldap_configured = False
@@ -73,7 +74,7 @@ class _LDAPConfig(object):
         Initializes and returns our logger instance.
         """
         if cls.logger is None:
-            cls.logger = logging.getLogger('django_auth_ldap')
+            cls.logger = logging.getLogger("django_auth_ldap")
             cls.logger.addHandler(logging.NullHandler())
 
         return cls.logger
@@ -90,7 +91,8 @@ class LDAPSearch(object):
     documented for configuration purposes. Internal clients may use the other
     methods to refine and execute the search.
     """
-    def __init__(self, base_dn, scope, filterstr='(objectClass=*)', attrlist=None):
+
+    def __init__(self, base_dn, scope, filterstr="(objectClass=*)", attrlist=None):
         """
         These parameters are the same as the first three parameters to
         ldap.search_s.
@@ -115,11 +117,13 @@ class LDAPSearch(object):
         for name, value in term_dict.items():
             if escape:
                 value = self.ldap.filter.escape_filter_chars(value)
-            term_strings.append('({}={})'.format(name, value))
+            term_strings.append("({}={})".format(name, value))
 
-        filterstr = '(&{})'.format(''.join(term_strings))
+        filterstr = "(&{})".format("".join(term_strings))
 
-        return self.__class__(self.base_dn, self.scope, filterstr, attrlist=self.attrlist)
+        return self.__class__(
+            self.base_dn, self.scope, filterstr, attrlist=self.attrlist
+        )
 
     def search_with_additional_term_string(self, filterstr):
         """
@@ -127,9 +131,11 @@ class LDAPSearch(object):
         string. The caller is responsible for passing in a properly escaped
         string.
         """
-        filterstr = '(&{}{})'.format(self.filterstr, filterstr)
+        filterstr = "(&{}{})".format(self.filterstr, filterstr)
 
-        return self.__class__(self.base_dn, self.scope, filterstr, attrlist=self.attrlist)
+        return self.__class__(
+            self.base_dn, self.scope, filterstr, attrlist=self.attrlist
+        )
 
     def execute(self, connection, filterargs=(), escape=True):
         """
@@ -146,10 +152,12 @@ class LDAPSearch(object):
 
         try:
             filterstr = self.filterstr % filterargs
-            results = connection.search_s(force_text(self.base_dn),
-                                          self.scope,
-                                          force_text(filterstr),
-                                          self.attrlist)
+            results = connection.search_s(
+                force_text(self.base_dn),
+                self.scope,
+                force_text(filterstr),
+                self.attrlist,
+            )
         except ldap.LDAPError as e:
             results = []
             logger.error(
@@ -175,8 +183,10 @@ class LDAPSearch(object):
         try:
             filterstr = self.filterstr % filterargs
             msgid = connection.search(
-                force_text(self.base_dn), self.scope, force_text(filterstr),
-                self.attrlist
+                force_text(self.base_dn),
+                self.scope,
+                force_text(filterstr),
+                self.attrlist,
             )
         except ldap.LDAPError as e:
             msgid = None
@@ -212,11 +222,14 @@ class LDAPSearch(object):
 
         """
         if isinstance(filterargs, tuple):
-            filterargs = tuple(self.ldap.filter.escape_filter_chars(value)
-                               for value in filterargs)
+            filterargs = tuple(
+                self.ldap.filter.escape_filter_chars(value) for value in filterargs
+            )
         elif isinstance(filterargs, dict):
-            filterargs = {key: self.ldap.filter.escape_filter_chars(value)
-                          for key, value in filterargs.items()}
+            filterargs = {
+                key: self.ldap.filter.escape_filter_chars(value)
+                for key, value in filterargs.items()
+            }
         else:
             raise TypeError("filterargs must be a tuple or dict.")
 
@@ -228,7 +241,7 @@ class LDAPSearch(object):
         references, decodes utf8, normalizes DNs, etc.
         """
         results = [r for r in results if r[0] is not None]
-        results = _DeepStringCoder('utf-8').decode(results)
+        results = _DeepStringCoder("utf-8").decode(results)
 
         # The normal form of a DN is lower case.
         results = [(r[0].lower(), r[1]) for r in results]
@@ -236,8 +249,11 @@ class LDAPSearch(object):
         result_dns = [result[0] for result in results]
         logger.debug(
             "search_s('{}', {}, '{}') returned {} objects: {}".format(
-                self.base_dn, self.scope, self.filterstr, len(result_dns),
-                "; ".join(result_dns)
+                self.base_dn,
+                self.scope,
+                self.filterstr,
+                len(result_dns),
+                "; ".join(result_dns),
             )
         )
 
@@ -249,19 +265,22 @@ class LDAPSearchUnion(object):
     A compound search object that returns the union of the results. Instantiate
     it with one or more LDAPSearch objects.
     """
+
     def __init__(self, *args):
         self.searches = args
         self.ldap = _LDAPConfig.get_ldap()
 
     def search_with_additional_terms(self, term_dict, escape=True):
-        searches = [s.search_with_additional_terms(term_dict, escape)
-                    for s in self.searches]
+        searches = [
+            s.search_with_additional_terms(term_dict, escape) for s in self.searches
+        ]
 
         return self.__class__(*searches)
 
     def search_with_additional_term_string(self, filterstr):
-        searches = [s.search_with_additional_term_string(filterstr)
-                    for s in self.searches]
+        searches = [
+            s.search_with_additional_term_string(filterstr) for s in self.searches
+        ]
 
         return self.__class__(*searches)
 
@@ -283,6 +302,7 @@ class _DeepStringCoder(object):
     dicts. This is helpful when interacting with the Unicode-unaware
     python-ldap.
     """
+
     def __init__(self, encoding):
         self.encoding = encoding
         self.ldap = _LDAPConfig.get_ldap()
@@ -331,6 +351,7 @@ class LDAPGroupType(object):
     Subclasses in this file must use self.ldap to access the python-ldap module.
     This will be a mock object during unit tests.
     """
+
     def __init__(self, name_attr="cn"):
         self.name_attr = name_attr
         self.ldap = _LDAPConfig.get_ldap()
@@ -387,6 +408,7 @@ class PosixGroupType(LDAPGroupType):
     """
     An LDAPGroupType subclass that handles groups of class posixGroup.
     """
+
     def user_groups(self, ldap_user, group_search):
         """
         Searches for any group that is either the user's primary or contains the
@@ -395,17 +417,17 @@ class PosixGroupType(LDAPGroupType):
         groups = []
 
         try:
-            user_uid = ldap_user.attrs['uid'][0]
+            user_uid = ldap_user.attrs["uid"][0]
 
-            if 'gidNumber' in ldap_user.attrs:
-                user_gid = ldap_user.attrs['gidNumber'][0]
-                filterstr = '(|(gidNumber={})(memberUid={}))'.format(
+            if "gidNumber" in ldap_user.attrs:
+                user_gid = ldap_user.attrs["gidNumber"][0]
+                filterstr = "(|(gidNumber={})(memberUid={}))".format(
                     self.ldap.filter.escape_filter_chars(user_gid),
-                    self.ldap.filter.escape_filter_chars(user_uid)
+                    self.ldap.filter.escape_filter_chars(user_uid),
                 )
             else:
-                filterstr = '(memberUid={})'.format(
-                    self.ldap.filter.escape_filter_chars(user_uid),
+                filterstr = "(memberUid={})".format(
+                    self.ldap.filter.escape_filter_chars(user_uid)
                 )
 
             search = group_search.search_with_additional_term_string(filterstr)
@@ -421,24 +443,20 @@ class PosixGroupType(LDAPGroupType):
         listed in the group's memberUid attribute.
         """
         try:
-            user_uid = ldap_user.attrs['uid'][0]
+            user_uid = ldap_user.attrs["uid"][0]
 
             try:
                 is_member = ldap_user.connection.compare_s(
-                    force_text(group_dn),
-                    'memberUid',
-                    user_uid.encode('utf-8'),
+                    force_text(group_dn), "memberUid", user_uid.encode("utf-8")
                 )
             except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                 is_member = False
 
             if not is_member:
                 try:
-                    user_gid = ldap_user.attrs['gidNumber'][0]
+                    user_gid = ldap_user.attrs["gidNumber"][0]
                     is_member = ldap_user.connection.compare_s(
-                        force_text(group_dn),
-                        'gidNumber',
-                        user_gid.encode('utf-8'),
+                        force_text(group_dn), "gidNumber", user_gid.encode("utf-8")
                     )
                 except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                     is_member = False
@@ -452,7 +470,8 @@ class MemberDNGroupType(LDAPGroupType):
     """
     A group type that stores lists of members as distinguished names.
     """
-    def __init__(self, member_attr, name_attr='cn'):
+
+    def __init__(self, member_attr, name_attr="cn"):
         """
         member_attr is the attribute on the group object that holds the list of
         member DNs.
@@ -465,7 +484,9 @@ class MemberDNGroupType(LDAPGroupType):
         return "<{}: {}>".format(self.__class__.__name__, self.member_attr)
 
     def user_groups(self, ldap_user, group_search):
-        search = group_search.search_with_additional_terms({self.member_attr: ldap_user.dn})
+        search = group_search.search_with_additional_terms(
+            {self.member_attr: ldap_user.dn}
+        )
         groups = search.execute(ldap_user.connection)
 
         return groups
@@ -475,7 +496,7 @@ class MemberDNGroupType(LDAPGroupType):
             result = ldap_user.connection.compare_s(
                 force_text(group_dn),
                 force_text(self.member_attr),
-                ldap_user.dn.encode('utf-8'),
+                ldap_user.dn.encode("utf-8"),
             )
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
             result = 0
@@ -489,7 +510,8 @@ class NestedMemberDNGroupType(LDAPGroupType):
     supports nested groups. There is no shortcut for is_member in this case, so
     it's left unimplemented.
     """
-    def __init__(self, member_attr, name_attr='cn'):
+
+    def __init__(self, member_attr, name_attr="cn"):
         """
         member_attr is the attribute on the group object that holds the list of
         member DNs.
@@ -510,9 +532,9 @@ class NestedMemberDNGroupType(LDAPGroupType):
         handled_dn_set = set()  # Member DNs that we've already searched with
 
         while len(member_dn_set) > 0:
-            group_infos = self.find_groups_with_any_member(member_dn_set,
-                                                           group_search,
-                                                           ldap_user.connection)
+            group_infos = self.find_groups_with_any_member(
+                member_dn_set, group_search, ldap_user.connection
+            )
             new_group_info_map = {info[0]: info for info in group_infos}
             group_info_map.update(new_group_info_map)
             handled_dn_set.update(member_dn_set)
@@ -525,7 +547,9 @@ class NestedMemberDNGroupType(LDAPGroupType):
 
     def find_groups_with_any_member(self, member_dn_set, group_search, connection):
         terms = [
-            "({0}={1})".format(self.member_attr, self.ldap.filter.escape_filter_chars(dn))
+            "({0}={1})".format(
+                self.member_attr, self.ldap.filter.escape_filter_chars(dn)
+            )
             for dn in member_dn_set
         ]
 
@@ -539,8 +563,9 @@ class GroupOfNamesType(MemberDNGroupType):
     """
     An LDAPGroupType subclass that handles groups of class groupOfNames.
     """
-    def __init__(self, name_attr='cn'):
-        super(GroupOfNamesType, self).__init__('member', name_attr)
+
+    def __init__(self, name_attr="cn"):
+        super(GroupOfNamesType, self).__init__("member", name_attr)
 
 
 class NestedGroupOfNamesType(NestedMemberDNGroupType):
@@ -548,16 +573,18 @@ class NestedGroupOfNamesType(NestedMemberDNGroupType):
     An LDAPGroupType subclass that handles groups of class groupOfNames with
     nested group references.
     """
-    def __init__(self, name_attr='cn'):
-        super(NestedGroupOfNamesType, self).__init__('member', name_attr)
+
+    def __init__(self, name_attr="cn"):
+        super(NestedGroupOfNamesType, self).__init__("member", name_attr)
 
 
 class GroupOfUniqueNamesType(MemberDNGroupType):
     """
     An LDAPGroupType subclass that handles groups of class groupOfUniqueNames.
     """
-    def __init__(self, name_attr='cn'):
-        super(GroupOfUniqueNamesType, self).__init__('uniqueMember', name_attr)
+
+    def __init__(self, name_attr="cn"):
+        super(GroupOfUniqueNamesType, self).__init__("uniqueMember", name_attr)
 
 
 class NestedGroupOfUniqueNamesType(NestedMemberDNGroupType):
@@ -565,16 +592,18 @@ class NestedGroupOfUniqueNamesType(NestedMemberDNGroupType):
     An LDAPGroupType subclass that handles groups of class groupOfUniqueNames
     with nested group references.
     """
-    def __init__(self, name_attr='cn'):
-        super(NestedGroupOfUniqueNamesType, self).__init__('uniqueMember', name_attr)
+
+    def __init__(self, name_attr="cn"):
+        super(NestedGroupOfUniqueNamesType, self).__init__("uniqueMember", name_attr)
 
 
 class ActiveDirectoryGroupType(MemberDNGroupType):
     """
     An LDAPGroupType subclass that handles Active Directory groups.
     """
-    def __init__(self, name_attr='cn'):
-        super(ActiveDirectoryGroupType, self).__init__('member', name_attr)
+
+    def __init__(self, name_attr="cn"):
+        super(ActiveDirectoryGroupType, self).__init__("member", name_attr)
 
 
 class NestedActiveDirectoryGroupType(NestedMemberDNGroupType):
@@ -582,16 +611,18 @@ class NestedActiveDirectoryGroupType(NestedMemberDNGroupType):
     An LDAPGroupType subclass that handles Active Directory groups with nested
     group references.
     """
-    def __init__(self, name_attr='cn'):
-        super(NestedActiveDirectoryGroupType, self).__init__('member', name_attr)
+
+    def __init__(self, name_attr="cn"):
+        super(NestedActiveDirectoryGroupType, self).__init__("member", name_attr)
 
 
 class OrganizationalRoleGroupType(MemberDNGroupType):
     """
     An LDAPGroupType subclass that handles groups of class organizationalRole.
     """
-    def __init__(self, name_attr='cn'):
-        super(OrganizationalRoleGroupType, self).__init__('roleOccupant', name_attr)
+
+    def __init__(self, name_attr="cn"):
+        super(OrganizationalRoleGroupType, self).__init__("roleOccupant", name_attr)
 
 
 class NestedOrganizationalRoleGroupType(NestedMemberDNGroupType):
@@ -599,8 +630,11 @@ class NestedOrganizationalRoleGroupType(NestedMemberDNGroupType):
     An LDAPGroupType subclass that handles groups of class OrganizationalRoleGroupType
     with nested group references.
     """
-    def __init__(self, name_attr='cn'):
-        super(NestedOrganizationalRoleGroupType, self).__init__('roleOccupant', name_attr)
+
+    def __init__(self, name_attr="cn"):
+        super(NestedOrganizationalRoleGroupType, self).__init__(
+            "roleOccupant", name_attr
+        )
 
 
 class LDAPGroupQuery(Node):
@@ -615,9 +649,10 @@ class LDAPGroupQuery(Node):
     :param str group_dn: The DN of a group to test for membership.
 
     """
+
     # Connection types
-    AND = 'AND'
-    OR = 'OR'
+    AND = "AND"
+    OR = "OR"
     default = AND
 
     _CONNECTORS = [AND, OR]

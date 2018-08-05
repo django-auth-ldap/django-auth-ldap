@@ -1,5 +1,6 @@
 sudo: false
 language: python
+python: 3.6
 cache: pip
 
 addons:
@@ -11,6 +12,10 @@ addons:
 matrix:
   fast_finish: true
   include:
+    - env: TOXENV=black
+    - env: TOXENV=flake8
+    - env: TOXENV=docs
+
     - python: 2.7
       env: TOXENV=py27-django111
     - python: 3.4
@@ -45,8 +50,7 @@ matrix:
       env: TOXENV=py37-djangomaster
       dist: xenial
       sudo: true
-    - env: TOXENV=lint
-    - env: TOXENV=docs
+
   allow_failures:
     - env: TOXENV=py35-djangomaster
     - env: TOXENV=py36-djangomaster

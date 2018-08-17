@@ -25,6 +25,7 @@ This version is supported on Python 2.7 and 3.4+; and Django 1.11+. It requires
     users
     permissions
     multiconfig
+    custombehavior
     logging
     performance
     example

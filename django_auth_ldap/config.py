@@ -36,7 +36,6 @@ import pprint
 
 import ldap
 import ldap.filter
-
 from django.utils.encoding import force_text
 from django.utils.tree import Node
 

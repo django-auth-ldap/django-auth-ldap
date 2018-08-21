@@ -48,31 +48,28 @@ Additional classes can be found in the config module next to this one.
 from __future__ import unicode_literals
 
 import copy
-from functools import reduce
 import operator
 import pprint
 import re
 import warnings
-
-import ldap
+from functools import reduce
 
 import django.conf
+import django.dispatch
+import ldap
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
-import django.dispatch
 from django.utils import six
 from django.utils.encoding import force_text
 from django.utils.inspect import func_supports_parameter
-
 from django_auth_ldap.config import (
     ConfigurationWarning,
     LDAPGroupQuery,
     LDAPSearch,
     _LDAPConfig,
 )
-
 
 logger = _LDAPConfig.get_logger()
 

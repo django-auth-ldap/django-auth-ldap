@@ -27,18 +27,17 @@
 from __future__ import unicode_literals
 
 import contextlib
-from copy import deepcopy
 import functools
 import io
 import logging
 import os
 import pickle
 import warnings
+from copy import deepcopy
 
 import ldap
 import mock
 import slapdtest
-
 from django.contrib.auth import authenticate, get_backends
 from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
@@ -46,7 +45,6 @@ from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
-
 from django_auth_ldap.backend import LDAPBackend, ldap_error, populate_user
 from django_auth_ldap.config import (
     GroupOfNamesType,

@@ -225,6 +225,17 @@ does not belong to this group. This can also be an
 :class:`~django_auth_ldap.config.LDAPGroupQuery` instance.
 
 
+.. setting:: AUTH_LDAP_NO_NEW_USERS
+
+AUTH_LDAP_NO_NEW_USERS
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+Prevent the creation of new users during authentication. Any users not already
+in the Django user database will not be able to login.
+
+
 .. setting:: AUTH_LDAP_SERVER_URI
 
 AUTH_LDAP_SERVER_URI

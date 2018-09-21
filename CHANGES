@@ -6,6 +6,9 @@
 - When :setting:`AUTH_LDAP_SERVER_URI` is set to a callable, it is now passed a
   positional ``request`` argument. Support for no arguments will continue for
   backwards compatibility but will be removed in a future version.
+- Added new :setting:`AUTH_LDAP_NO_NEW_USERS` to prevent the creation of new
+  users during authentication. Any users not already in the Django user
+  database will not be able to login.
 
 1.6.1 - 2018-06-02
 ------------------

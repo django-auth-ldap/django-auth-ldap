@@ -613,6 +613,11 @@ class _LDAPUser(object):
         should_populate = force_populate or self.settings.ALWAYS_UPDATE_USER or built
 
         if built:
+            if self.settings.NO_NEW_USERS:
+                raise self.AuthenticationFailed(
+                    "user does not satisfy AUTH_LDAP_NO_NEW_USERS"
+                )
+
             logger.debug("Creating Django user {}".format(username))
             self._user.set_unusable_password()
             save_user = True
@@ -1016,6 +1021,7 @@ class LDAPSettings(object):
         "MIRROR_GROUPS_EXCEPT": None,
         "PERMIT_EMPTY_PASSWORD": False,
         "REQUIRE_GROUP": None,
+        "NO_NEW_USERS": False,
         "SERVER_URI": "ldap://localhost",
         "START_TLS": False,
         "USER_QUERY_FIELD": None,

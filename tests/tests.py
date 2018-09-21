@@ -683,6 +683,17 @@ class LDAPTest(TestCase):
         self.assertIsNotNone(alice)
         self.assertIsNone(bob)
 
+    def test_no_new_users(self):
+        self._init_settings(
+            USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test", NO_NEW_USERS=True
+        )
+
+        user = authenticate(username="alice", password="password")
+
+        # No user was created.
+        self.assertIsNone(user)
+        self.assertEqual(0, User.objects.count())
+
     def test_simple_group_query(self):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",

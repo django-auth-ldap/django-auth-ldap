@@ -46,6 +46,5 @@ setup(
     keywords=["django", "ldap", "authentication", "auth"],
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     install_requires=["Django >= 1.11", "python-ldap >= 3.1"],
-    setup_requires=["setuptools >= 0.6c11"],
     tests_require=["mock >= 2.0.0"],
 )

@@ -48,3 +48,5 @@ setup(
     install_requires=["Django >= 1.11", "python-ldap >= 3.1"],
     tests_require=["mock >= 2.0.0"],
 )
+
+

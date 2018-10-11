@@ -177,12 +177,12 @@ class LDAPBackend(object):
         return False
 
     def get_all_permissions(self, user, obj=None):
-        return self.get_group_permissions(user, obj)
-
-    def get_group_permissions(self, user, obj=None):
         if not hasattr(user, "ldap_user") and self.settings.AUTHORIZE_ALL_USERS:
             _LDAPUser(self, user=user)  # This sets user.ldap_user
 
+        return self.get_group_permissions(user, obj)
+
+    def get_group_permissions(self, user, obj=None):
         if hasattr(user, "ldap_user"):
             permissions = user.ldap_user.get_group_permissions()
         else:

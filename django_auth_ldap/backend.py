@@ -177,7 +177,10 @@ class LDAPBackend(object):
         return False
 
     def get_all_permissions(self, user, obj=None):
-        return self.get_group_permissions(user, obj)
+        # Black have a problem when uses "|"
+        return set(
+            self.get_user_permissions(user, obj) | self.get_group_permissions(user, obj)
+        )
 
     def get_group_permissions(self, user, obj=None):
         if not hasattr(user, "ldap_user") and self.settings.AUTHORIZE_ALL_USERS:
@@ -189,6 +192,41 @@ class LDAPBackend(object):
             permissions = set()
 
         return permissions
+
+    def get_user_permissions(self, user, obj=None):
+        if not hasattr(user, "ldap_user") and self.settings.AUTHORIZE_ALL_USERS:
+            _LDAPUser(self, user=user)  # This sets user.ldap_user
+
+        if hasattr(user, "ldap_user"):
+            permissions = self._get_permissions(user, obj, "user")
+        else:
+            permissions = set()
+
+        return permissions
+
+    def _get_permissions(self, user_obj, obj, from_name):
+        """
+        Return the permissions of `user_obj` from `from_name`. `from_name` can
+        be either "group" or "user" to return permissions from
+        `_get_group_permissions` or `_get_user_permissions` respectively.
+        """
+        if not user_obj.is_active or user_obj.is_anonymous or obj is not None:
+            return set()
+
+        perm_cache_name = "_%s_perm_cache" % from_name
+        if not hasattr(user_obj, perm_cache_name):
+            if user_obj.is_superuser:
+                perms = Permission.objects.all()
+            else:
+                perms = getattr(self, "_get_%s_permissions" % from_name)(user_obj)
+            perms = perms.values_list("content_type__app_label", "codename").order_by()
+            setattr(
+                user_obj, perm_cache_name, {"%s.%s" % (ct, name) for ct, name in perms}
+            )
+        return getattr(user_obj, perm_cache_name)
+
+    def _get_user_permissions(self, user_obj):
+        return user_obj.user_permissions.all()
 
     #
     # Bonus API: populate the Django user from LDAP without authenticating.

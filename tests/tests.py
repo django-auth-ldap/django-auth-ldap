@@ -1576,6 +1576,27 @@ class LDAPTest(TestCase):
             cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"
         )
 
+    def test_user_permissions(self):
+        permissions = [
+            Permission.objects.get(codename="add_user"),
+            Permission.objects.get(codename="change_user"),
+        ]
+
+        backend = get_backend()
+        alice = User.objects.create(username="alice")
+        alice = backend.get_user(alice.pk)
+        alice.user_permissions.add(*permissions)
+
+        self.assertEqual(
+            backend.get_user_permissions(alice), {"auth.add_user", "auth.change_user"}
+        )
+        self.assertEqual(backend.get_group_permissions(alice), set([]))
+        self.assertEqual(
+            backend.get_all_permissions(alice), {"auth.add_user", "auth.change_user"}
+        )
+        self.assertIs(backend.has_perm(alice, "auth.add_user"), True)
+        self.assertIs(backend.has_module_perms(alice, "auth"), True)
+
     #
     # Utilities
     #

@@ -650,7 +650,9 @@ class _LDAPUser(object):
         for field, attr in self.settings.USER_ATTR_MAP.items():
             try:
                 value = self.attrs[attr][0]
-            except LookupError:
+            except (TypeError, LookupError):
+                # TypeError occurs when self.attrs is None as we were unable to
+                # load this user's attributes.
                 logger.warning(
                     "{} does not have a value for the attribute {}".format(
                         self.dn, attr

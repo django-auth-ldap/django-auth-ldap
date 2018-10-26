@@ -555,6 +555,18 @@ class LDAPTest(TestCase):
         self.assertEqual(user.last_name, "Adams")
         self.assertEqual(user.email, "")
 
+    @mock.patch.object(LDAPSearch, "execute", return_value=None)
+    def test_populate_user_with_bad_search(self, mock_execute):
+        self._init_settings(
+            USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
+            USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
+        )
+
+        user = authenticate(username="alice", password="password")
+        self.assertEqual(user.username, "alice")
+        self.assertEqual(user.first_name, "")
+        self.assertEqual(user.last_name, "")
+
     @_override_settings(AUTH_USER_MODEL="tests.TestUser")
     def test_authenticate_with_buggy_setter_raises_exception(self):
         self._init_settings(

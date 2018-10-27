@@ -44,6 +44,11 @@ setup(
         "Topic :: System :: Systems Administration :: Authentication/Directory :: LDAP",
     ],
     keywords=["django", "ldap", "authentication", "auth"],
+    project_urls={
+        "Documentation": "https://django-auth-ldap.readthedocs.io/",
+        "Source": "https://github.com/django-auth-ldap/django-auth-ldap",
+        "Tracker": "https://github.com/django-auth-ldap/django-auth-ldap/issues",
+    },
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     install_requires=["Django >= 1.11", "python-ldap >= 3.1"],
     tests_require=["mock >= 2.0.0"],

@@ -1,6 +1,6 @@
 sudo: false
+dist: xenial
 language: python
-python: 3.6
 cache: pip
 
 addons:
@@ -12,10 +12,14 @@ addons:
 matrix:
   fast_finish: true
   include:
-    - env: TOXENV=black
-    - env: TOXENV=flake8
-    - env: TOXENV=isort
-    - env: TOXENV=docs
+    - python: 3.7
+      env: TOXENV=black
+    - python: 3.7
+      env: TOXENV=flake8
+    - python: 3.7
+      env: TOXENV=isort
+    - python: 3.7
+      env: TOXENV=docs
 
     - python: 2.7
       env: TOXENV=py27-django111
@@ -33,24 +37,18 @@ matrix:
       env: TOXENV=py36-django20
     - python: 3.7
       env: TOXENV=py37-django20
-      dist: xenial
-      sudo: true
     - python: 3.5
       env: TOXENV=py35-django21
     - python: 3.6
       env: TOXENV=py36-django21
     - python: 3.7
       env: TOXENV=py37-django21
-      dist: xenial
-      sudo: true
     - python: 3.5
       env: TOXENV=py35-djangomaster
     - python: 3.6
       env: TOXENV=py36-djangomaster
     - python: 3.7
       env: TOXENV=py37-djangomaster
-      dist: xenial
-      sudo: true
 
   allow_failures:
     - env: TOXENV=py35-djangomaster

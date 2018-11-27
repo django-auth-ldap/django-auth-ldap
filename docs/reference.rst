@@ -311,6 +311,44 @@ attribute names. A users's :class:`~django.contrib.auth.models.User` object will
 be populated from his LDAP attributes at login.
 
 
+.. setting:: USER_ATTR_FILTER_MAP
+
+USER_ATTR_FILTER_MAP
+~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}``
+
+A mapping from :class:`~django.contrib.auth.models.User` field name to a
+function that returns the value. Useful if the attributes in LDAP have diffrent
+values or a diffrent format.
+
+The function will recieve the attribute list as the only parameter.
+
+-- code-block:: python
+
+    AUTH_LDAP_USER_ATTR_FILTER_MAP = {
+        'is_active': lambda attrs: 'active' in attrs['userFlags'],
+        'is_staff': lambda attrs: 'staff' in attrs['userFlags'],
+    }
+
+
+.. settting:: USER_ATTR_FILTERS_TO_GROUPNAME
+
+USER_ATTR_FILTERS_TO_GROUPNAME
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``[]``
+
+A list of functions that will return a list django group names. Allows to map
+attributes to Django groups.
+
+-- code-block:: python
+
+    AUTH_LDAP_USER_ATTR_FILTERS_TO_GROUPNAME = [
+        lambda attrs: ['manager'] if 'manager' in ['groups'] else [],
+    ]
+
+
 .. setting:: AUTH_LDAP_USER_DN_TEMPLATE
 
 AUTH_LDAP_USER_DN_TEMPLATE
@@ -640,3 +678,4 @@ Backend
         If this is not symmetrical to
         :meth:`~django_auth_ldap.backend.LDAPBackend.ldap_to_django_username`,
         the behavior is undefined.
+

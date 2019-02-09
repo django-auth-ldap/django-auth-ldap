@@ -29,14 +29,11 @@ Please see the docstring on the backend module for more information, including
 notes on naming conventions.
 """
 
-from __future__ import unicode_literals
-
 import logging
 import pprint
 
 import ldap
 import ldap.filter
-from django.utils.encoding import force_text
 from django.utils.tree import Node
 
 
@@ -44,7 +41,7 @@ class ConfigurationWarning(UserWarning):
     pass
 
 
-class _LDAPConfig(object):
+class _LDAPConfig:
     """
     A private class that loads and caches some global objects.
     """
@@ -83,7 +80,7 @@ class _LDAPConfig(object):
 logger = _LDAPConfig.get_logger()
 
 
-class LDAPSearch(object):
+class LDAPSearch:
     """
     Public class that holds a set of LDAP search parameters. Objects of this
     class should be considered immutable. Only the initialization method is
@@ -152,10 +149,7 @@ class LDAPSearch(object):
         try:
             filterstr = self.filterstr % filterargs
             results = connection.search_s(
-                force_text(self.base_dn),
-                self.scope,
-                force_text(filterstr),
-                self.attrlist,
+                self.base_dn, self.scope, filterstr, self.attrlist
             )
         except ldap.LDAPError as e:
             results = []
@@ -182,10 +176,7 @@ class LDAPSearch(object):
         try:
             filterstr = self.filterstr % filterargs
             msgid = connection.search(
-                force_text(self.base_dn),
-                self.scope,
-                force_text(filterstr),
-                self.attrlist,
+                self.base_dn, self.scope, filterstr, self.attrlist
             )
         except ldap.LDAPError as e:
             msgid = None
@@ -259,7 +250,7 @@ class LDAPSearch(object):
         return results
 
 
-class LDAPSearchUnion(object):
+class LDAPSearchUnion:
     """
     A compound search object that returns the union of the results. Instantiate
     it with one or more LDAPSearch objects.
@@ -295,7 +286,7 @@ class LDAPSearchUnion(object):
         return results.items()
 
 
-class _DeepStringCoder(object):
+class _DeepStringCoder:
     """
     Encodes and decodes strings in a nested structure of lists, tuples, and
     dicts. This is helpful when interacting with the Unicode-unaware
@@ -336,7 +327,7 @@ class _DeepStringCoder(object):
         return decoded
 
 
-class LDAPGroupType(object):
+class LDAPGroupType:
     """
     This is an abstract base class for classes that determine LDAP group
     membership. A group can mean many different things in LDAP, so we will need
@@ -446,7 +437,7 @@ class PosixGroupType(LDAPGroupType):
 
             try:
                 is_member = ldap_user.connection.compare_s(
-                    force_text(group_dn), "memberUid", user_uid.encode("utf-8")
+                    group_dn, "memberUid", user_uid.encode()
                 )
             except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                 is_member = False
@@ -455,7 +446,7 @@ class PosixGroupType(LDAPGroupType):
                 try:
                     user_gid = ldap_user.attrs["gidNumber"][0]
                     is_member = ldap_user.connection.compare_s(
-                        force_text(group_dn), "gidNumber", user_gid.encode("utf-8")
+                        group_dn, "gidNumber", user_gid.encode()
                     )
                 except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
                     is_member = False
@@ -477,7 +468,7 @@ class MemberDNGroupType(LDAPGroupType):
         """
         self.member_attr = member_attr
 
-        super(MemberDNGroupType, self).__init__(name_attr)
+        super().__init__(name_attr)
 
     def __repr__(self):
         return "<{}: {}>".format(self.__class__.__name__, self.member_attr)
@@ -493,9 +484,7 @@ class MemberDNGroupType(LDAPGroupType):
     def is_member(self, ldap_user, group_dn):
         try:
             result = ldap_user.connection.compare_s(
-                force_text(group_dn),
-                force_text(self.member_attr),
-                ldap_user.dn.encode("utf-8"),
+                group_dn, self.member_attr, ldap_user.dn.encode()
             )
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
             result = 0
@@ -517,7 +506,7 @@ class NestedMemberDNGroupType(LDAPGroupType):
         """
         self.member_attr = member_attr
 
-        super(NestedMemberDNGroupType, self).__init__(name_attr)
+        super().__init__(name_attr)
 
     def user_groups(self, ldap_user, group_search):
         """
@@ -546,13 +535,11 @@ class NestedMemberDNGroupType(LDAPGroupType):
 
     def find_groups_with_any_member(self, member_dn_set, group_search, connection):
         terms = [
-            "({0}={1})".format(
-                self.member_attr, self.ldap.filter.escape_filter_chars(dn)
-            )
+            "({}={})".format(self.member_attr, self.ldap.filter.escape_filter_chars(dn))
             for dn in member_dn_set
         ]
 
-        filterstr = "(|{0})".format("".join(terms))
+        filterstr = "(|{})".format("".join(terms))
         search = group_search.search_with_additional_term_string(filterstr)
 
         return search.execute(connection)
@@ -564,7 +551,7 @@ class GroupOfNamesType(MemberDNGroupType):
     """
 
     def __init__(self, name_attr="cn"):
-        super(GroupOfNamesType, self).__init__("member", name_attr)
+        super().__init__("member", name_attr)
 
 
 class NestedGroupOfNamesType(NestedMemberDNGroupType):
@@ -574,7 +561,7 @@ class NestedGroupOfNamesType(NestedMemberDNGroupType):
     """
 
     def __init__(self, name_attr="cn"):
-        super(NestedGroupOfNamesType, self).__init__("member", name_attr)
+        super().__init__("member", name_attr)
 
 
 class GroupOfUniqueNamesType(MemberDNGroupType):
@@ -583,7 +570,7 @@ class GroupOfUniqueNamesType(MemberDNGroupType):
     """
 
     def __init__(self, name_attr="cn"):
-        super(GroupOfUniqueNamesType, self).__init__("uniqueMember", name_attr)
+        super().__init__("uniqueMember", name_attr)
 
 
 class NestedGroupOfUniqueNamesType(NestedMemberDNGroupType):
@@ -593,7 +580,7 @@ class NestedGroupOfUniqueNamesType(NestedMemberDNGroupType):
     """
 
     def __init__(self, name_attr="cn"):
-        super(NestedGroupOfUniqueNamesType, self).__init__("uniqueMember", name_attr)
+        super().__init__("uniqueMember", name_attr)
 
 
 class ActiveDirectoryGroupType(MemberDNGroupType):
@@ -602,7 +589,7 @@ class ActiveDirectoryGroupType(MemberDNGroupType):
     """
 
     def __init__(self, name_attr="cn"):
-        super(ActiveDirectoryGroupType, self).__init__("member", name_attr)
+        super().__init__("member", name_attr)
 
 
 class NestedActiveDirectoryGroupType(NestedMemberDNGroupType):
@@ -612,7 +599,7 @@ class NestedActiveDirectoryGroupType(NestedMemberDNGroupType):
     """
 
     def __init__(self, name_attr="cn"):
-        super(NestedActiveDirectoryGroupType, self).__init__("member", name_attr)
+        super().__init__("member", name_attr)
 
 
 class OrganizationalRoleGroupType(MemberDNGroupType):
@@ -621,7 +608,7 @@ class OrganizationalRoleGroupType(MemberDNGroupType):
     """
 
     def __init__(self, name_attr="cn"):
-        super(OrganizationalRoleGroupType, self).__init__("roleOccupant", name_attr)
+        super().__init__("roleOccupant", name_attr)
 
 
 class NestedOrganizationalRoleGroupType(NestedMemberDNGroupType):
@@ -631,9 +618,7 @@ class NestedOrganizationalRoleGroupType(NestedMemberDNGroupType):
     """
 
     def __init__(self, name_attr="cn"):
-        super(NestedOrganizationalRoleGroupType, self).__init__(
-            "roleOccupant", name_attr
-        )
+        super().__init__("roleOccupant", name_attr)
 
 
 class LDAPGroupQuery(Node):
@@ -657,7 +642,7 @@ class LDAPGroupQuery(Node):
     _CONNECTORS = [AND, OR]
 
     def __init__(self, *args, **kwargs):
-        super(LDAPGroupQuery, self).__init__(children=list(args) + list(kwargs.items()))
+        super().__init__(children=list(args) + list(kwargs.items()))
 
     def __and__(self, other):
         return self._combine(other, self.AND)

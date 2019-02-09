@@ -45,8 +45,6 @@ information will be user_dn or user_info.
 Additional classes can be found in the config module next to this one.
 """
 
-from __future__ import unicode_literals
-
 import copy
 import operator
 import pprint
@@ -61,8 +59,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
-from django.utils import six
-from django.utils.encoding import force_text
 from django.utils.inspect import func_supports_parameter
 from django_auth_ldap.config import (
     ConfigurationWarning,
@@ -84,7 +80,7 @@ populate_user = django.dispatch.Signal(providing_args=["user", "ldap_user"])
 ldap_error = django.dispatch.Signal(providing_args=["context", "user", "exception"])
 
 
-class LDAPBackend(object):
+class LDAPBackend:
     """
     The main backend class. This implements the auth backend API, although it
     actually delegates most of its work to _LDAPUser, which is defined next.
@@ -249,7 +245,7 @@ class LDAPBackend(object):
         return username
 
 
-class _LDAPUser(object):
+class _LDAPUser:
     """
     Represents an LDAP user and ultimately fields all requests that the
     backend receives. This class exists for two reasons. First, it's
@@ -684,7 +680,7 @@ class _LDAPUser(object):
         """
         if isinstance(group_dns, LDAPGroupQuery):
             query = group_dns
-        elif isinstance(group_dns, six.string_types):
+        elif isinstance(group_dns, str):
             query = LDAPGroupQuery(group_dns)
         elif isinstance(group_dns, (list, tuple)) and len(group_dns) > 0:
             query = reduce(operator.or_, map(LDAPGroupQuery, group_dns))
@@ -723,7 +719,7 @@ class _LDAPUser(object):
             else:
                 raise malformed_mirror_groups_except()
 
-            if not all(isinstance(value, six.string_types) for value in mge):
+            if not all(isinstance(value, str) for value in mge):
                 raise malformed_mirror_groups_except()
             elif mg:
                 warnings.warn(
@@ -745,7 +741,7 @@ class _LDAPUser(object):
                 raise malformed_mirror_groups()
 
             if isinstance(mg, (set, frozenset)) and (
-                not all(isinstance(value, six.string_types) for value in mg)
+                not all(isinstance(value, str) for value in mg)
             ):
                 raise malformed_mirror_groups()
 
@@ -836,9 +832,7 @@ class _LDAPUser(object):
         the life of this object. If False, then the caller only wishes to test
         the credentials, after which the connection will be considered unbound.
         """
-        self._get_connection().simple_bind_s(
-            force_text(bind_dn), force_text(bind_password)
-        )
+        self._get_connection().simple_bind_s(bind_dn, bind_password)
 
         self._connection_bound = sticky
 
@@ -873,7 +867,7 @@ class _LDAPUser(object):
         return self._connection
 
 
-class _LDAPUserGroups(object):
+class _LDAPUserGroups:
     """
     Represents the set of groups that a user belongs to.
     """
@@ -998,7 +992,7 @@ class _LDAPUserGroups(object):
         return key
 
 
-class LDAPSettings(object):
+class LDAPSettings:
     """
     This is a simple class to take the place of the global settings object. An
     instance will contain all of our settings as attributes, with default values

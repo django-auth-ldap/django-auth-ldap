@@ -24,11 +24,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import unicode_literals
-
 import contextlib
 import functools
-import io
 import logging
 import os
 import pickle
@@ -130,7 +127,7 @@ class LDAPTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(LDAPTest, cls).setUpClass()
+        super().setUpClass()
         cls.configure_logger()
 
         here = os.path.dirname(__file__)
@@ -143,17 +140,17 @@ class LDAPTest(TestCase):
             "nis.schema",
         ]
         cls.server.start()
-        with io.open(os.path.join(here, "tests.ldif")) as fp:
+        with open(os.path.join(here, "tests.ldif")) as fp:
             ldif = fp.read()
         cls.server.ldapadd(ldif)
 
     @classmethod
     def tearDownClass(cls):
         cls.server.stop()
-        super(LDAPTest, cls).tearDownClass()
+        super().tearDownClass()
 
     def setUp(self):
-        super(LDAPTest, self).setUp()
+        super().setUp()
         cache.clear()
 
     def test_options(self):
@@ -1524,9 +1521,7 @@ class LDAPTest(TestCase):
         class MyBackend(LDAPBackend):
             def authenticate_ldap_user(self, ldap_user, password):
                 ldap_user.foo = "bar"
-                return super(MyBackend, self).authenticate_ldap_user(
-                    ldap_user, password
-                )
+                return super().authenticate_ldap_user(ldap_user, password)
 
         backend = MyBackend()
         user = backend.authenticate(None, username="alice", password="password")

@@ -42,6 +42,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
+
 from django_auth_ldap.backend import LDAPBackend, ldap_error, populate_user
 from django_auth_ldap.config import (
     GroupOfNamesType,

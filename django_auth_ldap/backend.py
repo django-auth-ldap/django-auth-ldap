@@ -60,6 +60,7 @@ from django.contrib.auth.models import Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.utils.inspect import func_supports_parameter
+
 from django_auth_ldap.config import (
     ConfigurationWarning,
     LDAPGroupQuery,

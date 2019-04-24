@@ -193,9 +193,7 @@ class LDAPBackend:
 
     def populate_user(self, username):
         ldap_user = _LDAPUser(self, username=username)
-        user = ldap_user.populate_user()
-
-        return user
+        return ldap_user.populate_user()
 
     #
     # Hooks for subclasses
@@ -523,10 +521,7 @@ class _LDAPUser:
     def _construct_simple_user_dn(self):
         template = self.settings.USER_DN_TEMPLATE
         username = ldap.dn.escape_dn_chars(self._username)
-
-        user_dn = template % {"user": username}
-
-        return user_dn
+        return template % {"user": username}
 
     def _search_for_user_dn(self):
         """
@@ -986,11 +981,9 @@ class _LDAPUserGroups:
         DN for maximum compatibility.
         """
         dn = self._ldap_user.dn
-        key = valid_cache_key(
+        return valid_cache_key(
             "auth_ldap.{}.{}.{}".format(self.__class__.__name__, attr_name, dn)
         )
-
-        return key
 
 
 class LDAPSettings:
@@ -1067,6 +1060,4 @@ def valid_cache_key(key):
     """
     Sanitizes a cache key for memcached.
     """
-    key = re.sub(r"\s+", "+", key)[:250]
-
-    return key
+    return re.sub(r"\s+", "+", key)[:250]

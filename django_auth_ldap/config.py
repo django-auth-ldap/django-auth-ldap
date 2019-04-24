@@ -477,9 +477,7 @@ class MemberDNGroupType(LDAPGroupType):
         search = group_search.search_with_additional_terms(
             {self.member_attr: ldap_user.dn}
         )
-        groups = search.execute(ldap_user.connection)
-
-        return groups
+        return search.execute(ldap_user.connection)
 
     def is_member(self, ldap_user, group_dn):
         try:

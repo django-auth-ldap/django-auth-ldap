@@ -37,19 +37,20 @@ something like this:
 
     from django_auth_ldap.backend import LDAPBackend
 
+
     class CustomLDAPBackend(LDAPBackend):
         default_settings = {
-            'LOGIN_COUNTER_KEY': 'CUSTOM_LDAP_LOGIN_ATTEMPT_COUNT',
-            'LOGIN_ATTEMPT_LIMIT': 50,
-            'RESET_TIME': 30 * 60,
-            'USERNAME_REGEX': r'^.*$',
+            "LOGIN_COUNTER_KEY": "CUSTOM_LDAP_LOGIN_ATTEMPT_COUNT",
+            "LOGIN_ATTEMPT_LIMIT": 50,
+            "RESET_TIME": 30 * 60,
+            "USERNAME_REGEX": r"^.*$",
         }
 
         def authenticate_ldap_user(self, ldap_user, password):
             if self.exceeded_login_attempt_limit():
                 # Or you can raise a 403 if you do not want
                 # to continue checking other auth backends
-                print('Login attempts exceeded.')
+                print("Login attempts exceeded.")
                 return None
             self.increment_login_attempt_count()
             user = ldap_user.authenticate(password)
@@ -67,9 +68,7 @@ something like this:
             try:
                 cache.incr(self.settings.LOGIN_COUNTER_KEY)
             except ValueError:
-                cache.set(
-                    self.settings.LOGIN_COUNTER_KEY, 1, self.settings.RESET_TIME
-                )
+                cache.set(self.settings.LOGIN_COUNTER_KEY, 1, self.settings.RESET_TIME)
 
         def exceeded_login_attempt_limit(self):
             return self.login_attempt_count >= self.settings.LOGIN_ATTEMPT_LIMIT
@@ -79,7 +78,7 @@ something like this:
 
         def send_sms(self, username):
             # Implement your SMS logic here
-            print('SMS sent!')
+            print("SMS sent!")
 
 
 
@@ -88,9 +87,9 @@ something like this:
     # settings.py
 
     AUTHENTICATION_BACKENDS = [
-    # ...
-        'mypackage.ldap.CustomLDAPBackend',
-    # ...
+        # ...
+        "mypackage.ldap.CustomLDAPBackend",
+        # ...
     ]
 
 
@@ -123,12 +122,12 @@ prefix, then you can simply modify your settings.py like so.
 
     AUTH_LDAP_LOGIN_ATTEMPT_LIMIT = 100
     AUTH_LDAP_RESET_TIME = 15 * 60
-    AUTH_LDAP_USERNAME_REGEX = r'^zz_.*$'
+    AUTH_LDAP_USERNAME_REGEX = r"^zz_.*$"
 
     AUTHENTICATION_BACKENDS = [
-    # ...
-        'mypackage.ldap.CustomLDAPBackend',
-    # ...
+        # ...
+        "mypackage.ldap.CustomLDAPBackend",
+        # ...
     ]
 
 If the :attr:`~django_auth_ldap.backend.LDAPBackend.settings_prefix` of the
@@ -142,10 +141,10 @@ like this.
 
     AUTH_LDAP_1_LOGIN_ATTEMPT_LIMIT = 100
     AUTH_LDAP_1_RESET_TIME = 15 * 60
-    AUTH_LDAP_1_USERNAME_REGEX = r'^zz_.*$'
+    AUTH_LDAP_1_USERNAME_REGEX = r"^zz_.*$"
 
     AUTHENTICATION_BACKENDS = [
-    # ...
-        'mypackage.ldap.CustomLDAPBackend',
-    # ...
+        # ...
+        "mypackage.ldap.CustomLDAPBackend",
+        # ...
     ]

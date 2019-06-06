@@ -296,7 +296,7 @@ operational attributes, which are not normally included:
 
 .. code-block:: python
 
-    AUTH_LDAP_USER_ATTRLIST = ['*', '+']
+    AUTH_LDAP_USER_ATTRLIST = ["*", "+"]
 
 
 .. setting:: AUTH_LDAP_USER_ATTR_MAP

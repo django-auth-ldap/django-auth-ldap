@@ -35,9 +35,7 @@ uncommon:
 
     import ldap
 
-    AUTH_LDAP_CONNECTION_OPTIONS = {
-        ldap.OPT_REFERRALS: 0
-    }
+    AUTH_LDAP_CONNECTION_OPTIONS = {ldap.OPT_REFERRALS: 0}
 
 .. versionchanged:: 1.7.0
 
@@ -70,8 +68,9 @@ looks like this (some defaults included for completeness):
 
     AUTH_LDAP_BIND_DN = ""
     AUTH_LDAP_BIND_PASSWORD = ""
-    AUTH_LDAP_USER_SEARCH = LDAPSearch("ou=users,dc=example,dc=com",
-        ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+    AUTH_LDAP_USER_SEARCH = LDAPSearch(
+        "ou=users,dc=example,dc=com", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+    )
 
 This will perform an anonymous bind, search under
 ``"ou=users,dc=example,dc=com"`` for an object with a uid matching the user's

@@ -51,8 +51,8 @@ configuration must be of this type and part of the search results.
     import ldap
     from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 
-    AUTH_LDAP_GROUP_SEARCH = LDAPSearch("ou=groups,dc=example,dc=com",
-        ldap.SCOPE_SUBTREE, "(objectClass=groupOfNames)"
+    AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+        "ou=groups,dc=example,dc=com", ldap.SCOPE_SUBTREE, "(objectClass=groupOfNames)"
     )
     AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
 
@@ -81,12 +81,9 @@ object to perform more complex matches against a user's groups. For example:
     from django_auth_ldap.config import LDAPGroupQuery
 
     AUTH_LDAP_REQUIRE_GROUP = (
-        (
-            LDAPGroupQuery("cn=enabled,ou=groups,dc=example,dc=com") |
-            LDAPGroupQuery("cn=also_enabled,ou=groups,dc=example,dc=com")
-        ) &
-        ~LDAPGroupQuery("cn=disabled,ou=groups,dc=example,dc=com")
-    )
+        LDAPGroupQuery("cn=enabled,ou=groups,dc=example,dc=com")
+        | LDAPGroupQuery("cn=also_enabled,ou=groups,dc=example,dc=com")
+    ) & ~LDAPGroupQuery("cn=disabled,ou=groups,dc=example,dc=com")
 
 It is important to note a couple features of the example above. First and foremost,
 this handles the case of both `AUTH_LDAP_REQUIRE_GROUP` and `AUTH_LDAP_DENY_GROUP`

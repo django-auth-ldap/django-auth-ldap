@@ -23,9 +23,9 @@ copyright = "2009, Peter Sagerson"
 author = "Peter Sagerson"
 
 # The short X.Y version
-version = "1.7"
+version = "2.0"
 # The full version, including alpha/beta/rc tags
-release = "1.7.0"
+release = "2.0.0"
 
 
 # -- General configuration ---------------------------------------------------

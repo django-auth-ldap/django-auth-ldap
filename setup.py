@@ -46,7 +46,7 @@ setup(
         "Source": "https://github.com/django-auth-ldap/django-auth-ldap",
         "Tracker": "https://github.com/django-auth-ldap/django-auth-ldap/issues",
     },
-    python_requires=">=3.4",
+    python_requires=">=3.5",
     install_requires=["Django >= 1.11", "python-ldap >= 3.1"],
     tests_require=["mock >= 2.0.0"],
 )

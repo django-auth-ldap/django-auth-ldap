@@ -2,6 +2,7 @@
 ------------------
 
 - Removed support for Python 2 and 3.4.
+- Removed support for end of life Django 2.0.
 - Added support for Django 2.2.
 - Add testing and support for Python 3.7 with Django 1.11 and 2.1.
 - When :setting:`AUTH_LDAP_SERVER_URI` is set to a callable, it is now passed a

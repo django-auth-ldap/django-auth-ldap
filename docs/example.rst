@@ -15,41 +15,39 @@ default settings and arguments are included for completeness.
 
 
     # Baseline configuration.
-    AUTH_LDAP_SERVER_URI = 'ldap://ldap.example.com'
+    AUTH_LDAP_SERVER_URI = "ldap://ldap.example.com"
 
-    AUTH_LDAP_BIND_DN = 'cn=django-agent,dc=example,dc=com'
-    AUTH_LDAP_BIND_PASSWORD = 'phlebotinum'
+    AUTH_LDAP_BIND_DN = "cn=django-agent,dc=example,dc=com"
+    AUTH_LDAP_BIND_PASSWORD = "phlebotinum"
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
-        'ou=users,dc=example,dc=com',
-        ldap.SCOPE_SUBTREE,
-        '(uid=%(user)s)',
+        "ou=users,dc=example,dc=com", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
     )
     # Or:
     # AUTH_LDAP_USER_DN_TEMPLATE = 'uid=%(user)s,ou=users,dc=example,dc=com'
 
     # Set up the basic group parameters.
     AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
-        'ou=django,ou=groups,dc=example,dc=com',
+        "ou=django,ou=groups,dc=example,dc=com",
         ldap.SCOPE_SUBTREE,
-        '(objectClass=groupOfNames)',
+        "(objectClass=groupOfNames)",
     )
-    AUTH_LDAP_GROUP_TYPE = GroupOfNamesType(name_attr='cn')
+    AUTH_LDAP_GROUP_TYPE = GroupOfNamesType(name_attr="cn")
 
     # Simple group restrictions
-    AUTH_LDAP_REQUIRE_GROUP = 'cn=enabled,ou=django,ou=groups,dc=example,dc=com'
-    AUTH_LDAP_DENY_GROUP = 'cn=disabled,ou=django,ou=groups,dc=example,dc=com'
+    AUTH_LDAP_REQUIRE_GROUP = "cn=enabled,ou=django,ou=groups,dc=example,dc=com"
+    AUTH_LDAP_DENY_GROUP = "cn=disabled,ou=django,ou=groups,dc=example,dc=com"
 
     # Populate the Django user from the LDAP directory.
     AUTH_LDAP_USER_ATTR_MAP = {
-        'first_name': 'givenName',
-        'last_name': 'sn',
-        'email': 'mail',
+        "first_name": "givenName",
+        "last_name": "sn",
+        "email": "mail",
     }
 
     AUTH_LDAP_USER_FLAGS_BY_GROUP = {
-        'is_active': 'cn=active,ou=django,ou=groups,dc=example,dc=com',
-        'is_staff': 'cn=staff,ou=django,ou=groups,dc=example,dc=com',
-        'is_superuser': 'cn=superuser,ou=django,ou=groups,dc=example,dc=com',
+        "is_active": "cn=active,ou=django,ou=groups,dc=example,dc=com",
+        "is_staff": "cn=staff,ou=django,ou=groups,dc=example,dc=com",
+        "is_superuser": "cn=superuser,ou=django,ou=groups,dc=example,dc=com",
     }
 
     # This is the default, but I like to be explicit.
@@ -65,6 +63,6 @@ default settings and arguments are included for completeness.
     # Keep ModelBackend around for per-user permissions and maybe a local
     # superuser.
     AUTHENTICATION_BACKENDS = (
-        'django_auth_ldap.backend.LDAPBackend',
-        'django.contrib.auth.backends.ModelBackend',
+        "django_auth_ldap.backend.LDAPBackend",
+        "django.contrib.auth.backends.ModelBackend",
     )

@@ -17,9 +17,7 @@ To use the auth backend in a Django project, add
 
 .. code-block:: python
 
-    AUTHENTICATION_BACKENDS = [
-        'django_auth_ldap.backend.LDAPBackend',
-    ]
+    AUTHENTICATION_BACKENDS = ["django_auth_ldap.backend.LDAPBackend"]
 
 :class:`~django_auth_ldap.backend.LDAPBackend` should work with custom user
 models, but it does assume that a database is present.
@@ -36,8 +34,8 @@ models, but it does assume that a database is present.
     .. code-block:: python
 
         AUTHENTICATION_BACKENDS = [
-            'django_auth_ldap.backend.LDAPBackend',
-            'django.contrib.auth.backends.ModelBackend',
+            "django_auth_ldap.backend.LDAPBackend",
+            "django.contrib.auth.backends.ModelBackend",
         ]
 
 

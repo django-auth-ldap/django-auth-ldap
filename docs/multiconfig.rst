@@ -17,8 +17,10 @@ example should demonstrate this:
 
     from django_auth_ldap.backend import LDAPBackend
 
+
     class LDAPBackend1(LDAPBackend):
         settings_prefix = "AUTH_LDAP_1_"
+
 
     class LDAPBackend2(LDAPBackend):
         settings_prefix = "AUTH_LDAP_2_"
@@ -34,10 +36,7 @@ example should demonstrate this:
     AUTH_LDAP_2_SERVER_URI = "ldap://ldap2.example.com"
     AUTH_LDAP_2_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
 
-    AUTHENTICATION_BACKENDS = (
-        "mypackage.ldap.LDAPBackend1",
-        "mypackage.ldap.LDAPBackend2",
-    )
+    AUTHENTICATION_BACKENDS = ("mypackage.ldap.LDAPBackend1", "mypackage.ldap.LDAPBackend2")
 
 All of the usual rules apply: Django will attempt to authenticate a user with
 each backend in turn until one of them succeeds. When a particular backend

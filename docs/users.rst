@@ -83,10 +83,10 @@ group membership:
     AUTH_LDAP_USER_FLAGS_BY_GROUP = {
         "is_active": "cn=active,ou=groups,dc=example,dc=com",
         "is_staff": (
-            LDAPGroupQuery("cn=staff,ou=groups,dc=example,dc=com") |
-            LDAPGroupQuery("cn=admin,ou=groups,dc=example,dc=com")
+            LDAPGroupQuery("cn=staff,ou=groups,dc=example,dc=com")
+            | LDAPGroupQuery("cn=admin,ou=groups,dc=example,dc=com")
         ),
-        "is_superuser": "cn=superuser,ou=groups,dc=example,dc=com"
+        "is_superuser": "cn=superuser,ou=groups,dc=example,dc=com",
     }
 
 Values in this dictionary may be simple DNs (as strings), lists or tuples of
@@ -115,9 +115,9 @@ found in LDAP.
 
     from django_auth_ldap.backend import LDAPBackend
 
-    user = LDAPBackend().populate_user('alice')
+    user = LDAPBackend().populate_user("alice")
     if user is None:
-        raise Exception('No user named alice')
+        raise Exception("No user named alice")
 
 
 .. _ldap_user:

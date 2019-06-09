@@ -260,6 +260,11 @@ class LDAPTest(TestCase):
         user = authenticate(username="invalid", password="i_do_not_exist")
         self.assertIsNone(user)
 
+    def test_username_none(self):
+        self._init_settings()
+        user = authenticate(username=None, password="password")
+        self.assertIsNone(user)
+
     @spy_ldap("simple_bind_s")
     def test_simple_bind_escaped(self, mock):
         """ Bind with a username that requires escaping. """

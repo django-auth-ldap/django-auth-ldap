@@ -135,7 +135,7 @@ settings and arguments are included for completeness.
     # Use LDAP group membership to calculate group permissions.
     AUTH_LDAP_FIND_GROUP_PERMS = True
 
-    # Cache distinguised names and group memberships for an hour to minimize
+    # Cache distinguished names and group memberships for an hour to minimize
     # LDAP traffic.
     AUTH_LDAP_CACHE_TIMEOUT = 3600
 

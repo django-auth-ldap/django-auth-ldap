@@ -25,7 +25,7 @@ groups, and permissions.
 * Tests: http://travis-ci.org/django-auth-ldap/django-auth-ldap
 * License: BSD 2-Clause
 
-This version is supported on Python 2.7 and 3.4+; and Django 1.11+. It requires
+This version is supported on Python 3.5+; and Django 1.11+. It requires
 `python-ldap`_ >= 3.0.
 
 .. _`python-ldap`: https://pypi.org/project/python-ldap/

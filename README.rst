@@ -26,7 +26,7 @@ groups, and permissions.
 * License: BSD 2-Clause
 
 This version is supported on Python 3.5+; and Django 1.11+. It requires
-`python-ldap`_ >= 3.0.
+`python-ldap`_ >= 3.1.
 
 .. _`python-ldap`: https://pypi.org/project/python-ldap/
 

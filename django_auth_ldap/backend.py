@@ -320,6 +320,48 @@ class _LDAPConnectionMixIn:
         return self._connection
 
 
+class LDAPReverseEmailSearch(_LDAPConnectionMixIn):
+    def __init__(self, backend, email):
+        super().__init__(backend)
+
+        self._email = email
+        self._ldap_users = []
+
+    def search_for_users(self, should_populate=False):
+        search = self.settings.REVERSE_EMAIL_SEARCH
+        if search is None:
+            raise ImproperlyConfigured(
+                "AUTH_LDAP_REVERSE_EMAIL_SEARCH must be an LDAPSearch instance."
+            )
+        USERNAME_ATTR = self.settings.USERNAME_ATTR
+        if USERNAME_ATTR is None:
+            raise ImproperlyConfigured(
+                "AUTH_LDAP_USERNAME_ATTR must be specified to search by email."
+            )
+
+        results = search.execute(self.connection, {"email": self._email})
+        if not results:
+            return None
+
+        for result in results:
+            user_dn, user_attrs = result
+            username = user_attrs[USERNAME_ATTR][0]
+            ldap_user = _LDAPUser(self.backend, username=username)
+            ldap_user._user_dn = user_dn
+            ldap_user._user_attrs = user_attrs
+            if should_populate:
+                ldap_user.populate_user()
+
+            self._ldap_users.append(ldap_user)
+
+        if should_populate:
+            # Return populated Django Users if populating was requested.
+            return [ldap_user._user for ldap_user in self._ldap_users]
+        else:
+            # Otherwise, just return the found _LDAPUsers.
+            return self._ldap_users
+
+
 class _LDAPUser(_LDAPConnectionMixIn):
     """
     Represents an LDAP user and ultimately fields all requests that the
@@ -1026,6 +1068,8 @@ class LDAPSettings:
         "USER_DN_TEMPLATE": None,
         "USER_FLAGS_BY_GROUP": {},
         "USER_SEARCH": None,
+        "REVERSE_EMAIL_SEARCH": None,
+        "USERNAME_ATTR": None,
     }
 
     def __init__(self, prefix="AUTH_LDAP_", defaults={}):

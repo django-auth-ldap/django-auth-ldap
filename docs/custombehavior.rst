@@ -16,7 +16,7 @@ customize the behavior by following these general steps:
   :class:`~django_auth_ldap.backend.LDAPBackend` subclass.
 
 
-Subclassing LDAPBAckend
+Subclassing LDAPBackend
 -----------------------
 
 You can implement your own :class:`~django_auth_ldap.backend.LDAPBackend` subclass

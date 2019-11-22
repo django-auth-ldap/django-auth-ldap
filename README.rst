@@ -40,7 +40,7 @@ Install the package with pip:
 
     $ pip install django-auth-ldap
 
-It requires `python-ldap`_ >= 3.0. You'll need the `OpenLDAP`_ libraries and
+It requires `python-ldap`_ >= 3.1. You'll need the `OpenLDAP`_ libraries and
 headers available on your system.
 
 To use the auth backend in a Django project, add

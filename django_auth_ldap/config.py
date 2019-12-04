@@ -100,7 +100,7 @@ class LDAPSearch:
         self.ldap = _LDAPConfig.get_ldap()
 
     def __repr__(self):
-        return "<{}: {}>".format(self.__class__.__name__, self.base_dn)
+        return "<{}: {}>".format(type(self).__name__, self.base_dn)
 
     def search_with_additional_terms(self, term_dict, escape=True):
         """
@@ -117,9 +117,7 @@ class LDAPSearch:
 
         filterstr = "(&{})".format("".join(term_strings))
 
-        return self.__class__(
-            self.base_dn, self.scope, filterstr, attrlist=self.attrlist
-        )
+        return type(self)(self.base_dn, self.scope, filterstr, attrlist=self.attrlist)
 
     def search_with_additional_term_string(self, filterstr):
         """
@@ -129,9 +127,7 @@ class LDAPSearch:
         """
         filterstr = "(&{}{})".format(self.filterstr, filterstr)
 
-        return self.__class__(
-            self.base_dn, self.scope, filterstr, attrlist=self.attrlist
-        )
+        return type(self)(self.base_dn, self.scope, filterstr, attrlist=self.attrlist)
 
     def execute(self, connection, filterargs=(), escape=True):
         """
@@ -265,14 +261,14 @@ class LDAPSearchUnion:
             s.search_with_additional_terms(term_dict, escape) for s in self.searches
         ]
 
-        return self.__class__(*searches)
+        return type(self)(*searches)
 
     def search_with_additional_term_string(self, filterstr):
         searches = [
             s.search_with_additional_term_string(filterstr) for s in self.searches
         ]
 
-        return self.__class__(*searches)
+        return type(self)(*searches)
 
     def execute(self, connection, filterargs=()):
         msgids = [search._begin(connection, filterargs) for search in self.searches]
@@ -471,7 +467,7 @@ class MemberDNGroupType(LDAPGroupType):
         super().__init__(name_attr)
 
     def __repr__(self):
-        return "<{}: {}>".format(self.__class__.__name__, self.member_attr)
+        return "<{}: {}>".format(type(self).__name__, self.member_attr)
 
     def user_groups(self, ldap_user, group_search):
         search = group_search.search_with_additional_terms(

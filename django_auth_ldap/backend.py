@@ -386,6 +386,8 @@ class _LDAPUser(object):
             )
             raise
 
+        self._get_connection().unbind_s()
+            
         return user
 
     def get_group_permissions(self):

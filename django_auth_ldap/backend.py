@@ -433,6 +433,8 @@ class _LDAPUser:
         except Exception as e:
             logger.warning("{} while authenticating {}".format(e, self._username))
             raise
+            
+        self._get_connection().unbind_s()
 
         return user
 

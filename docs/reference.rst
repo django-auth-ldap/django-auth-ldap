@@ -279,7 +279,10 @@ Default: ``None``
 The field on the user model used to query the authenticating user in the
 database. If unset, uses the value of ``USERNAME_FIELD`` of the model class.
 When set, the value used to query is obtained through the
-:setting:`AUTH_LDAP_USER_ATTR_MAP`.
+:setting:`AUTH_LDAP_USER_ATTR_MAP`. For example, setting :setting:`AUTH_LDAP_USER_ATTR_MAP`
+to ``username`` and adding ``"username": "sAMAccountName",`` to :setting:`AUTH_LDAP_USER_ATTR_MAP`
+will cause django to query local database using ``username`` column and LDAP using
+``sAMAccountName`` attribute.
 
 
 .. setting:: AUTH_LDAP_USER_ATTRLIST

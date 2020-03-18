@@ -476,13 +476,14 @@ class _LDAPUser:
         Binds to the LDAP server with the user's DN and password. Raises
         AuthenticationFailed on failure.
         """
-        if self.dn is None:
+        if not self.settings.BIND_AS_AUTHENTICATING_USER and self.dn is None:
             raise self.AuthenticationFailed("failed to map the username to a DN.")
 
         try:
-            sticky = self.settings.BIND_AS_AUTHENTICATING_USER
-
-            self._bind_as(self.dn, password, sticky=sticky)
+            if self.settings.BIND_AS_AUTHENTICATING_USER:
+                self._bind_as(self._username, password)
+            else:
+                self._bind_as(self.dn, password)
         except ldap.INVALID_CREDENTIALS:
             raise self.AuthenticationFailed("user DN/password rejected by LDAP server.")
 

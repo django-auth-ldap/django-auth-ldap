@@ -481,7 +481,7 @@ class _LDAPUser:
 
         try:
             if self.settings.BIND_AS_AUTHENTICATING_USER:
-                self._bind_as(self._username, password)
+                self._bind_as(self._username, password, sticky=True)
             else:
                 self._bind_as(self.dn, password)
         except ldap.INVALID_CREDENTIALS:

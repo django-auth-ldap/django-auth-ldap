@@ -74,11 +74,13 @@ logger = _LDAPConfig.get_logger()
 # Exported signals
 
 # Allows clients to perform custom user population.
-populate_user = django.dispatch.Signal(providing_args=["user", "ldap_user"])
+# Passed arguments: user, ldap_user
+populate_user = django.dispatch.Signal()
 
 # Allows clients to inspect and perform special handling of LDAPError
 # exceptions. Exceptions raised by handlers will be propagated out.
-ldap_error = django.dispatch.Signal(providing_args=["context", "user", "exception"])
+# Passed arguments: context, user, exception
+ldap_error = django.dispatch.Signal()
 
 
 class LDAPBackend:

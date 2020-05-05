@@ -270,8 +270,8 @@ class LDAPSearchUnion:
 
         return type(self)(*searches)
 
-    def execute(self, connection, filterargs=()):
-        msgids = [search._begin(connection, filterargs) for search in self.searches]
+    def execute(self, connection, filterargs=(), escape=True):
+        msgids = [search._begin(connection, filterargs, escape) for search in self.searches]
         results = {}
 
         for search, msgid in zip(self.searches, msgids):

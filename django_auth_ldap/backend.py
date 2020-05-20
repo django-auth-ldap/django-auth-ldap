@@ -229,7 +229,7 @@ class LDAPBackend:
             lookup = query_field
         else:
             query_field = model.USERNAME_FIELD
-            query_value = username.lower()
+            query_value = username.strip()
             lookup = "{}__iexact".format(query_field)
 
         try:

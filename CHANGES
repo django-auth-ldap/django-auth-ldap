@@ -1,3 +1,8 @@
+2.2.0 - 2020-06-02
+------------------
+
+- Added support for the escape argument in ``LDAPSearchUnion.execute()``.
+
 2.1.1 - 2020-03-26
 
 - Removed drepecated ``providing_args`` from ``Signal`` instances.

@@ -117,7 +117,7 @@ class LDAPBackend:
         try:
             return self._cache
         except AttributeError:
-            cache_name = getattr(self.settings, "AUTH_LDAP_CACHE", "default")
+            cache_name = getattr(self.settings, 'AUTH_LDAP_CACHE', 'default')
             self._cache = caches[cache_name]
         return self._cache
 
@@ -368,7 +368,10 @@ class _LDAPUser:
             logger.debug("Authentication failed for {}: {}".format(self._username, e))
         except ldap.LDAPError as e:
             results = ldap_error.send(
-                type(self.backend), context="authenticate", user=self._user, exception=e
+                type(self.backend),
+                context="authenticate",
+                user=self._user,
+                exception=e,
             )
             if len(results) == 0:
                 logger.warning(

@@ -59,6 +59,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.cache import caches
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
+from django.utils.functional import cached_property
 from django.utils.inspect import func_supports_parameter
 
 from django_auth_ldap.config import (
@@ -112,14 +113,9 @@ class LDAPBackend:
             k: v for k, v in self.__dict__.items() if k not in ["_settings", "_ldap"]
         }
 
-    @property
+    @cached_property
     def cache(self):
-        try:
-            return self._cache
-        except AttributeError:
-            cache_name = getattr(self.settings, "AUTH_LDAP_CACHE", "default")
-            self._cache = caches[cache_name]
-        return self._cache
+        return caches[getattr(self.settings, "AUTH_LDAP_CACHE", "default")]
 
     @property
     def settings(self):
@@ -368,7 +364,10 @@ class _LDAPUser:
             logger.debug("Authentication failed for {}: {}".format(self._username, e))
         except ldap.LDAPError as e:
             results = ldap_error.send(
-                type(self.backend), context="authenticate", user=self._user, exception=e
+                type(self.backend),
+                context="authenticate",
+                user=self._user,
+                exception=e
             )
             if len(results) == 0:
                 logger.warning(

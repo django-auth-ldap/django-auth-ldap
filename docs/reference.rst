@@ -370,10 +370,6 @@ match a name in the Django cache settings.
 
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
-            'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/2'
-        },
-        'celery': {
             'BACKEND': 'django_redis.cache.RedisCache',
             'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/1'
         },

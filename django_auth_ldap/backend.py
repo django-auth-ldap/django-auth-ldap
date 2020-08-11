@@ -57,7 +57,7 @@ import django.dispatch
 import ldap
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.core.cache import cache
+from django.core.cache import caches
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.utils.inspect import func_supports_parameter
 
@@ -111,6 +111,15 @@ class LDAPBackend:
         return {
             k: v for k, v in self.__dict__.items() if k not in ["_settings", "_ldap"]
         }
+
+    @property
+    def cache(self):
+        try:
+            return self._cache
+        except AttributeError:
+            cache_name = getattr(self.settings, 'AUTH_LDAP_CACHE', 'default')
+            self._cache = caches[cache_name]
+        return self._cache
 
     @property
     def settings(self):
@@ -514,7 +523,7 @@ class _LDAPUser:
                 cache_key = valid_cache_key(
                     "django_auth_ldap.user_dn.{}".format(self._username)
                 )
-                self._user_dn = cache.get_or_set(
+                self._user_dn = self.cache.get_or_set(
                     cache_key, self._search_for_user_dn, self.settings.CACHE_TIMEOUT
                 )
             else:
@@ -971,14 +980,14 @@ class _LDAPUserGroups:
     def _load_cached_attr(self, attr_name):
         if self.settings.CACHE_TIMEOUT > 0:
             key = self._cache_key(attr_name)
-            value = cache.get(key)
+            value = self.cache.get(key)
             setattr(self, attr_name, value)
 
     def _cache_attr(self, attr_name):
         if self.settings.CACHE_TIMEOUT > 0:
             key = self._cache_key(attr_name)
             value = getattr(self, attr_name, None)
-            cache.set(key, value, self.settings.CACHE_TIMEOUT)
+            self.cache.set(key, value, self.settings.CACHE_TIMEOUT)
 
     def _cache_key(self, attr_name):
         """

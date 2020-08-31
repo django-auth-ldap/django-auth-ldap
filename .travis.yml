@@ -14,8 +14,6 @@ matrix:
     - env: TOXENV=flake8
     - env: TOXENV=isort
     - env: TOXENV=docs
-    - python: 3.5
-      env: TOXENV=py35-django22
     - python: 3.6
       env: TOXENV=py36-django22
     - python: 3.7

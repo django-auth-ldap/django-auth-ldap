@@ -3,6 +3,7 @@ UNRELEASED
 
 - Removed support for end of life Django 1.11. django-auth-ldap now requires
   Django 2.2+.
+- Removed support for end of life Python 3.5.
 
 2.2.0 - 2020-06-02
 ------------------

@@ -1,2 +1,6 @@
-VERSION = (2, 2, 0)
-__version__ = ".".join(str(i) for i in VERSION)
+try:
+    from .version import version
+except ImportError:
+    __version__ = None
+else:
+    __version__ = version

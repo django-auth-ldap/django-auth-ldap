@@ -13,6 +13,8 @@
 import os
 import sys
 
+from pkg_resources import get_distribution
+
 sys.path.insert(0, os.path.abspath("ext"))
 
 
@@ -22,10 +24,8 @@ project = "django-auth-ldap"
 copyright = "2009, Peter Sagerson"
 author = "Peter Sagerson"
 
-# The short X.Y version
-version = "2.2"
-# The full version, including alpha/beta/rc tags
-release = "2.2.0"
+release = get_distribution("django-auth-ldap").version
+version = ".".join(release.split(".")[:2])
 
 
 # -- General configuration ---------------------------------------------------

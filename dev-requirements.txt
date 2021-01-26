@@ -1,5 +1,0 @@
-black
-Django >= 2.2
-flake8
-python-ldap >= 3.0
-sphinx

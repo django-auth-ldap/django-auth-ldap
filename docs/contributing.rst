@@ -18,21 +18,8 @@ anchor point.
 Development
 -----------
 
-To get set up for development, activate your virtualenv and use pip to install
-from ``dev-requirements.txt``:
-
-.. code-block:: sh
-
-    $ pip install -r dev-requirements.txt
-
-To run the tests:
-
-.. code-block:: sh
-
-    $ django-admin test --settings tests.settings
-
-To run the full test suite in a range of environments, run `tox`_ from the root
-of the project:
+To run the full test suite in a range of environments, run :doc:`tox <tox:index>`
+from the root of the project:
 
 .. code-block:: sh
 
@@ -41,4 +28,8 @@ of the project:
 This includes some static analysis to detect potential runtime errors and style
 issues.
 
-.. _`tox`: https://tox.readthedocs.io/
+To limit to a single environment, use :option:`tox.-e`:
+
+.. code-block:: console
+
+   $ tox -e djangomaster

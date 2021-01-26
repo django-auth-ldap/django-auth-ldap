@@ -29,9 +29,9 @@ import os
 import pickle
 import warnings
 from copy import deepcopy
+from unittest import mock
 
 import ldap
-import mock
 import slapdtest
 from django.contrib.auth import authenticate, get_backends
 from django.contrib.auth.models import Group, Permission, User

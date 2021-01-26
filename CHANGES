@@ -5,6 +5,7 @@ UNRELEASED
   Django 2.2+.
 - Removed support for end of life Python 3.5.
 - Added support for Django 3.1.
+- Added support for Python 3.9.
 
 2.2.0 - 2020-06-02
 ------------------

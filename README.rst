@@ -71,7 +71,6 @@ database is present.
             'django.contrib.auth.backends.ModelBackend',
         ]
 
-.. _`python-ldap`: https://pypi.org/project/python-ldap/
 .. _`OpenLDAP`: https://www.openldap.org/
 
 

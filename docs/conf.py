@@ -174,4 +174,5 @@ intersphinx_mapping = {
         "https://docs.djangoproject.com/en/stable/_objects/",
     ),
     "pythonldap": ("https://python-ldap.readthedocs.io/en/latest/", None),
+    "tox": ("https://tox.readthedocs.io/en/latest/", None),
 }

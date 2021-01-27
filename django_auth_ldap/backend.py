@@ -71,20 +71,22 @@ from typing import (
 
 import django.conf
 import django.dispatch
-import ldap
+import ldap3
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.http import HttpRequest
-from django.utils.inspect import func_supports_parameter
-from ldap.ldapobject import LDAPObject
+from ldap3 import Connection, Server
+from ldap3.core.exceptions import LDAPException, LDAPInvalidCredentialsResult
+from ldap3.utils.dn import escape_rdn
 
 from django_auth_ldap.config import (
     AbstractLDAPSearch,
     ConfigurationWarning,
     LDAPGroupQuery,
     LDAPGroupType,
+    LDAPGroupTypeIsMember,
     LDAPSearch,
     _LDAPConfig,
 )
@@ -121,23 +123,20 @@ class LDAPBackend(BaseBackend):
 
     def __init__(self) -> None:
         self._settings: Optional[LDAPSettings] = None
-        self._ldap: ldap = None  # The cached ldap module (or mock object)
+        self._server: Optional[Server] = None
 
     def __getstate__(self) -> dict:
         """
         Exclude certain cached properties from pickling.
         """
-        return {
-            k: v for k, v in self.__dict__.items() if k not in ["_settings", "_ldap"]
-        }
+        return {k: v for k, v in self.__dict__.items() if k != "_server"}
 
     def __setstate__(self, state: Dict[str, Any]):
         """
         Set excluded properties from pickling.
         """
         self.__dict__.update(state)
-        self._settings = None
-        self._ldap = None
+        self._server = None
 
     @property
     def settings(self) -> "LDAPSettings":
@@ -150,12 +149,26 @@ class LDAPBackend(BaseBackend):
     def settings(self, settings: "LDAPSettings") -> None:
         self._settings = settings
 
-    @property
-    def ldap(self) -> ldap:
-        if self._ldap is None:
-            self._ldap = _LDAPConfig.get_ldap(self.settings.GLOBAL_OPTIONS)
+    def get_server(self, request: Optional[HttpRequest]) -> Server:
+        uri = self.settings.SERVER_URI
+        uri_callable = callable(uri)
 
-        return self._ldap
+        if self._server is None or uri_callable:
+            if uri_callable:
+                uri = cast(Callable, uri)(request)
+
+            _server = Server(uri, use_ssl=self.settings.START_TLS)
+            if _server.ssl:
+                logger.debug("Use SSL")
+
+            if uri_callable:
+                self._server = None
+            else:
+                self._server = _server
+
+            return _server
+
+        return self._server
 
     def get_user_model(self) -> Type[AbstractUser]:
         """
@@ -265,11 +278,16 @@ class LDAPBackend(BaseBackend):
         model = self.get_user_model()
 
         if self.settings.USER_QUERY_FIELD:
-            if ldap_user.attrs is None:
-                raise TypeError("The attrs of the LDAP user should not be None")
+            if self.settings.USER_ATTR_MAP is None:
+                raise TypeError(
+                    "%s should not be None"
+                    % self.settings._prepend_prefix("USER_ATTR_MAP")
+                )
 
             query_field = self.settings.USER_QUERY_FIELD
-            query_value = ldap_user.attrs[self.settings.USER_ATTR_MAP[query_field]][0]
+            query_value = ldap_user.get_single_attr(
+                self.settings.USER_ATTR_MAP[query_field]
+            )
             lookup = query_field
         else:
             query_field = model.USERNAME_FIELD
@@ -326,10 +344,10 @@ class _LDAPUser:
         ignored.
         """
         self._user_dn: Optional[str] = None
-        self._user_attrs: Optional[Dict[str, List[str]]] = None
+        self._user_attrs: Optional[Dict[str, Any]] = None
         self._groups: Optional[_LDAPUserGroups] = None
         self._group_permissions: Optional[Set[str]] = None
-        self._connection: Optional[LDAPObject] = None
+        self._connection: Optional[Connection] = None
         self._connection_bound: bool = False
 
         self.backend: LDAPBackend = backend
@@ -393,10 +411,6 @@ class _LDAPUser:
         user.ldap_username = self._username
 
     @property
-    def ldap(self) -> ldap:
-        return self.backend.ldap
-
-    @property
     def settings(self) -> "LDAPSettings":
         return self.backend.settings
 
@@ -417,7 +431,7 @@ class _LDAPUser:
             user = self._get_or_create_user()
         except self.AuthenticationFailed as e:
             logger.debug("Authentication failed for {}: {}".format(self._username, e))
-        except ldap.LDAPError as e:
+        except LDAPException as e:
             results = ldap_error.send(
                 type(self.backend),
                 context="authenticate",
@@ -448,7 +462,7 @@ class _LDAPUser:
                 try:
                     if self.dn is not None:
                         self._load_group_permissions()
-                except ldap.LDAPError as e:
+                except LDAPException as e:
                     results = ldap_error.send(
                         type(self.backend),
                         context="get_group_permissions",
@@ -478,7 +492,7 @@ class _LDAPUser:
             else:
                 user = self._user
 
-        except ldap.LDAPError as e:
+        except LDAPException as e:
             results = ldap_error.send(
                 type(self.backend),
                 context="populate_user",
@@ -509,11 +523,27 @@ class _LDAPUser:
         return self._user_dn
 
     @property
-    def attrs(self) -> Optional[Dict[str, List[str]]]:
+    def attrs(self) -> Optional[Dict[str, Any]]:
         if self._user_attrs is None:
             self._load_user_attrs()
 
         return self._user_attrs
+
+    def get_single_attr(self, name) -> Any:
+        if self.attrs is None:
+            raise TypeError("The attribute attr should not be None")
+
+        value = self.attrs[name]
+        if isinstance(value, List):
+            value_len = len(value)
+            if value_len == 1:
+                value = value[0]
+            elif value_len == 0:
+                raise ValueError("The attribute '%s' has no entries" % name)
+            else:
+                raise ValueError("The attribute '%s' has more than one entry" % name)
+
+        return value
 
     @property
     def group_dns(self) -> Set[str]:
@@ -524,7 +554,7 @@ class _LDAPUser:
         return self._get_groups().get_group_names()
 
     @property
-    def connection(self) -> LDAPObject:
+    def connection(self) -> Connection:
         if not self._connection_bound:
             self._bind()
 
@@ -546,13 +576,13 @@ class _LDAPUser:
             sticky = self.settings.BIND_AS_AUTHENTICATING_USER
 
             self._bind_as(self.dn, password, sticky=sticky)
-        except ldap.INVALID_CREDENTIALS:
+        except LDAPInvalidCredentialsResult:
             raise self.AuthenticationFailed("user DN/password rejected by LDAP server.")
 
     def _load_user_attrs(self) -> None:
         if self.dn is not None:
             search = LDAPSearch(
-                self.dn, ldap.SCOPE_BASE, attrlist=self.settings.USER_ATTRLIST
+                self.dn, ldap3.BASE, attrlist=self.settings.USER_ATTRLIST
             )
             results = search.execute(self.connection)
 
@@ -594,7 +624,7 @@ class _LDAPUser:
             )
 
         template = self.settings.USER_DN_TEMPLATE
-        username = ldap.dn.escape_dn_chars(self._username)
+        username = escape_rdn(self._username)
         return template % {"user": username}
 
     def _search_for_user_dn(self) -> Optional[str]:
@@ -722,34 +752,35 @@ class _LDAPUser:
         self._populate_user_from_group_memberships()
 
     def _populate_user_from_attributes(self) -> None:
-        for field, attr in self.settings.USER_ATTR_MAP.items():
-            try:
-                if self.attrs is None:
-                    raise TypeError("The attrs of the LDAP user should not be None")
-
-                value = self.attrs[attr][0]
-            except (TypeError, LookupError):
-                # TypeError occurs when self.attrs is None as we were unable to
-                # load this user's attributes.
-                logger.warning(
-                    "{} does not have a value for the attribute {}".format(
-                        self.dn, attr
+        if self.settings.USER_ATTR_MAP:
+            for field, attr in self.settings.USER_ATTR_MAP.items():
+                try:
+                    value = self.get_single_attr(attr)
+                except (TypeError, LookupError):
+                    # TypeError occurs when self.attrs is None as we were unable to
+                    # load this user's attributes.
+                    logger.warning(
+                        "{} does not have a value for the attribute {}".format(
+                            self.dn, attr
+                        )
                     )
-                )
-            else:
-                setattr(self._user, field, value)
+                else:
+                    setattr(self._user, field, value)
 
     def _populate_user_from_group_memberships(self) -> None:
-        for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.items():
-            try:
-                query = self._normalize_group_dns(group_dns)
-            except ValueError as e:
-                raise ImproperlyConfigured(
-                    "{}: {}", self.settings._prepend_prefix("USER_FLAGS_BY_GROUP"), e
-                )
+        if self.settings.USER_FLAGS_BY_GROUP:
+            for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.items():
+                try:
+                    query = self._normalize_group_dns(group_dns)
+                except ValueError as e:
+                    raise ImproperlyConfigured(
+                        "{}: {}",
+                        self.settings._prepend_prefix("USER_FLAGS_BY_GROUP"),
+                        e,
+                    )
 
-            value = query.resolve(self)
-            setattr(self._user, field, value)
+                value = query.resolve(self)
+                setattr(self._user, field, value)
 
     def _normalize_group_dns(
         self,
@@ -928,42 +959,38 @@ class _LDAPUser:
         the life of this object. If False, then the caller only wishes to test
         the credentials, after which the connection will be considered unbound.
         """
-        self._get_connection().simple_bind_s(bind_dn, bind_password)
+        if bind_dn:
+            self._get_connection().rebind(bind_dn, bind_password)
+        else:
+            connection = self._get_connection()
+            # clear user and password, otherwise anonymous bind won't work
+            # https://github.com/cannatag/ldap3/issues/871
+            connection.user = None
+            connection.password = None
+            connection.rebind(authentication=ldap3.ANONYMOUS)
 
         self._connection_bound = sticky
 
-    def _get_connection(self) -> LDAPObject:
+    def _get_connection(self) -> Connection:
         """
-        Returns our cached LDAPObject, which may or may not be bound.
+        Returns our cached Connection, which may or may not be bound.
         """
         if self._connection is None:
-            uri = self.settings.SERVER_URI
-            if callable(uri):
-                if func_supports_parameter(uri, "request"):
-                    uri = uri(self._request)
-                else:
-                    warnings.warn(
-                        "Update %s callable %s.%s to accept "
-                        "a positional `request` argument. Support for callables "
-                        "accepting no arguments will be removed in a future "
-                        "version."
-                        % (
-                            self.settings._prepend_prefix("SERVER_URI"),
-                            uri.__module__,
-                            uri.__name__,
-                        ),
-                        DeprecationWarning,
-                    )
-                    uri = uri()  # type: ignore
+            server = self.backend.get_server(self._request)
+            self._connection = Connection(
+                server,
+                client_strategy=ldap3.ASYNC,
+                lazy=False,
+                raise_exceptions=True,
+            )
 
-            self._connection = self.backend.ldap.initialize(uri, bytes_mode=False)
-
-            for opt, value in self.settings.CONNECTION_OPTIONS.items():
-                self._connection.set_option(opt, value)
-
-            if self.settings.START_TLS:
+            if (
+                not self._connection.tls_started
+                and not self._connection.starting_tls
+                and (self.settings.START_TLS or self._connection.server.ssl)
+            ):
                 logger.debug("Initiating TLS")
-                self._connection.start_tls_s()
+                self._connection.start_tls()
 
         return self._connection
 
@@ -978,7 +1005,7 @@ class _LDAPUserGroups:
         self._ldap_user: _LDAPUser = ldap_user
         self._group_type: Optional[LDAPGroupType] = None
         self._group_search: Optional[AbstractLDAPSearch] = None
-        self._group_infos: Optional[Collection[Tuple[str, Dict[str, List[str]]]]] = None
+        self._group_infos: Optional[Collection[Tuple[str, Dict[str, Any]]]] = None
         self._group_dns: Optional[Set[str]] = None
         self._group_names: Optional[Set[str]] = None
 
@@ -1033,20 +1060,20 @@ class _LDAPUserGroups:
         """
         Returns true if our user is a member of the given group.
         """
-        is_member = None
-
         # Normalize the DN
         group_dn = group_dn.lower()
 
         # If we have self._group_dns, we'll use it. Otherwise, we'll try to
         # avoid the cost of loading it.
-        if self._group_dns is None:
+        if self._group_dns is None and isinstance(
+            self._group_type, LDAPGroupTypeIsMember
+        ):
             if self._group_type is None:
                 raise TypeError("The group type should not be None")
 
             is_member = self._group_type.is_member(self._ldap_user, group_dn)
 
-        if is_member is None:
+        else:
             is_member = group_dn in self.get_group_dns()
 
         logger.debug(
@@ -1069,7 +1096,7 @@ class _LDAPUserGroups:
 
     def _get_group_infos(
         self,
-    ) -> Collection[Tuple[str, Dict[str, List[str]]]]:
+    ) -> Collection[Tuple[str, Dict[str, Any]]]:
         """
         Returns a (cached) list of group_info structures for the groups that our
         user is a member of.
@@ -1126,10 +1153,8 @@ class LDAPSettings:
         bind_dn: str = "",
         bind_password: str = "",
         cache_timeout: int = 0,
-        connection_options: Optional[Dict[int, Any]] = None,
         deny_group: Optional[str] = None,
         find_group_perms: bool = False,
-        global_options: Optional[Dict[int, Any]] = None,
         group_search: Optional[AbstractLDAPSearch] = None,
         group_type: Optional[LDAPGroupType] = None,
         mirror_groups: Union[bool, Collection[str], None] = None,
@@ -1164,15 +1189,9 @@ class LDAPSettings:
         self.BIND_DN: str = self._get_setting("BIND_DN", bind_dn)
         self.BIND_PASSWORD: str = self._get_setting("BIND_PASSWORD", bind_password)
         self.CACHE_TIMEOUT: int = self._get_setting("CACHE_TIMEOUT", cache_timeout)
-        self.CONNECTION_OPTIONS: Dict[int, Any] = self._get_setting(
-            "CONNECTION_OPTIONS", connection_options or dict()
-        )
         self.DENY_GROUP: Optional[str] = self._get_setting("DENY_GROUP", deny_group)
         self.FIND_GROUP_PERMS: bool = self._get_setting(
             "FIND_GROUP_PERMS", find_group_perms
-        )
-        self.GLOBAL_OPTIONS: Dict[int, Any] = self._get_setting(
-            "GLOBAL_OPTIONS", global_options or dict()
         )
         self.GROUP_SEARCH: Optional[AbstractLDAPSearch] = self._get_setting(
             "GROUP_SEARCH", group_search

@@ -154,9 +154,7 @@ class LDAPBackend(BaseBackend):
     @property
     def ldap(self) -> ldap:
         if self._ldap is None:
-            options = getattr(django.conf.settings, "AUTH_LDAP_GLOBAL_OPTIONS", None)
-
-            self._ldap = _LDAPConfig.get_ldap(options)
+            self._ldap = _LDAPConfig.get_ldap(self.settings.GLOBAL_OPTIONS)
 
         return self._ldap
 
@@ -968,13 +966,13 @@ class _LDAPUserGroups:
         """
 
         self._group_type = self.settings.GROUP_TYPE
-        if self._group_type is None:
+        if not isinstance(self._group_type, LDAPGroupType):
             raise ImproperlyConfigured(
                 "AUTH_LDAP_GROUP_TYPE must be an LDAPGroupType instance."
             )
 
         self._group_search = self.settings.GROUP_SEARCH
-        if self._group_search is None:
+        if not isinstance(self._group_search, AbstractLDAPSearch):
             raise ImproperlyConfigured(
                 "AUTH_LDAP_GROUP_SEARCH must be an LDAPSearch instance."
             )

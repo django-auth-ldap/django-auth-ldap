@@ -47,7 +47,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    ValuesView,
     cast,
 )
 
@@ -69,7 +68,7 @@ class _LDAPConfig:
     A private class that loads and caches some global objects.
     """
 
-    logger: Optional[logging.Logger] = None
+    _logger: Optional[logging.Logger] = None
 
     _ldap_configured: bool = False
 
@@ -92,11 +91,11 @@ class _LDAPConfig:
         """
         Initializes and returns our logger instance.
         """
-        if cls.logger is None:
-            cls.logger = logging.getLogger("django_auth_ldap")
-            cls.logger.addHandler(logging.NullHandler())
+        if cls._logger is None:
+            cls._logger = logging.getLogger("django_auth_ldap")
+            cls._logger.addHandler(logging.NullHandler())
 
-        return cls.logger
+        return cls._logger
 
 
 # Our global logger
@@ -632,7 +631,7 @@ class NestedMemberDNGroupType(LDAPGroupType):
 
     def user_groups(
         self, ldap_user: "_LDAPUser", group_search: AbstractLDAPSearch
-    ) -> ValuesView[Tuple[str, Dict[str, List[str]]]]:
+    ) -> ItemsView[str, Dict[str, List[str]]]:
         """
         This searches for all of a user's groups from the bottom up. In other
         words, it returns the groups that the user belongs to, the groups that
@@ -647,20 +646,21 @@ class NestedMemberDNGroupType(LDAPGroupType):
         handled_dn_set = set()  # Member DNs that we've already searched with
 
         while len(member_dn_set) > 0:
-            group_infos = self.find_groups_with_any_member(
-                member_dn_set, group_search, ldap_user.connection
+            group_infos = dict(
+                self._find_groups_with_any_member(
+                    member_dn_set, group_search, ldap_user.connection
+                )
             )
-            new_group_info_map = {info[0]: info for info in group_infos}
-            group_info_map.update(new_group_info_map)
+            group_info_map.update(group_infos)
             handled_dn_set.update(member_dn_set)
 
             # Get ready for the next iteration. To avoid cycles, we make sure
             # never to search with the same member DN twice.
-            member_dn_set = set(new_group_info_map.keys()) - handled_dn_set
+            member_dn_set = set(group_infos.keys()) - handled_dn_set
 
-        return group_info_map.values()
+        return group_info_map.items()
 
-    def find_groups_with_any_member(
+    def _find_groups_with_any_member(
         self,
         member_dn_set: Set[str],
         group_search: AbstractLDAPSearch,

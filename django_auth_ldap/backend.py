@@ -581,7 +581,8 @@ class _LDAPUser:
     def _construct_simple_user_dn(self) -> str:
         if self.settings.USER_DN_TEMPLATE is None:
             raise ImproperlyConfigured(
-                "%s should not be None" % self.settings._name("USER_DN_TEMPLATE")
+                "%s should not be None"
+                % self.settings._prepend_prefix("USER_DN_TEMPLATE")
             )
 
         template = self.settings.USER_DN_TEMPLATE
@@ -596,7 +597,8 @@ class _LDAPUser:
         search = self.settings.USER_SEARCH
         if search is None:
             raise ImproperlyConfigured(
-                "AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance."
+                "%s must be an LDAPSearch instance."
+                % self.settings._prepend_prefix("USER_SEARCH")
             )
 
         results = search.execute(self.connection, {"user": self._username})
@@ -627,7 +629,8 @@ class _LDAPUser:
             result = required_group_dn.resolve(self)
             if not result:
                 raise self.AuthenticationFailed(
-                    "user does not satisfy AUTH_LDAP_REQUIRE_GROUP"
+                    "user does not satisfy %s"
+                    % self.settings._prepend_prefix("REQUIRE_GROUP")
                 )
 
         return True
@@ -643,7 +646,8 @@ class _LDAPUser:
             is_member = self._get_groups().is_member_of(denied_group_dn)
             if is_member:
                 raise self.AuthenticationFailed(
-                    "user does not satisfy AUTH_LDAP_DENY_GROUP"
+                    "user does not satisfy %s"
+                    % self.settings._prepend_prefix("DENY_GROUP")
                 )
 
         return True
@@ -674,7 +678,8 @@ class _LDAPUser:
         if built:
             if self.settings.NO_NEW_USERS:
                 raise self.AuthenticationFailed(
-                    "user does not satisfy AUTH_LDAP_NO_NEW_USERS"
+                    "user does not satisfy %s"
+                    % self.settings._prepend_prefix("NO_NEW_USERS")
                 )
 
             logger.debug("Creating Django user {}".format(username))
@@ -729,7 +734,7 @@ class _LDAPUser:
                 query = self._normalize_group_dns(group_dns)
             except ValueError as e:
                 raise ImproperlyConfigured(
-                    "{}: {}", self.settings._name("USER_FLAGS_BY_GROUP"), e
+                    "{}: {}", self.settings._prepend_prefix("USER_FLAGS_BY_GROUP"), e
                 )
 
             value = query.resolve(self)
@@ -771,14 +776,14 @@ class _LDAPUser:
         def malformed_mirror_groups_except() -> ImproperlyConfigured:
             return ImproperlyConfigured(
                 "{} must be a collection of group names".format(
-                    self.settings._name("MIRROR_GROUPS_EXCEPT")
+                    self.settings._prepend_prefix("MIRROR_GROUPS_EXCEPT")
                 )
             )
 
         def malformed_mirror_groups() -> ImproperlyConfigured:
             return ImproperlyConfigured(
-                "{} must be True or a collection of group names".format(
-                    self.settings._name("MIRROR_GROUPS")
+                "{} must be a bool or a collection of group names".format(
+                    self.settings._prepend_prefix("MIRROR_GROUPS")
                 )
             )
 
@@ -799,8 +804,8 @@ class _LDAPUser:
                 warnings.warn(
                     ConfigurationWarning(
                         "Ignoring {} in favor of {}".format(
-                            self.settings._name("MIRROR_GROUPS"),
-                            self.settings._name("MIRROR_GROUPS_EXCEPT"),
+                            self.settings._prepend_prefix("MIRROR_GROUPS"),
+                            self.settings._prepend_prefix("MIRROR_GROUPS_EXCEPT"),
                         )
                     )
                 )
@@ -924,10 +929,15 @@ class _LDAPUser:
                     uri = uri(self._request)
                 else:
                     warnings.warn(
-                        "Update AUTH_LDAP_SERVER_URI callable %s.%s to accept "
+                        "Update %s callable %s.%s to accept "
                         "a positional `request` argument. Support for callables "
                         "accepting no arguments will be removed in a future "
-                        "version." % (uri.__module__, uri.__name__),
+                        "version."
+                        % (
+                            self.settings._prepend_prefix("SERVER_URI"),
+                            uri.__module__,
+                            uri.__name__,
+                        ),
                         DeprecationWarning,
                     )
                     uri = uri()  # type: ignore
@@ -970,13 +980,15 @@ class _LDAPUserGroups:
         self._group_type = self.settings.GROUP_TYPE
         if self._group_type is None:
             raise ImproperlyConfigured(
-                "AUTH_LDAP_GROUP_TYPE must be an LDAPGroupType instance."
+                "%s must be an LDAPGroupType instance."
+                % self.settings._prepend_prefix("GROUP_TYPE")
             )
 
         self._group_search = self.settings.GROUP_SEARCH
         if self._group_search is None:
             raise ImproperlyConfigured(
-                "AUTH_LDAP_GROUP_SEARCH must be an LDAPSearch instance."
+                "%s must be an LDAPSearch instance."
+                % self.settings._prepend_prefix("GROUP_SEARCH")
             )
 
     def get_group_names(self) -> Set[str]:
@@ -1198,27 +1210,30 @@ class LDAPSettings:
         if (
             getattr(
                 django.conf.settings,
-                self._name("CACHE_GROUPS"),
+                self._prepend_prefix("CACHE_GROUPS"),
                 defaults.get("CACHE_GROUPS"),
             )
             is not None
         ):
             warnings.warn(
-                "Found deprecated setting AUTH_LDAP_CACHE_GROUP. Use "
-                "AUTH_LDAP_CACHE_TIMEOUT instead.",
+                "Found deprecated setting %s. Use %s instead."
+                % (
+                    self._prepend_prefix("CACHE_GROUPS"),
+                    self._prepend_prefix("CACHE_TIMEOUT"),
+                ),
                 DeprecationWarning,
             )
             self.CACHE_TIMEOUT = self._get_setting(
                 "GROUP_CACHE_TIMEOUT", defaults, 3600
             )
 
-    def _name(self, suffix: str) -> str:
+    def _prepend_prefix(self, suffix: str) -> str:
         return self._prefix + suffix
 
     def _get_setting(self, suffix: str, defaults: Dict[str, Any], default: T) -> T:
         return getattr(
             django.conf.settings,
-            self._name(suffix),
+            self._prepend_prefix(suffix),
             defaults.get(suffix, default),
         )
 

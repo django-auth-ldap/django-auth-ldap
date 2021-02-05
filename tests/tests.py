@@ -1586,7 +1586,7 @@ class LDAPTest(TestCase):
         self.assertEqual(w[0].category, DeprecationWarning)
         self.assertEqual(
             str(w[0].message),
-            "Found deprecated setting AUTH_LDAP_CACHE_GROUP. Use "
+            "Found deprecated setting AUTH_LDAP_CACHE_GROUPS. Use "
             "AUTH_LDAP_CACHE_TIMEOUT instead.",
         )
         # DN is cached.

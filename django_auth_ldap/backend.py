@@ -405,9 +405,7 @@ class _LDAPUser:
         try:
             self._authenticate_user_dn(password)
             self._check_requirements()
-            self._get_or_create_user()
-
-            user = self._user
+            user = self._get_or_create_user()
         except self.AuthenticationFailed as e:
             logger.debug("Authentication failed for {}: {}".format(self._username, e))
         except ldap.LDAPError as e:
@@ -467,9 +465,10 @@ class _LDAPUser:
             # self.attrs will only be non-None if we were able to load this user
             # from the LDAP directory, so this filters out nonexistent users.
             if self.attrs is not None:
-                self._get_or_create_user(force_populate=True)
+                user = self._get_or_create_user(force_populate=True)
+            else:
+                user = self._user
 
-            user = self._user
         except ldap.LDAPError as e:
             results = ldap_error.send(
                 type(self.backend),
@@ -656,7 +655,7 @@ class _LDAPUser:
     # User management
     #
 
-    def _get_or_create_user(self, force_populate: bool = False) -> None:
+    def _get_or_create_user(self, force_populate: bool = False) -> AbstractUser:
         """
         Loads the User model object from the database or creates it if it
         doesn't exist. Also populates the fields, subject to
@@ -702,6 +701,8 @@ class _LDAPUser:
         if self.settings.MIRROR_GROUPS or self.settings.MIRROR_GROUPS_EXCEPT:
             self._normalize_mirror_settings()
             self._mirror_groups()
+
+        return self._user
 
     def _populate_user(self) -> None:
         """

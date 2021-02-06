@@ -8,9 +8,6 @@ Django Authentication Using LDAP
 .. image:: https://img.shields.io/pypi/v/django-auth-ldap.svg
    :target: https://pypi.org/project/django-auth-ldap/
 
-.. image:: https://img.shields.io/travis/django-auth-ldap/django-auth-ldap/master.svg?label=travis-ci
-   :target: http://travis-ci.org/django-auth-ldap/django-auth-ldap
-
 .. image:: https://img.shields.io/pypi/l/django-auth-ldap.svg
    :target: https://raw.githubusercontent.com/django-auth-ldap/django-auth-ldap/master/LICENSE
 
@@ -22,7 +19,6 @@ groups, and permissions.
 * Documentation: https://django-auth-ldap.readthedocs.io/
 * PyPI: https://pypi.org/project/django-auth-ldap/
 * Repository: https://github.com/django-auth-ldap/django-auth-ldap
-* Tests: http://travis-ci.org/django-auth-ldap/django-auth-ldap
 * License: BSD 2-Clause
 
 This version is supported on Python 3.6+; and Django 2.2+. It requires

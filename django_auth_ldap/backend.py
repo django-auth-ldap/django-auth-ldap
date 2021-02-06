@@ -53,10 +53,12 @@ import warnings
 from functools import reduce
 from logging import Logger
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     Collection,
     Dict,
+    FrozenSet,
     List,
     Optional,
     Set,
@@ -694,9 +696,10 @@ class _LDAPUser:
             self._user.save()
 
         # This has to wait until we're sure the user has a pk.
-        if self.settings.MIRROR_GROUPS or self.settings.MIRROR_GROUPS_EXCEPT:
-            self._normalize_mirror_settings()
-            self._mirror_groups()
+        mg, mge = self._normalize_mirror_settings()
+        if (mg is not None and mg is not False) or mge is not None:
+            mg = None if isinstance(mg, bool) else mg
+            self._mirror_groups(mg, mge)
 
     def _populate_user(self) -> None:
         """
@@ -763,7 +766,13 @@ class _LDAPUser:
 
         return query
 
-    def _normalize_mirror_settings(self) -> None:
+    def _normalize_mirror_settings(
+        self,
+    ) -> Union[
+        Tuple[Union[bool, FrozenSet[str]], None],
+        Tuple[None, FrozenSet[str]],
+        Tuple[None, None],
+    ]:
         """
         Validates the group mirroring settings and converts them as necessary.
         """
@@ -782,15 +791,11 @@ class _LDAPUser:
                 )
             )
 
-        mge = self.settings.MIRROR_GROUPS_EXCEPT
         mg = self.settings.MIRROR_GROUPS
+        mge = self.settings.MIRROR_GROUPS_EXCEPT
 
         if mge is not None:
-            if isinstance(mge, (set, frozenset)):
-                pass
-            elif isinstance(mge, (list, tuple)):
-                mge = self.settings.MIRROR_GROUPS_EXCEPT = frozenset(mge)
-            else:
+            if not isinstance(mge, (AbstractSet, List, tuple)):
                 raise malformed_mirror_groups_except()
 
             if not all(isinstance(value, str) for value in mge):
@@ -804,22 +809,27 @@ class _LDAPUser:
                         )
                     )
                 )
-                mg = self.settings.MIRROR_GROUPS = None
+
+            return None, frozenset(mge)
 
         if mg is not None:
-            if isinstance(mg, (bool, set, frozenset)):
-                pass
-            elif isinstance(mg, (list, tuple)):
-                mg = self.settings.MIRROR_GROUPS = frozenset(mg)
-            else:
+            if not isinstance(mg, (bool, AbstractSet, List, tuple)):
                 raise malformed_mirror_groups()
 
-            if isinstance(mg, (set, frozenset)) and (
-                not all(isinstance(value, str) for value in mg)
-            ):
-                raise malformed_mirror_groups()
+            if not isinstance(mg, bool):
+                if not all(isinstance(value, str) for value in mg):
+                    raise malformed_mirror_groups()
 
-    def _mirror_groups(self) -> None:
+                mg = frozenset(mg)
+            return mg, None
+
+        return None, None
+
+    def _mirror_groups(
+        self,
+        normalized_mirror_groups: Optional[FrozenSet[str]],
+        normalized_mirror_groups_except: Optional[FrozenSet[str]],
+    ) -> None:
         """
         Mirrors the user's LDAP groups in the Django database and updates the
         user's membership.
@@ -832,20 +842,16 @@ class _LDAPUser:
             self._user.groups.values_list("name", flat=True).iterator()
         )
 
-        # These were normalized to sets above.
-        MIRROR_GROUPS_EXCEPT = self.settings.MIRROR_GROUPS_EXCEPT
-        MIRROR_GROUPS = self.settings.MIRROR_GROUPS
-
         # If the settings are white- or black-listing groups, we'll update
         # target_group_names such that we won't modify the membership of groups
         # beyond our purview.
-        if isinstance(MIRROR_GROUPS_EXCEPT, (set, frozenset)):
-            target_group_names = (target_group_names - MIRROR_GROUPS_EXCEPT) | (
-                current_group_names & MIRROR_GROUPS_EXCEPT
-            )
-        elif isinstance(MIRROR_GROUPS, (set, frozenset)):
-            target_group_names = (target_group_names & MIRROR_GROUPS) | (
-                current_group_names - MIRROR_GROUPS
+        if normalized_mirror_groups_except is not None:
+            target_group_names = (
+                target_group_names - normalized_mirror_groups_except
+            ) | (current_group_names & normalized_mirror_groups_except)
+        elif normalized_mirror_groups is not None:
+            target_group_names = (target_group_names & normalized_mirror_groups) | (
+                current_group_names - normalized_mirror_groups
             )
 
         if target_group_names != current_group_names:

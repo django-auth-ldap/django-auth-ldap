@@ -10,10 +10,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+import contextlib
 import os
 import sys
 
-from pkg_resources import get_distribution
+from pkg_resources import DistributionNotFound, get_distribution
 
 sys.path.insert(0, os.path.abspath("ext"))
 
@@ -24,7 +25,28 @@ project = "django-auth-ldap"
 copyright = "2009, Peter Sagerson"
 author = "Peter Sagerson"
 
-release = get_distribution("django-auth-ldap").version
+
+@contextlib.contextmanager
+def chdir(directory):
+    curdir = os.curdir
+    try:
+        os.chdir(directory)
+        yield
+    finally:
+        os.chdir(curdir)
+
+
+try:
+    dist = get_distribution("django-auth-ldap")
+except DistributionNotFound:
+    # The project is not installed in readthedocs environment (requires LDAP
+    # bindings). Read the version with setuptools_scm.
+    import setuptools_scm
+
+    with chdir(".."):
+        release = setuptools_scm.get_version()
+else:
+    release = dist.version
 version = ".".join(release.split(".")[:2])
 
 

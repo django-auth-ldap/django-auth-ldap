@@ -117,20 +117,9 @@ class LDAPBackend(BaseBackend):
     actually delegates most of its work to _LDAPUser, which is defined next.
     """
 
-    supports_anonymous_user: bool = False
-    supports_object_permissions: bool = True
-    supports_inactive_user: bool = False
-
-    _settings: Optional["LDAPSettings"] = None
-    _ldap: ldap = None  # The cached ldap module (or mock object)
-
-    # This is prepended to our internal setting names to produce the names we
-    # expect in Django's settings file. Subclasses can change this in order to
-    # support multiple collections of settings.
-    settings_prefix: str = "AUTH_LDAP_"
-
-    # Default settings to override the built-in defaults.
-    default_settings: Dict[str, Any] = dict()
+    def __init__(self) -> None:
+        self._settings: Optional[LDAPSettings] = None
+        self._ldap: ldap = None  # The cached ldap module (or mock object)
 
     def __getstate__(self) -> dict:
         """
@@ -140,10 +129,18 @@ class LDAPBackend(BaseBackend):
             k: v for k, v in self.__dict__.items() if k not in ["_settings", "_ldap"]
         }
 
+    def __setstate__(self, state: Dict[str, Any]):
+        """
+        Set excluded properties from pickling.
+        """
+        self.__dict__.update(state)
+        self._settings = None
+        self._ldap = None
+
     @property
     def settings(self) -> "LDAPSettings":
         if self._settings is None:
-            self._settings = LDAPSettings(self.settings_prefix, self.default_settings)
+            self._settings = LDAPSettings()
 
         return self._settings
 
@@ -1103,7 +1100,7 @@ class LDAPSettings:
     if they are not specified by the configuration.
     """
 
-    _prefix: str = "AUTH_LDAP_"
+    prefix: str = "AUTH_LDAP_"
 
     defaults = {
         "ALWAYS_UPDATE_USER": True,
@@ -1132,15 +1129,11 @@ class LDAPSettings:
         "USER_SEARCH": None,
     }
 
-    def __init__(
-        self, prefix: str = "AUTH_LDAP_", defaults: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def __init__(self, defaults: Optional[Dict[str, Any]] = None) -> None:
         """
         Loads our settings from django.conf.settings, applying defaults for any
         that are omitted.
         """
-        self._prefix = prefix
-
         defaults = dict(self.defaults, **(defaults or dict()))  # type: ignore
 
         self.ALWAYS_UPDATE_USER: bool = self._get_setting(
@@ -1229,7 +1222,7 @@ class LDAPSettings:
             )
 
     def _prepend_prefix(self, suffix: str) -> str:
-        return self._prefix + suffix
+        return self.prefix + suffix
 
     def _get_setting(self, suffix: str, defaults: Dict[str, Any], default: T) -> T:
         return getattr(

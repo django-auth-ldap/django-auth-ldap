@@ -211,23 +211,6 @@ class LDAPTest(TestCase):
         self.assertEqual(user.username, "alice")
         self.assertEqual(User.objects.count(), user_count + 1)
 
-    def test_default_settings(self):
-        class MyBackend(LDAPBackend):
-            default_settings = {
-                "SERVER_URI": self.server.ldap_uri,
-                "USER_DN_TEMPLATE": "uid=%(user)s,ou=people,o=test",
-            }
-
-        backend = MyBackend()
-
-        user_count = User.objects.count()
-
-        user = backend.authenticate(None, username="alice", password="password")
-
-        self.assertIs(user.has_usable_password(), False)
-        self.assertEqual(user.username, "alice")
-        self.assertEqual(User.objects.count(), user_count + 1)
-
     @_override_settings(
         AUTHENTICATION_BACKENDS=[
             "django_auth_ldap.backend.LDAPBackend",

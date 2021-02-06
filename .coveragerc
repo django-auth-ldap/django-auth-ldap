@@ -1,8 +1,0 @@
-[run]
-source = .
-omit =
-    .tox/*
-    setup.py
-
-[report]
-show_missing = True

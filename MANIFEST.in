@@ -1,2 +1,2 @@
-exclude .coveragerc .editorconfig .gitignore
+exclude .editorconfig .gitignore
 prune .github

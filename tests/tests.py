@@ -1554,29 +1554,6 @@ class LDAPTest(TestCase):
             cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"
         )
 
-    def test_deprecated_cache_groups(self):
-        self._init_settings(
-            USER_SEARCH=LDAPSearch(
-                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
-            ),
-            CACHE_GROUPS=True,
-        )
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            user = authenticate(username="alice", password="password")
-        self.assertIsNotNone(user)
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, DeprecationWarning)
-        self.assertEqual(
-            str(w[0].message),
-            "Found deprecated setting AUTH_LDAP_CACHE_GROUPS. Use "
-            "AUTH_LDAP_CACHE_TIMEOUT instead.",
-        )
-        # DN is cached.
-        self.assertEqual(
-            cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"
-        )
-
     #
     # Utilities
     #

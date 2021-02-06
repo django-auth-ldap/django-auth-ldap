@@ -143,7 +143,13 @@ class LDAPBackend(BaseBackend):
     @property
     def settings(self) -> "LDAPSettings":
         if self._settings is None:
-            self._settings = LDAPSettings(self.settings_prefix, self.default_settings)
+            self._settings = LDAPSettings(
+                self.settings_prefix,
+                **{
+                    key.lower(): self.default_settings[key]
+                    for key in self.default_settings
+                }
+            )
 
         return self._settings
 
@@ -1092,35 +1098,36 @@ class LDAPSettings:
 
     _prefix: str = "AUTH_LDAP_"
 
-    defaults = {
-        "ALWAYS_UPDATE_USER": True,
-        "AUTHORIZE_ALL_USERS": False,
-        "BIND_AS_AUTHENTICATING_USER": False,
-        "BIND_DN": "",
-        "BIND_PASSWORD": "",
-        "CONNECTION_OPTIONS": {},
-        "DENY_GROUP": None,
-        "FIND_GROUP_PERMS": False,
-        "CACHE_TIMEOUT": 0,
-        "GROUP_SEARCH": None,
-        "GROUP_TYPE": None,
-        "MIRROR_GROUPS": None,
-        "MIRROR_GROUPS_EXCEPT": None,
-        "PERMIT_EMPTY_PASSWORD": False,
-        "REQUIRE_GROUP": None,
-        "NO_NEW_USERS": False,
-        "SERVER_URI": "ldap://localhost",
-        "START_TLS": False,
-        "USER_QUERY_FIELD": None,
-        "USER_ATTRLIST": None,
-        "USER_ATTR_MAP": {},
-        "USER_DN_TEMPLATE": None,
-        "USER_FLAGS_BY_GROUP": {},
-        "USER_SEARCH": None,
-    }
-
     def __init__(
-        self, prefix: str = "AUTH_LDAP_", defaults: Optional[Dict[str, Any]] = None
+        self,
+        prefix: str = "AUTH_LDAP_",
+        always_update_user: bool = True,
+        authorize_all_users: bool = False,
+        bind_as_authenticating_user: bool = False,
+        bind_dn: str = "",
+        bind_password: str = "",
+        cache_timeout: int = 0,
+        connection_options: Optional[Dict[int, Any]] = None,
+        deny_group: Optional[str] = None,
+        find_group_perms: bool = False,
+        global_options: Optional[Dict[int, Any]] = None,
+        group_search: Optional[AbstractLDAPSearch] = None,
+        group_type: Optional[LDAPGroupType] = None,
+        mirror_groups: Union[bool, Collection[str], None] = None,
+        mirror_groups_except: Optional[Collection[str]] = None,
+        no_new_users: bool = False,
+        permit_empty_password: bool = False,
+        require_group: Union[str, LDAPGroupQuery, None] = None,
+        server_uri: Union[
+            str, Callable[[Optional[HttpRequest]], str]
+        ] = "ldap://localhost",
+        start_tls: bool = False,
+        user_attrlist: Optional[Collection[str]] = None,
+        user_attr_map: Optional[Dict[str, str]] = None,
+        user_dn_template: Optional[str] = None,
+        user_flags_by_group: Optional[Dict[str, Union[str, LDAPGroupQuery]]] = None,
+        user_query_field: Optional[str] = None,
+        user_search: Optional[AbstractLDAPSearch] = None,
     ) -> None:
         """
         Loads our settings from django.conf.settings, applying defaults for any
@@ -1128,99 +1135,75 @@ class LDAPSettings:
         """
         self._prefix = prefix
 
-        defaults = dict(self.defaults, **(defaults or dict()))  # type: ignore
-
         self.ALWAYS_UPDATE_USER: bool = self._get_setting(
-            "ALWAYS_UPDATE_USER", defaults, True
+            "ALWAYS_UPDATE_USER", always_update_user
         )
         self.AUTHORIZE_ALL_USERS: bool = self._get_setting(
-            "AUTHORIZE_ALL_USERS", defaults, False
+            "AUTHORIZE_ALL_USERS", authorize_all_users
         )
         self.BIND_AS_AUTHENTICATING_USER: bool = self._get_setting(
-            "BIND_AS_AUTHENTICATING_USER", defaults, False
+            "BIND_AS_AUTHENTICATING_USER", bind_as_authenticating_user
         )
-        self.BIND_DN: str = self._get_setting("BIND_DN", defaults, "")
-        self.BIND_PASSWORD: str = self._get_setting("BIND_PASSWORD", defaults, "")
-        self.CACHE_TIMEOUT: int = self._get_setting("CACHE_TIMEOUT", defaults, 0)
+        self.BIND_DN: str = self._get_setting("BIND_DN", bind_dn)
+        self.BIND_PASSWORD: str = self._get_setting("BIND_PASSWORD", bind_password)
+        self.CACHE_TIMEOUT: int = self._get_setting("CACHE_TIMEOUT", cache_timeout)
         self.CONNECTION_OPTIONS: Dict[int, Any] = self._get_setting(
-            "CONNECTION_OPTIONS", defaults, dict()
+            "CONNECTION_OPTIONS", connection_options or dict()
         )
-        self.DENY_GROUP: Optional[str] = self._get_setting("DENY_GROUP", defaults, None)
+        self.DENY_GROUP: Optional[str] = self._get_setting("DENY_GROUP", deny_group)
         self.FIND_GROUP_PERMS: bool = self._get_setting(
-            "FIND_GROUP_PERMS", defaults, False
+            "FIND_GROUP_PERMS", find_group_perms
         )
         self.GLOBAL_OPTIONS: Dict[int, Any] = self._get_setting(
-            "GLOBAL_OPTIONS", defaults, dict()
+            "GLOBAL_OPTIONS", global_options or dict()
         )
         self.GROUP_SEARCH: Optional[AbstractLDAPSearch] = self._get_setting(
-            "GROUP_SEARCH", defaults, None
+            "GROUP_SEARCH", group_search
         )
         self.GROUP_TYPE: Optional[LDAPGroupType] = self._get_setting(
-            "GROUP_TYPE", defaults, None
+            "GROUP_TYPE", group_type
         )
         self.MIRROR_GROUPS: Union[bool, Collection[str], None] = self._get_setting(
-            "MIRROR_GROUPS", defaults, None
+            "MIRROR_GROUPS", mirror_groups
         )
         self.MIRROR_GROUPS_EXCEPT: Optional[Collection[str]] = self._get_setting(
-            "MIRROR_GROUPS_EXCEPT", defaults, None
+            "MIRROR_GROUPS_EXCEPT", mirror_groups_except
         )
-        self.NO_NEW_USERS: bool = self._get_setting("NO_NEW_USERS", defaults, False)
+        self.NO_NEW_USERS: bool = self._get_setting("NO_NEW_USERS", no_new_users)
         self.PERMIT_EMPTY_PASSWORD: bool = self._get_setting(
-            "PERMIT_EMPTY_PASSWORD", defaults, False
+            "PERMIT_EMPTY_PASSWORD", permit_empty_password
         )
         self.REQUIRE_GROUP: Union[str, LDAPGroupQuery, None] = self._get_setting(
-            "REQUIRE_GROUP", defaults, None
+            "REQUIRE_GROUP", require_group
         )
         self.SERVER_URI: Union[
             str, Callable[[Optional[HttpRequest]], str]
-        ] = self._get_setting("SERVER_URI", defaults, "ldap://localhost")
-        self.START_TLS: bool = self._get_setting("START_TLS", defaults, False)
-        self.USER_QUERY_FIELD: Optional[str] = self._get_setting(
-            "USER_QUERY_FIELD", defaults, None
-        )
+        ] = self._get_setting("SERVER_URI", server_uri)
+        self.START_TLS: bool = self._get_setting("START_TLS", start_tls)
         self.USER_ATTRLIST: Optional[Collection[str]] = self._get_setting(
-            "USER_ATTRLIST", defaults, None
+            "USER_ATTRLIST", user_attrlist
         )
         self.USER_ATTR_MAP: Dict[str, str] = self._get_setting(
-            "USER_ATTR_MAP", defaults, dict()
+            "USER_ATTR_MAP", user_attr_map or dict()
         )
         self.USER_DN_TEMPLATE: Optional[str] = self._get_setting(
-            "USER_DN_TEMPLATE", defaults, None
+            "USER_DN_TEMPLATE", user_dn_template
         )
         self.USER_FLAGS_BY_GROUP: Dict[
             str, Union[str, LDAPGroupQuery]
-        ] = self._get_setting("USER_FLAGS_BY_GROUP", defaults, dict())
-        self.USER_SEARCH: Optional[AbstractLDAPSearch] = self._get_setting(
-            "USER_SEARCH", defaults, None
+        ] = self._get_setting("USER_FLAGS_BY_GROUP", user_flags_by_group or dict())
+        self.USER_QUERY_FIELD: Optional[str] = self._get_setting(
+            "USER_QUERY_FIELD", user_query_field
         )
-
-        # Compatibility with old caching settings.
-        if (
-            getattr(
-                django.conf.settings,
-                self._name("CACHE_GROUPS"),
-                defaults.get("CACHE_GROUPS"),
-            )
-            is not None
-        ):
-            warnings.warn(
-                "Found deprecated setting AUTH_LDAP_CACHE_GROUP. Use "
-                "AUTH_LDAP_CACHE_TIMEOUT instead.",
-                DeprecationWarning,
-            )
-            self.CACHE_TIMEOUT = self._get_setting(
-                "GROUP_CACHE_TIMEOUT", defaults, 3600
-            )
+        self.USER_SEARCH: Optional[AbstractLDAPSearch] = self._get_setting(
+            "USER_SEARCH", user_search
+        )
 
     def _name(self, suffix: str) -> str:
         return self._prefix + suffix
 
-    def _get_setting(self, suffix: str, defaults: Dict[str, Any], default: T) -> T:
-        return getattr(
-            django.conf.settings,
-            self._name(suffix),
-            defaults.get(suffix, default),
-        )
+    def _get_setting(self, suffix: str, default: T) -> T:
+        return getattr(django.conf.settings, self._name(suffix), default)
 
 
 def valid_cache_key(key: str) -> str:

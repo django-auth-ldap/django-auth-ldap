@@ -312,15 +312,6 @@ class _LDAPUser:
     class AuthenticationFailed(Exception):
         pass
 
-    # Defaults
-    _user: Optional[AbstractUser] = None
-    _user_dn: Optional[str] = None
-    _user_attrs: Optional[Dict[str, List[str]]] = None
-    _groups: Optional["_LDAPUserGroups"] = None
-    _group_permissions: Optional[Set[str]] = None
-    _connection: Optional[LDAPObject] = None
-    _connection_bound: bool = False
-
     #
     # Initialization
     #
@@ -337,7 +328,15 @@ class _LDAPUser:
         authenticated User object. If a user is given, the username will be
         ignored.
         """
+        self._user_dn: Optional[str] = None
+        self._user_attrs: Optional[Dict[str, List[str]]] = None
+        self._groups: Optional[_LDAPUserGroups] = None
+        self._group_permissions: Optional[Set[str]] = None
+        self._connection: Optional[LDAPObject] = None
+        self._connection_bound: bool = False
+
         self.backend: LDAPBackend = backend
+        self._user: Optional[AbstractUser] = user
         self._username: Optional[str] = username
         self._request: Optional[HttpRequest] = request
 
@@ -375,6 +374,19 @@ class _LDAPUser:
             for k, v in self.__dict__.items()
             if k in ["backend", "_username", "_user"]
         }
+
+    def __setstate__(self, state: Dict[str, Any]):
+        """
+        Set excluded properties from pickling.
+        """
+        self.__dict__.update(state)
+        self._user_dn = None
+        self._user_attrs = None
+        self._groups = None
+        self._group_permissions = None
+        self._connection = None
+        self._connection_bound = False
+        self._request = None
 
     def _set_authenticated_user(self, user: AbstractUser) -> None:
         self._user = user

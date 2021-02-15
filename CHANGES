@@ -1,5 +1,5 @@
-UNRELEASED
-----------
+2.3.0 - 2021-02-15
+------------------
 
 - Removed support for end of life Django 1.11. django-auth-ldap now requires
   Django 2.2+.

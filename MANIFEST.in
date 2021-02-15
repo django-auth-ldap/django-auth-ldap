@@ -1,2 +1,2 @@
-exclude .editorconfig .gitignore
+exclude .editorconfig .gitignore .readthedocs.yml
 prune .github

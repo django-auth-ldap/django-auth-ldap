@@ -8,6 +8,9 @@ Django Authentication Using LDAP
 .. image:: https://img.shields.io/pypi/v/django-auth-ldap.svg
    :target: https://pypi.org/project/django-auth-ldap/
 
+.. image:: https://github.com/django-auth-ldap/django-auth-ldap/workflows/Test/badge.svg
+   :target: https://github.com/django-auth-ldap/django-auth-ldap/workflows/Test/badge.svg
+
 .. image:: https://img.shields.io/pypi/l/django-auth-ldap.svg
    :target: https://raw.githubusercontent.com/django-auth-ldap/django-auth-ldap/master/LICENSE
 

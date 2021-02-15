@@ -21,7 +21,11 @@ jobs:
           - django22
           - django30
           - django31
-          - djangomaster
+        include:
+          - python-version: 3.8
+            tox-environment: djangomaster
+          - python-version: 3.9
+            tox-environment: djangomaster
 
     env:
       TOXENV: ${{ matrix.tox-environment }}

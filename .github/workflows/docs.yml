@@ -13,15 +13,6 @@ jobs:
       TOXENV: docs
 
     steps:
-      - name: Install LDAP libs
-        run: |
-          sudo apt-get update
-          # https://www.python-ldap.org/en/latest/installing.html#debian
-          sudo apt-get install slapd ldap-utils libldap2-dev libsasl2-dev
-          # https://github.com/python-ldap/python-ldap/issues/370
-          sudo apt-get install apparmor-utils
-          sudo aa-disable /usr/sbin/slapd
-
       - uses: actions/checkout@v2
 
       - name: Set up Python

@@ -1,0 +1,892 @@
+{
+  "entries": [
+    {
+      "attributes": {
+        "o": [
+          "test"
+        ],
+        "objectClass": [
+          "organization"
+        ]
+      },
+      "dn": "o=test",
+      "raw": {
+        "o": [
+          "test"
+        ],
+        "objectClass": [
+          "organization"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "groups"
+        ]
+      },
+      "dn": "ou=groups,o=test",
+      "raw": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "groups"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "people"
+        ]
+      },
+      "dn": "ou=people,o=test",
+      "raw": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "people"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "moregroups"
+        ]
+      },
+      "dn": "ou=moregroups,o=test",
+      "raw": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "moregroups"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "query_groups"
+        ]
+      },
+      "dn": "ou=query_groups,o=test",
+      "raw": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "query_groups"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "mirror_groups"
+        ]
+      },
+      "dn": "ou=mirror_groups,o=test",
+      "raw": {
+        "objectClass": [
+          "organizationalUnit"
+        ],
+        "ou": [
+          "mirror_groups"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "staff_px"
+        ],
+        "gidNumber": 1001,
+        "memberUid": [
+          "alice",
+          "nonposix"
+        ],
+        "objectClass": [
+          "posixGroup"
+        ]
+      },
+      "dn": "cn=staff_px,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "staff_px"
+        ],
+        "gidNumber": [
+          "1001"
+        ],
+        "memberUid": [
+          "alice",
+          "nonposix"
+        ],
+        "objectClass": [
+          "posixGroup"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "active_px"
+        ],
+        "gidNumber": 1000,
+        "memberUid": [
+          "nonposix"
+        ],
+        "objectClass": [
+          "posixGroup"
+        ]
+      },
+      "dn": "cn=active_px,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "active_px"
+        ],
+        "gidNumber": [
+          "1000"
+        ],
+        "memberUid": [
+          "nonposix"
+        ],
+        "objectClass": [
+          "posixGroup"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "empty_gon"
+        ],
+        "member": [
+          ""
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=empty_gon,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "empty_gon"
+        ],
+        "member": [
+          ""
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "staff_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=staff_gon,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "staff_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "active_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=active_gon,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "active_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "nested_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test",
+          "cn=circular_gon,ou=groups,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=nested_gon,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "nested_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test",
+          "cn=circular_gon,ou=groups,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "parent_gon"
+        ],
+        "member": [
+          "cn=nested_gon,ou=groups,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=parent_gon,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "parent_gon"
+        ],
+        "member": [
+          "cn=nested_gon,ou=groups,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "circular_gon"
+        ],
+        "member": [
+          "cn=parent_gon,ou=groups,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=circular_gon,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "circular_gon"
+        ],
+        "member": [
+          "cn=parent_gon,ou=groups,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "superuser_px"
+        ],
+        "gidNumber": 1002,
+        "memberUid": [
+          "alice",
+          "nonposix"
+        ],
+        "objectClass": [
+          "posixGroup"
+        ]
+      },
+      "dn": "cn=superuser_px,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "superuser_px"
+        ],
+        "gidNumber": [
+          "1002"
+        ],
+        "memberUid": [
+          "alice",
+          "nonposix"
+        ],
+        "objectClass": [
+          "posixGroup"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "superuser_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=superuser_gon,ou=groups,o=test",
+      "raw": {
+        "cn": [
+          "superuser_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "bob"
+        ],
+        "gidNumber": 50,
+        "givenName": [
+          "Robert"
+        ],
+        "homeDirectory": "/home/bob",
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson",
+          "posixAccount"
+        ],
+        "sn": [
+          "Barker"
+        ],
+        "uid": [
+          "bob"
+        ],
+        "uidNumber": 1001,
+        "userPassword": [
+          "password"
+        ]
+      },
+      "dn": "uid=bob,ou=people,o=test",
+      "raw": {
+        "cn": [
+          "bob"
+        ],
+        "gidNumber": [
+          "50"
+        ],
+        "givenName": [
+          "Robert"
+        ],
+        "homeDirectory": [
+          "/home/bob"
+        ],
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson",
+          "posixAccount"
+        ],
+        "sn": [
+          "Barker"
+        ],
+        "uid": [
+          "bob"
+        ],
+        "uidNumber": [
+          "1001"
+        ],
+        "userPassword": [
+          "password"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "alice"
+        ],
+        "gidNumber": 1000,
+        "givenName": [
+          "Alice"
+        ],
+        "homeDirectory": "/home/alice",
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson",
+          "posixAccount"
+        ],
+        "sn": [
+          "Adams"
+        ],
+        "uid": [
+          "alice"
+        ],
+        "uidNumber": 1000,
+        "userPassword": [
+          "password"
+        ]
+      },
+      "dn": "uid=alice,ou=people,o=test",
+      "raw": {
+        "cn": [
+          "alice"
+        ],
+        "gidNumber": [
+          "1000"
+        ],
+        "givenName": [
+          "Alice"
+        ],
+        "homeDirectory": [
+          "/home/alice"
+        ],
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson",
+          "posixAccount"
+        ],
+        "sn": [
+          "Adams"
+        ],
+        "uid": [
+          "alice"
+        ],
+        "uidNumber": [
+          "1000"
+        ],
+        "userPassword": [
+          "password"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "nobody"
+        ],
+        "gidNumber": 50,
+        "homeDirectory": "/home/nobody",
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson",
+          "posixAccount"
+        ],
+        "sn": [
+          "nobody"
+        ],
+        "uid": [
+          "nobody"
+        ],
+        "uidNumber": 1003,
+        "userPassword": [
+          "password"
+        ]
+      },
+      "dn": "uid=nobody,ou=people,o=test",
+      "raw": {
+        "cn": [
+          "nobody"
+        ],
+        "gidNumber": [
+          "50"
+        ],
+        "homeDirectory": [
+          "/home/nobody"
+        ],
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson",
+          "posixAccount"
+        ],
+        "sn": [
+          "nobody"
+        ],
+        "uid": [
+          "nobody"
+        ],
+        "uidNumber": [
+          "1003"
+        ],
+        "userPassword": [
+          "password"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "dre\u00dfler"
+        ],
+        "gidNumber": 50,
+        "givenName": [
+          "Wolfgang"
+        ],
+        "homeDirectory": "/home/dressler",
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson",
+          "posixAccount"
+        ],
+        "sn": [
+          "Dre\u00dfler"
+        ],
+        "uid": [
+          "dre\u00dfler"
+        ],
+        "uidNumber": 1002,
+        "userPassword": [
+          "password"
+        ]
+      },
+      "dn": "uid=dre\u00dfler,ou=people,o=test",
+      "raw": {
+        "cn": [
+          "dre\u00dfler"
+        ],
+        "gidNumber": [
+          "50"
+        ],
+        "givenName": [
+          "Wolfgang"
+        ],
+        "homeDirectory": [
+          "/home/dressler"
+        ],
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson",
+          "posixAccount"
+        ],
+        "sn": [
+          "Dre\u00dfler"
+        ],
+        "uid": [
+          "dre\u00dfler"
+        ],
+        "uidNumber": [
+          "1002"
+        ],
+        "userPassword": [
+          "password"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "nonposix"
+        ],
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson"
+        ],
+        "sn": [
+          "nonposix"
+        ],
+        "uid": [
+          "nonposix"
+        ],
+        "userPassword": [
+          "password"
+        ]
+      },
+      "dn": "uid=nonposix,ou=people,o=test",
+      "raw": {
+        "cn": [
+          "nonposix"
+        ],
+        "objectClass": [
+          "person",
+          "organizationalPerson",
+          "inetOrgPerson"
+        ],
+        "sn": [
+          "nonposix"
+        ],
+        "uid": [
+          "nonposix"
+        ],
+        "userPassword": [
+          "password"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "other_gon"
+        ],
+        "member": [
+          "uid=bob,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=other_gon,ou=moregroups,o=test",
+      "raw": {
+        "cn": [
+          "other_gon"
+        ],
+        "member": [
+          "uid=bob,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "bob_gon"
+        ],
+        "member": [
+          "uid=bob,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=bob_gon,ou=query_groups,o=test",
+      "raw": {
+        "cn": [
+          "bob_gon"
+        ],
+        "member": [
+          "uid=bob,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "alice_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=alice_gon,ou=query_groups,o=test",
+      "raw": {
+        "cn": [
+          "alice_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "mutual_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test",
+          "uid=bob,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=mutual_gon,ou=query_groups,o=test",
+      "raw": {
+        "cn": [
+          "mutual_gon"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test",
+          "uid=bob,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "dre\u00dfler_gon"
+        ],
+        "member": [
+          "uid=dre\u00dfler,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=dre\u00dfler_gon,ou=query_groups,o=test",
+      "raw": {
+        "cn": [
+          "dre\u00dfler_gon"
+        ],
+        "member": [
+          "uid=dre\u00dfler,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "mirror1"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=mirror1,ou=mirror_groups,o=test",
+      "raw": {
+        "cn": [
+          "mirror1"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "mirror2"
+        ],
+        "member": [
+          ""
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=mirror2,ou=mirror_groups,o=test",
+      "raw": {
+        "cn": [
+          "mirror2"
+        ],
+        "member": [
+          ""
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "mirror3"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=mirror3,ou=mirror_groups,o=test",
+      "raw": {
+        "cn": [
+          "mirror3"
+        ],
+        "member": [
+          "uid=alice,ou=people,o=test"
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    },
+    {
+      "attributes": {
+        "cn": [
+          "mirror4"
+        ],
+        "member": [
+          ""
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      },
+      "dn": "cn=mirror4,ou=mirror_groups,o=test",
+      "raw": {
+        "cn": [
+          "mirror4"
+        ],
+        "member": [
+          ""
+        ],
+        "objectClass": [
+          "groupOfNames"
+        ]
+      }
+    }
+  ]
+}

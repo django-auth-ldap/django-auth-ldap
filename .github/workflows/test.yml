@@ -21,6 +21,7 @@ jobs:
           - django22
           - django30
           - django31
+          - django32
         include:
           - python-version: 3.8
             tox-environment: djangomain

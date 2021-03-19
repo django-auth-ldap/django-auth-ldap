@@ -32,4 +32,4 @@ To limit to a single environment, use :option:`tox.-e`:
 
 .. code-block:: console
 
-   $ tox -e djangomaster
+   $ tox -e djangomain

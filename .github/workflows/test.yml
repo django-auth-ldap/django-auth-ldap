@@ -23,9 +23,9 @@ jobs:
           - django31
         include:
           - python-version: 3.8
-            tox-environment: djangomaster
+            tox-environment: djangomain
           - python-version: 3.9
-            tox-environment: djangomaster
+            tox-environment: djangomain
 
     env:
       TOXENV: ${{ matrix.tox-environment }}

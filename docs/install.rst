@@ -8,7 +8,9 @@ Install the package with pip:
     $ pip install django-auth-ldap
 
 It requires `python-ldap`_ >= 3.0. You'll need the `OpenLDAP`_ libraries and
-headers available on your system.
+headers available on your system. If you wish to use SASL authentication, you'll
+also need an implementation like `Cyrus SASL`_ - often packaged as `libsasl2-*` or
+`cyrus-sasl-*`.
 
 To use the auth backend in a Django project, add
 ``'django_auth_ldap.backend.LDAPBackend'`` to
@@ -41,3 +43,4 @@ models, but it does assume that a database is present.
 
 .. _`python-ldap`: https://pypi.org/project/python-ldap/
 .. _`OpenLDAP`: https://www.openldap.org/
+.. _`Cyrus SASL`: https://www.cyrusimap.org/sasl/

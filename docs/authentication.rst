@@ -153,6 +153,11 @@ precaution against false positives,
 authentication attempt with an empty password. You can disable this behavior by
 setting :setting:`AUTH_LDAP_PERMIT_EMPTY_PASSWORD` to True.
 
+If set, the :setting:`AUTH_LDAP_BIND_SASL_MECHANISM` will superscede the 
+:setting:`AUTH_LDAP_BIND_DN` and :setting:`AUTH_LDAP_BIND_PASSWORD` credentials
+for most operations. This setting is ignored when validating a dn/password for
+the purpose of authentication.
+
 By default, all LDAP operations are performed with the
 :setting:`AUTH_LDAP_BIND_DN` and :setting:`AUTH_LDAP_BIND_PASSWORD` credentials,
 not with the user's. Otherwise, the LDAP connection would be bound as the

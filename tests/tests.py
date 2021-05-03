@@ -265,7 +265,7 @@ class LDAPTest(TestCase):
 
     @spy_ldap("simple_bind_s")
     def test_simple_bind_escaped(self, mock):
-        """ Bind with a username that requires escaping. """
+        """Bind with a username that requires escaping."""
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
 
         user = authenticate(username="alice,1", password="password")
@@ -418,7 +418,7 @@ class LDAPTest(TestCase):
 
     @spy_ldap("search_s")
     def test_search_bind_escaped(self, mock):
-        """ Search for a username that requires escaping. """
+        """Search for a username that requires escaping."""
         self._init_settings(
             USER_SEARCH=LDAPSearch(
                 "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"

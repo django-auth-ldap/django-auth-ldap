@@ -40,6 +40,7 @@ objectClass: inetOrgPerson
 objectClass: posixAccount
 cn: bob
 uid: bob
+mail: bob@example.com
 userPassword: password
 uidNumber: 1001
 gidNumber: 50
@@ -54,6 +55,7 @@ objectClass: inetOrgPerson
 objectClass: posixAccount
 cn: dreßler
 uid: dreßler
+mail: dressler@example.com
 userPassword: password
 uidNumber: 1002
 gidNumber: 50
@@ -68,11 +70,26 @@ objectClass: inetOrgPerson
 objectClass: posixAccount
 cn: nobody
 uid: nobody
+mail: nobody@example.com
 userPassword: password
 uidNumber: 1003
 gidNumber: 50
 sn: nobody
 homeDirectory: /home/nobody
+
+dn: uid=nobody2,ou=people,o=test
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+cn: nobody2
+uid: nobody2
+mail: nobody@example.com
+userPassword: password
+uidNumber: 1003
+gidNumber: 50
+sn: nobody2
+homeDirectory: /home/nobody2
 
 dn: uid=nonposix,ou=people,o=test
 objectClass: person
@@ -80,6 +97,7 @@ objectClass: organizationalPerson
 objectClass: inetOrgPerson
 cn: nonposix
 uid: nonposix
+mail: nonposix@example.com
 userPassword: password
 sn: nonposix
 

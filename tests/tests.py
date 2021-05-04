@@ -41,7 +41,12 @@ from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 
-from django_auth_ldap.backend import LDAPBackend, ldap_error, populate_user
+from django_auth_ldap.backend import (
+    LDAPBackend,
+    LDAPReverseEmailSearch,
+    ldap_error,
+    populate_user,
+)
 from django_auth_ldap.config import (
     GroupOfNamesType,
     LDAPGroupQuery,
@@ -546,7 +551,7 @@ class LDAPTest(TestCase):
             USER_ATTR_MAP={
                 "first_name": "givenName",
                 "last_name": "sn",
-                "email": "mail",
+                "email": "mail",  # alice doesn't have the "mail" attribute set
             },
         )
 
@@ -1586,6 +1591,100 @@ class LDAPTest(TestCase):
         self.assertEqual(
             cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"
         )
+
+    def test_search_by_email(self):
+        self._init_settings(
+            REVERSE_EMAIL_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(mail=%(email)s)"
+            ),
+            USERNAME_ATTR="uid",
+        )
+
+        email_search = LDAPReverseEmailSearch(LDAPBackend(), "bob@example.com")
+        result_ldap_users = email_search.search_for_users(should_populate=False)
+
+        self.assertEqual(len(result_ldap_users), 1)
+
+        user = result_ldap_users[0]
+        self.assertEqual(user._username, "bob")
+        self.assertEqual(user.dn, "uid=bob,ou=people,o=test")
+
+        self.assertEqual(
+            dict(user.attrs),
+            {
+                "objectClass": [
+                    "person",
+                    "organizationalPerson",
+                    "inetOrgPerson",
+                    "posixAccount",
+                ],
+                "cn": ["bob"],
+                "uid": ["bob"],
+                "mail": ["bob@example.com"],
+                "userPassword": ["password"],
+                "uidNumber": ["1001"],
+                "gidNumber": ["50"],
+                "givenName": ["Robert"],
+                "sn": ["Barker"],
+                "homeDirectory": ["/home/bob"],
+            },
+        )
+
+    def test_search_by_email_multiple_users_found(self):
+        self._init_settings(
+            REVERSE_EMAIL_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(mail=%(email)s)"
+            ),
+            USERNAME_ATTR="uid",
+        )
+
+        # Email below matches accounts "nobody" and "nobody2"
+        email_search = LDAPReverseEmailSearch(LDAPBackend(), "nobody@example.com")
+        result_ldap_users = email_search.search_for_users(should_populate=False)
+
+        self.assertEqual(len(result_ldap_users), 2)
+
+        result_dns = set(user.dn for user in result_ldap_users)
+        self.assertEqual(
+            set(["uid=nobody,ou=people,o=test", "uid=nobody2,ou=people,o=test"]),
+            result_dns,
+        )
+
+    def test_search_by_email_no_results(self):
+        self._init_settings(
+            REVERSE_EMAIL_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(mail=%(email)s)"
+            ),
+            USERNAME_ATTR="uid",
+        )
+
+        # Email below matches accounts "nobody" and "nobody2"
+        email_search = LDAPReverseEmailSearch(LDAPBackend(), "invalidemail@example.com")
+        result_ldap_users = email_search.search_for_users(should_populate=False)
+
+        self.assertEqual(result_ldap_users, None)
+
+    def test_search_by_email_should_populate(self):
+        self._init_settings(
+            REVERSE_EMAIL_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(mail=%(email)s)"
+            ),
+            USERNAME_ATTR="uid",
+            USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
+        )
+        user_count = User.objects.count()
+
+        email_search = LDAPReverseEmailSearch(LDAPBackend(), "bob@example.com")
+        result_users = email_search.search_for_users(should_populate=True)
+
+        self.assertEqual(len(result_users), 1)
+
+        user = result_users[0]
+        self.assertEqual(user.username, "bob")
+        self.assertEqual(user.first_name, "Robert")
+        self.assertEqual(user.last_name, "Barker")
+
+        self.assertEqual(User.objects.count(), user_count + 1)
 
     #
     # Utilities

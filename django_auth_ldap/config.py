@@ -31,10 +31,32 @@ notes on naming conventions.
 
 import logging
 import pprint
+from abc import ABC, abstractmethod
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Collection,
+    Dict,
+    ItemsView,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import ldap
 import ldap.filter
 from django.utils.tree import Node
+from ldap.ldapobject import LDAPObject
+
+if TYPE_CHECKING:
+    from django_auth_ldap.backend import _LDAPUser, _LDAPUserGroups
 
 
 class ConfigurationWarning(UserWarning):
@@ -46,12 +68,12 @@ class _LDAPConfig:
     A private class that loads and caches some global objects.
     """
 
-    logger = None
+    _logger: Optional[logging.Logger] = None
 
-    _ldap_configured = False
+    _ldap_configured: bool = False
 
     @classmethod
-    def get_ldap(cls, global_options=None):
+    def get_ldap(cls, global_options: Optional[Dict[int, Any]] = None) -> ldap:
         """
         Returns the configured ldap module.
         """
@@ -65,22 +87,127 @@ class _LDAPConfig:
         return ldap
 
     @classmethod
-    def get_logger(cls):
+    def get_logger(cls) -> logging.Logger:
         """
         Initializes and returns our logger instance.
         """
-        if cls.logger is None:
-            cls.logger = logging.getLogger("django_auth_ldap")
-            cls.logger.addHandler(logging.NullHandler())
+        if cls._logger is None:
+            cls._logger = logging.getLogger("django_auth_ldap")
+            cls._logger.addHandler(logging.NullHandler())
 
-        return cls.logger
+        return cls._logger
 
 
 # Our global logger
-logger = _LDAPConfig.get_logger()
+logger: logging.Logger = _LDAPConfig.get_logger()
 
 
-class LDAPSearch:
+class AbstractLDAPSearch(ABC):
+    """
+    The abstract base class for ldap searches.
+    """
+
+    @abstractmethod
+    def search_with_additional_terms(
+        self, term_dict: Dict[str, str], escape: bool = True
+    ) -> "AbstractLDAPSearch":
+        """
+        Returns a new search object with additional search terms and-ed to the
+        filter string. term_dict maps attribute names to assertion values. If
+        you don't want the values escaped, pass escape=False.
+        """
+        pass
+
+    @abstractmethod
+    def search_with_additional_term_string(
+        self, filterstr: str
+    ) -> "AbstractLDAPSearch":
+        """
+        Returns a new search object with filterstr and-ed to the original filter
+        string. The caller is responsible for passing in a properly escaped
+        string.
+        """
+        pass
+
+    def execute(
+        self,
+        connection: LDAPObject,
+        filterargs: Union[Tuple[Any, ...], Mapping[str, Any]] = (),
+        escape: bool = True,
+    ) -> Collection[Tuple[str, Dict[str, List[str]]]]:
+        """
+        Executes the search on the given connection (an LDAPObject). filterargs
+        is an object that will be used for expansion of the filter string.
+        If escape is True, values in filterargs will be escaped.
+        """
+        self._search(connection, filterargs, escape)
+
+        return self._result(connection)
+
+    @abstractmethod
+    def _abandon(self, connection: LDAPObject) -> None:
+        """
+        Abandon a previous asynchronous search.
+        """
+        pass
+
+    @abstractmethod
+    def _search(
+        self,
+        connection: LDAPObject,
+        filterargs: Union[Tuple[Any, ...], Mapping[str, Any]] = (),
+        escape: bool = True,
+    ) -> None:
+        """
+        Begins an asynchronous search and returns the message id to retrieve
+        the results.
+
+        filterargs is an object that will be used for expansion of the filter
+        string. If escape is True, values in filterargs will be escaped.
+        """
+        pass
+
+    @abstractmethod
+    def _result(
+        self, connection: LDAPObject
+    ) -> Collection[Tuple[str, Dict[str, List[str]]]]:
+        """
+        Returns the result of a previous asynchronous query or an empty array
+        if no search has been initiated.
+
+        The python-ldap library returns utf8-encoded strings. For the sake of
+        sanity, this method will decode all result strings and return them as
+        Unicode.
+        """
+        pass
+
+    @classmethod
+    def _escape_filterargs(
+        cls, filterargs: Union[Tuple[Any, ...], Mapping[str, Any]]
+    ) -> Union[Tuple[Any, ...], Mapping[str, Any]]:
+        """
+        Escapes all string values in filterargs and all others remain the same.
+
+        filterargs is a value suitable for Django's string formatting operator
+        (%), which means it's either a tuple or a dict. This return a new tuple
+        or dict with all values escaped for use in filter strings.
+        """
+        if isinstance(filterargs, tuple):
+            filterargs = tuple(
+                ldap.filter.escape_filter_chars(str(value)) for value in filterargs
+            )
+        elif isinstance(filterargs, Mapping):
+            filterargs = dict(
+                (key, ldap.filter.escape_filter_chars(str(value)))
+                for key, value in filterargs.items()
+            )
+        else:
+            raise TypeError("filterargs must be a tuple or mapping.")
+
+        return filterargs
+
+
+class LDAPSearch(AbstractLDAPSearch):
     """
     Public class that holds a set of LDAP search parameters. Objects of this
     class should be considered immutable. Only the initialization method is
@@ -88,26 +215,30 @@ class LDAPSearch:
     methods to refine and execute the search.
     """
 
-    def __init__(self, base_dn, scope, filterstr="(objectClass=*)", attrlist=None):
+    def __init__(
+        self,
+        base_dn: str,
+        scope: int,
+        filterstr: str = "(objectClass=*)",
+        attrlist: Optional[Collection[str]] = None,
+    ) -> None:
         """
         These parameters are the same as the first three parameters to
         ldap.search_s.
         """
-        self.base_dn = base_dn
-        self.scope = scope
-        self.filterstr = filterstr
-        self.attrlist = attrlist
-        self.ldap = _LDAPConfig.get_ldap()
+        self.base_dn: str = base_dn
+        self.scope: int = scope
+        self.filterstr: str = filterstr
+        self.attrlist: Optional[Collection[str]] = attrlist
+        self.ldap: ldap = _LDAPConfig.get_ldap()
+        self.msgid: Optional[int] = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<{}: {}>".format(type(self).__name__, self.base_dn)
 
-    def search_with_additional_terms(self, term_dict, escape=True):
-        """
-        Returns a new search object with additional search terms and-ed to the
-        filter string. term_dict maps attribute names to assertion values. If
-        you don't want the values escaped, pass escape=False.
-        """
+    def search_with_additional_terms(
+        self, term_dict: Dict[str, str], escape: bool = True
+    ) -> "LDAPSearch":
         term_strings = [self.filterstr]
 
         for name, value in term_dict.items():
@@ -119,167 +250,143 @@ class LDAPSearch:
 
         return type(self)(self.base_dn, self.scope, filterstr, attrlist=self.attrlist)
 
-    def search_with_additional_term_string(self, filterstr):
-        """
-        Returns a new search object with filterstr and-ed to the original filter
-        string. The caller is responsible for passing in a properly escaped
-        string.
-        """
+    def search_with_additional_term_string(self, filterstr: str) -> "LDAPSearch":
         filterstr = "(&{}{})".format(self.filterstr, filterstr)
 
         return type(self)(self.base_dn, self.scope, filterstr, attrlist=self.attrlist)
 
-    def execute(self, connection, filterargs=(), escape=True):
-        """
-        Executes the search on the given connection (an LDAPObject). filterargs
-        is an object that will be used for expansion of the filter string.
-        If escape is True, values in filterargs will be escaped.
+    def _abandon(self, connection: LDAPObject) -> None:
+        if self.msgid is not None:
+            connection.abandon(self.msgid)
+            self.msgid = None
 
-        The python-ldap library returns utf8-encoded strings. For the sake of
-        sanity, this method will decode all result strings and return them as
-        Unicode.
-        """
+    def _search(
+        self,
+        connection: LDAPObject,
+        filterargs: Union[Tuple[Any, ...], Mapping[str, Any]] = (),
+        escape: bool = True,
+    ) -> None:
+        self._abandon(connection)
+
         if escape:
             filterargs = self._escape_filterargs(filterargs)
 
+        filterstr = self.filterstr % filterargs
+
         try:
-            filterstr = self.filterstr % filterargs
-            results = connection.search_s(
+            self.msgid = connection.search(
                 self.base_dn, self.scope, filterstr, self.attrlist
             )
         except ldap.LDAPError as e:
-            results = []
-            logger.error(
-                "search_s('{}', {}, '{}') raised {}".format(
-                    self.base_dn, self.scope, filterstr, pprint.pformat(e)
-                )
-            )
-
-        return self._process_results(results)
-
-    def _begin(self, connection, filterargs=(), escape=True):
-        """
-        Begins an asynchronous search and returns the message id to retrieve
-        the results.
-
-        filterargs is an object that will be used for expansion of the filter
-        string. If escape is True, values in filterargs will be escaped.
-
-        """
-        if escape:
-            filterargs = self._escape_filterargs(filterargs)
-
-        try:
-            filterstr = self.filterstr % filterargs
-            msgid = connection.search(
-                self.base_dn, self.scope, filterstr, self.attrlist
-            )
-        except ldap.LDAPError as e:
-            msgid = None
             logger.error(
                 "search('{}', {}, '{}') raised {}".format(
                     self.base_dn, self.scope, filterstr, pprint.pformat(e)
                 )
             )
 
-        return msgid
+    def _result(self, connection: LDAPObject) -> List[Tuple[str, Dict[str, List[str]]]]:
+        if self.msgid is None:
+            raise RuntimeError(
+                "The search has either not been initiated, abandoned,"
+                " or the results have already been fetched"
+            )
 
-    def _results(self, connection, msgid):
-        """
-        Returns the result of a previous asynchronous query.
-        """
         try:
-            kind, results = connection.result(msgid)
+            kind, results = connection.result(self.msgid)
             if kind not in (ldap.RES_SEARCH_ENTRY, ldap.RES_SEARCH_RESULT):
                 results = []
+            else:
+                results = self._process_results(results)
+                result_dns = [result[0] for result in results]
+
+                logger.debug(
+                    "search_s('{}', {}, '{}') returned {} objects: {}".format(
+                        self.base_dn,
+                        self.scope,
+                        self.filterstr,
+                        len(result_dns),
+                        "; ".join(result_dns),
+                    )
+                )
         except ldap.LDAPError as e:
             results = []
-            logger.error("result({}) raised {}".format(msgid, pprint.pformat(e)))
+            logger.error("result({}) raised {}".format(self.msgid, pprint.pformat(e)))
 
-        return self._process_results(results)
+        self.msgid = None
 
-    def _escape_filterargs(self, filterargs):
-        """
-        Escapes values in filterargs.
+        return results
 
-        filterargs is a value suitable for Django's string formatting operator
-        (%), which means it's either a tuple or a dict. This return a new tuple
-        or dict with all values escaped for use in filter strings.
-
-        """
-        if isinstance(filterargs, tuple):
-            filterargs = tuple(
-                self.ldap.filter.escape_filter_chars(value) for value in filterargs
-            )
-        elif isinstance(filterargs, dict):
-            filterargs = {
-                key: self.ldap.filter.escape_filter_chars(value)
-                for key, value in filterargs.items()
-            }
-        else:
-            raise TypeError("filterargs must be a tuple or dict.")
-
-        return filterargs
-
-    def _process_results(self, results):
+    @classmethod
+    def _process_results(
+        cls,
+        results: List[
+            Tuple[
+                Union[str, bytes, None],
+                Dict[Union[str, bytes], List[Union[str, bytes]]],
+            ]
+        ],
+    ) -> List[Tuple[str, Dict[str, List[str]]]]:
         """
         Returns a sanitized copy of raw LDAP results. This scrubs out
         references, decodes utf8, normalizes DNs, etc.
         """
         results = [r for r in results if r[0] is not None]
-        results = _DeepStringCoder("utf-8").decode(results)
-
-        # The normal form of a DN is lower case.
-        results = [(r[0].lower(), r[1]) for r in results]
-
-        result_dns = [result[0] for result in results]
-        logger.debug(
-            "search_s('{}', {}, '{}') returned {} objects: {}".format(
-                self.base_dn,
-                self.scope,
-                self.filterstr,
-                len(result_dns),
-                "; ".join(result_dns),
-            )
+        decoded_results = cast(
+            List[Tuple[str, Dict[str, List[str]]]],
+            _DeepStringCoder("utf-8").decode(results),
         )
 
-        return results
+        # The normal form of a DN is lower case.
+        decoded_results = [(r[0].lower(), r[1]) for r in decoded_results]
+
+        return decoded_results
 
 
-class LDAPSearchUnion:
+class LDAPSearchUnion(AbstractLDAPSearch):
     """
     A compound search object that returns the union of the results. Instantiate
-    it with one or more LDAPSearch objects.
+    it with one or more AbstractLDAPSearch objects.
     """
 
-    def __init__(self, *args):
-        self.searches = args
-        self.ldap = _LDAPConfig.get_ldap()
+    def __init__(self, *args: AbstractLDAPSearch) -> None:
+        self.searches: Tuple[AbstractLDAPSearch, ...] = args
+        self.ldap: ldap = _LDAPConfig.get_ldap()
 
-    def search_with_additional_terms(self, term_dict, escape=True):
-        searches = [
+    def search_with_additional_terms(
+        self, term_dict: Dict[str, str], escape: bool = True
+    ) -> "LDAPSearchUnion":
+        searches = tuple(
             s.search_with_additional_terms(term_dict, escape) for s in self.searches
-        ]
+        )
 
         return type(self)(*searches)
 
-    def search_with_additional_term_string(self, filterstr):
-        searches = [
+    def search_with_additional_term_string(self, filterstr: str) -> "LDAPSearchUnion":
+        searches = tuple(
             s.search_with_additional_term_string(filterstr) for s in self.searches
-        ]
+        )
 
         return type(self)(*searches)
 
-    def execute(self, connection, filterargs=(), escape=True):
-        msgids = [
-            search._begin(connection, filterargs, escape) for search in self.searches
-        ]
-        results = {}
+    def _abandon(self, connection: LDAPObject) -> None:
+        for search in self.searches:
+            search._abandon(connection)
 
-        for search, msgid in zip(self.searches, msgids):
-            if msgid is not None:
-                result = search._results(connection, msgid)
-                results.update(dict(result))
+    def _search(
+        self,
+        connection: LDAPObject,
+        filterargs: Union[Tuple[Any, ...], Mapping[str, Any]] = (),
+        escape: bool = True,
+    ) -> None:
+        for search in self.searches:
+            search._search(connection, filterargs, escape)
+
+    def _result(self, connection: LDAPObject) -> ItemsView[str, Dict[str, List[str]]]:
+        results = dict()
+
+        for search in self.searches:
+            result = search._result(connection)
+            results.update(dict(result))
 
         return results.items()
 
@@ -291,29 +398,32 @@ class _DeepStringCoder:
     python-ldap.
     """
 
-    def __init__(self, encoding):
-        self.encoding = encoding
-        self.ldap = _LDAPConfig.get_ldap()
+    def __init__(self, encoding: str) -> None:
+        self.encoding: str = encoding
+        self.ldap: ldap = _LDAPConfig.get_ldap()
 
-    def decode(self, value):
+    def decode(
+        self, value: Union[bytes, List, tuple, Dict, Any]
+    ) -> Union[str, List, tuple, ldap.cidict.cidict, Any]:
         try:
             if isinstance(value, bytes):
                 value = value.decode(self.encoding)
-            elif isinstance(value, list):
-                value = self._decode_list(value)
+            elif isinstance(value, List):
+                value = list(self._decode_iterable(value))
             elif isinstance(value, tuple):
-                value = tuple(self._decode_list(value))
-            elif isinstance(value, dict):
+                value = tuple(self._decode_iterable(value))
+            elif isinstance(value, Dict):
                 value = self._decode_dict(value)
         except UnicodeDecodeError:
             pass
 
         return value
 
-    def _decode_list(self, value):
-        return [self.decode(v) for v in value]
+    def _decode_iterable(self, iterable: Iterable) -> Iterator:
+        for element in iterable:
+            yield self.decode(element)
 
-    def _decode_dict(self, value):
+    def _decode_dict(self, value: Dict) -> ldap.cidict.cidict:
         # Attribute dictionaries should be case-insensitive. python-ldap
         # defines this, although for some reason, it doesn't appear to use it
         # for search results.
@@ -325,7 +435,7 @@ class _DeepStringCoder:
         return decoded
 
 
-class LDAPGroupType:
+class LDAPGroupType(ABC):
     """
     This is an abstract base class for classes that determine LDAP group
     membership. A group can mean many different things in LDAP, so we will need
@@ -340,11 +450,14 @@ class LDAPGroupType:
     This will be a mock object during unit tests.
     """
 
-    def __init__(self, name_attr="cn"):
-        self.name_attr = name_attr
-        self.ldap = _LDAPConfig.get_ldap()
+    def __init__(self, name_attr: str = "cn") -> None:
+        self.name_attr: str = name_attr
+        self.ldap: ldap = _LDAPConfig.get_ldap()
 
-    def user_groups(self, ldap_user, group_search):
+    @abstractmethod
+    def user_groups(
+        self, ldap_user: "_LDAPUser", group_search: AbstractLDAPSearch
+    ) -> Collection[Tuple[str, Dict[str, List[str]]]]:
         """
         Returns a list of group_info structures, each one a group to which
         ldap_user belongs. group_search is an LDAPSearch object that returns all
@@ -359,9 +472,9 @@ class LDAPGroupType:
 
         This is the primitive method in the API and must be implemented.
         """
-        return []
+        pass
 
-    def is_member(self, ldap_user, group_dn):
+    def is_member(self, ldap_user: "_LDAPUser", group_dn: str) -> Optional[bool]:
         """
         This method is an optimization for determining group membership without
         loading all of the user's groups. Subclasses that are able to do this
@@ -374,7 +487,9 @@ class LDAPGroupType:
         """
         return None
 
-    def group_name_from_info(self, group_info):
+    def group_name_from_info(
+        self, group_info: Tuple[str, Dict[str, List[str]]]
+    ) -> Optional[str]:
         """
         Given the (DN, attrs) 2-tuple of an LDAP group, this returns the name of
         the Django group. This may return None to indicate that a particular
@@ -385,11 +500,9 @@ class LDAPGroupType:
         parameter.
         """
         try:
-            name = group_info[1][self.name_attr][0]
+            return group_info[1][self.name_attr][0]
         except (KeyError, IndexError):
-            name = None
-
-        return name
+            return None
 
 
 class PosixGroupType(LDAPGroupType):
@@ -397,12 +510,15 @@ class PosixGroupType(LDAPGroupType):
     An LDAPGroupType subclass that handles groups of class posixGroup.
     """
 
-    def user_groups(self, ldap_user, group_search):
+    def user_groups(
+        self, ldap_user: "_LDAPUser", group_search: AbstractLDAPSearch
+    ) -> Collection[Tuple[str, Dict[str, List[str]]]]:
         """
         Searches for any group that is either the user's primary or contains the
         user as a member.
         """
-        groups = []
+        if ldap_user.attrs is None:
+            raise TypeError("The attrs of the LDAP user should not be None")
 
         try:
             user_uid = ldap_user.attrs["uid"][0]
@@ -421,15 +537,18 @@ class PosixGroupType(LDAPGroupType):
             search = group_search.search_with_additional_term_string(filterstr)
             groups = search.execute(ldap_user.connection)
         except (KeyError, IndexError):
-            pass
+            groups = []
 
         return groups
 
-    def is_member(self, ldap_user, group_dn):
+    def is_member(self, ldap_user: "_LDAPUser", group_dn: str) -> bool:
         """
         Returns True if the group is the user's primary group or if the user is
         listed in the group's memberUid attribute.
         """
+        if ldap_user.attrs is None:
+            raise TypeError("The attrs of the LDAP user should not be None")
+
         try:
             user_uid = ldap_user.attrs["uid"][0]
 
@@ -459,33 +578,39 @@ class MemberDNGroupType(LDAPGroupType):
     A group type that stores lists of members as distinguished names.
     """
 
-    def __init__(self, member_attr, name_attr="cn"):
+    def __init__(self, member_attr: str, name_attr: str = "cn") -> None:
         """
         member_attr is the attribute on the group object that holds the list of
         member DNs.
         """
-        self.member_attr = member_attr
+        self.member_attr: str = member_attr
 
         super().__init__(name_attr)
 
     def __repr__(self):
         return "<{}: {}>".format(type(self).__name__, self.member_attr)
 
-    def user_groups(self, ldap_user, group_search):
+    def user_groups(
+        self, ldap_user: "_LDAPUser", group_search: AbstractLDAPSearch
+    ) -> Collection[Tuple[str, Dict[str, List[str]]]]:
+        if ldap_user.dn is None:
+            raise TypeError("The dn of the LDAP user should not be None")
+
         search = group_search.search_with_additional_terms(
             {self.member_attr: ldap_user.dn}
         )
         return search.execute(ldap_user.connection)
 
-    def is_member(self, ldap_user, group_dn):
+    def is_member(self, ldap_user: "_LDAPUser", group_dn: str) -> bool:
+        if ldap_user.dn is None:
+            raise TypeError("The dn of the LDAP user should not be None")
+
         try:
-            result = ldap_user.connection.compare_s(
+            return ldap_user.connection.compare_s(
                 group_dn, self.member_attr, ldap_user.dn.encode()
             )
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
-            result = 0
-
-        return result
+            return False
 
 
 class NestedMemberDNGroupType(LDAPGroupType):
@@ -495,41 +620,52 @@ class NestedMemberDNGroupType(LDAPGroupType):
     it's left unimplemented.
     """
 
-    def __init__(self, member_attr, name_attr="cn"):
+    def __init__(self, member_attr: str, name_attr: str = "cn") -> None:
         """
         member_attr is the attribute on the group object that holds the list of
         member DNs.
         """
-        self.member_attr = member_attr
+        self.member_attr: str = member_attr
 
         super().__init__(name_attr)
 
-    def user_groups(self, ldap_user, group_search):
+    def user_groups(
+        self, ldap_user: "_LDAPUser", group_search: AbstractLDAPSearch
+    ) -> ItemsView[str, Dict[str, List[str]]]:
         """
         This searches for all of a user's groups from the bottom up. In other
         words, it returns the groups that the user belongs to, the groups that
         those groups belong to, etc. Circular references will be detected and
         pruned.
         """
-        group_info_map = {}  # Maps group_dn to group_info of groups we've found
+        if ldap_user.dn is None:
+            raise TypeError("The dn of the LDAP user should not be None")
+
+        group_info_map = dict()  # Maps group_dn to group_info of groups we've found
         member_dn_set = {ldap_user.dn}  # Member DNs to search with next
         handled_dn_set = set()  # Member DNs that we've already searched with
 
         while len(member_dn_set) > 0:
-            group_infos = self.find_groups_with_any_member(
-                member_dn_set, group_search, ldap_user.connection
+            group_infos = dict(
+                self._find_groups_with_any_member(
+                    member_dn_set, group_search, ldap_user.connection
+                )
             )
-            new_group_info_map = {info[0]: info for info in group_infos}
-            group_info_map.update(new_group_info_map)
+            group_info_map.update(group_infos)
             handled_dn_set.update(member_dn_set)
 
             # Get ready for the next iteration. To avoid cycles, we make sure
             # never to search with the same member DN twice.
-            member_dn_set = set(new_group_info_map.keys()) - handled_dn_set
+            member_dn_set = set(group_infos.keys()) - handled_dn_set
 
-        return group_info_map.values()
+        return group_info_map.items()
 
-    def find_groups_with_any_member(self, member_dn_set, group_search, connection):
+    def _find_groups_with_any_member(
+        self,
+        member_dn_set: Set[str],
+        group_search: AbstractLDAPSearch,
+        connection: LDAPObject,
+    ) -> Collection[Tuple[str, Dict[str, List[str]]]]:
         terms = [
             "({}={})".format(self.member_attr, self.ldap.filter.escape_filter_chars(dn))
             for dn in member_dn_set
@@ -546,7 +682,7 @@ class GroupOfNamesType(MemberDNGroupType):
     An LDAPGroupType subclass that handles groups of class groupOfNames.
     """
 
-    def __init__(self, name_attr="cn"):
+    def __init__(self, name_attr: str = "cn") -> None:
         super().__init__("member", name_attr)
 
 
@@ -556,7 +692,7 @@ class NestedGroupOfNamesType(NestedMemberDNGroupType):
     nested group references.
     """
 
-    def __init__(self, name_attr="cn"):
+    def __init__(self, name_attr: str = "cn") -> None:
         super().__init__("member", name_attr)
 
 
@@ -565,7 +701,7 @@ class GroupOfUniqueNamesType(MemberDNGroupType):
     An LDAPGroupType subclass that handles groups of class groupOfUniqueNames.
     """
 
-    def __init__(self, name_attr="cn"):
+    def __init__(self, name_attr: str = "cn") -> None:
         super().__init__("uniqueMember", name_attr)
 
 
@@ -575,7 +711,7 @@ class NestedGroupOfUniqueNamesType(NestedMemberDNGroupType):
     with nested group references.
     """
 
-    def __init__(self, name_attr="cn"):
+    def __init__(self, name_attr: str = "cn") -> None:
         super().__init__("uniqueMember", name_attr)
 
 
@@ -584,7 +720,7 @@ class ActiveDirectoryGroupType(MemberDNGroupType):
     An LDAPGroupType subclass that handles Active Directory groups.
     """
 
-    def __init__(self, name_attr="cn"):
+    def __init__(self, name_attr: str = "cn") -> None:
         super().__init__("member", name_attr)
 
 
@@ -594,7 +730,7 @@ class NestedActiveDirectoryGroupType(NestedMemberDNGroupType):
     group references.
     """
 
-    def __init__(self, name_attr="cn"):
+    def __init__(self, name_attr: str = "cn") -> None:
         super().__init__("member", name_attr)
 
 
@@ -603,7 +739,7 @@ class OrganizationalRoleGroupType(MemberDNGroupType):
     An LDAPGroupType subclass that handles groups of class organizationalRole.
     """
 
-    def __init__(self, name_attr="cn"):
+    def __init__(self, name_attr: str = "cn") -> None:
         super().__init__("roleOccupant", name_attr)
 
 
@@ -613,7 +749,7 @@ class NestedOrganizationalRoleGroupType(NestedMemberDNGroupType):
     with nested group references.
     """
 
-    def __init__(self, name_attr="cn"):
+    def __init__(self, name_attr: str = "cn") -> None:
         super().__init__("roleOccupant", name_attr)
 
 
@@ -626,8 +762,7 @@ class LDAPGroupQuery(Node):
     group DN as the only argument. These queries can then be combined with the
     ``&``, ``|``, and ``~`` operators.
 
-    :param str group_dn: The DN of a group to test for membership.
-
+    :param str group_dns: The DN of a group to test for membership.
     """
 
     # Connection types
@@ -637,23 +772,23 @@ class LDAPGroupQuery(Node):
 
     _CONNECTORS = [AND, OR]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(children=list(args) + list(kwargs.items()))
+    def __init__(self, *group_dns: str) -> None:
+        super().__init__(children=list(group_dns))
 
-    def __and__(self, other):
+    def __and__(self, other: "LDAPGroupQuery") -> "LDAPGroupQuery":
         return self._combine(other, self.AND)
 
-    def __or__(self, other):
+    def __or__(self, other: "LDAPGroupQuery") -> "LDAPGroupQuery":
         return self._combine(other, self.OR)
 
-    def __invert__(self):
+    def __invert__(self) -> "LDAPGroupQuery":
         obj = type(self)()
         obj.add(self, self.AND)
         obj.negate()
 
         return obj
 
-    def _combine(self, other, conn):
+    def _combine(self, other: "LDAPGroupQuery", conn: str) -> "LDAPGroupQuery":
         if not isinstance(other, LDAPGroupQuery):
             raise TypeError(other)
         if conn not in self._CONNECTORS:
@@ -666,7 +801,9 @@ class LDAPGroupQuery(Node):
 
         return obj
 
-    def resolve(self, ldap_user, groups=None):
+    def resolve(
+        self, ldap_user: "_LDAPUser", groups: Optional["_LDAPUserGroups"] = None
+    ) -> bool:
         if groups is None:
             groups = ldap_user._get_groups()
 
@@ -677,7 +814,7 @@ class LDAPGroupQuery(Node):
         return result
 
     @property
-    def aggregator(self):
+    def aggregator(self) -> Callable[[Iterable[object]], bool]:
         """
         Returns a function for aggregating a sequence of sub-results.
         """
@@ -690,7 +827,9 @@ class LDAPGroupQuery(Node):
 
         return aggregator
 
-    def _resolve_children(self, ldap_user, groups):
+    def _resolve_children(
+        self, ldap_user: "_LDAPUser", groups: "_LDAPUserGroups"
+    ) -> Iterator[bool]:
         """
         Generates the query result for each child.
         """

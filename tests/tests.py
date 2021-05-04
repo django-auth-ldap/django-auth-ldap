@@ -211,23 +211,6 @@ class LDAPTest(TestCase):
         self.assertEqual(user.username, "alice")
         self.assertEqual(User.objects.count(), user_count + 1)
 
-    def test_default_settings(self):
-        class MyBackend(LDAPBackend):
-            default_settings = {
-                "SERVER_URI": self.server.ldap_uri,
-                "USER_DN_TEMPLATE": "uid=%(user)s,ou=people,o=test",
-            }
-
-        backend = MyBackend()
-
-        user_count = User.objects.count()
-
-        user = backend.authenticate(None, username="alice", password="password")
-
-        self.assertIs(user.has_usable_password(), False)
-        self.assertEqual(user.username, "alice")
-        self.assertEqual(User.objects.count(), user_count + 1)
-
     @_override_settings(
         AUTHENTICATION_BACKENDS=[
             "django_auth_ldap.backend.LDAPBackend",
@@ -416,7 +399,7 @@ class LDAPTest(TestCase):
         self.assertIsNotNone(user)
         self.assertEqual(User.objects.count(), user_count + 1)
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_search_bind_escaped(self, mock):
         """Search for a username that requires escaping."""
         self._init_settings(
@@ -589,7 +572,7 @@ class LDAPTest(TestCase):
         with self.assertRaisesMessage(Exception, "Oops..."):
             backend.populate_user("alice")
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_populate_with_attrlist(self, mock):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
@@ -1133,7 +1116,7 @@ class LDAPTest(TestCase):
 
         self.assertEqual(backend.get_group_permissions(alice), set())
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_group_cache(self, mock):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
@@ -1507,17 +1490,24 @@ class LDAPTest(TestCase):
         self.assertIs(backend.has_perm(alice, "auth.add_user"), True)
         self.assertIs(backend.has_module_perms(alice, "auth"), True)
 
-    @mock.patch("ldap.ldapobject.SimpleLDAPObject.search_s")
-    def test_search_attrlist(self, mock_search):
+    def test_search_attrlist(self):
         backend = get_backend()
         connection = backend.ldap.initialize(self.server.ldap_uri, bytes_mode=False)
         search = LDAPSearch(
             "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=alice)", ["*", "+"]
         )
-        search.execute(connection)
-        mock_search.assert_called_once_with(
-            "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=alice)", ["*", "+"]
-        )
+
+        with mock.patch("ldap.ldapobject.SimpleLDAPObject.search") as mock_search:
+            with mock.patch("ldap.ldapobject.SimpleLDAPObject.result") as mock_result:
+                mock_search.return_value = 123
+                mock_result.return_value = (ldap.RES_SEARCH_RESULT, [])
+
+                search.execute(connection)
+
+                mock_search.assert_called_once_with(
+                    "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=alice)", ["*", "+"]
+                )
+                mock_result.assert_called_once_with(mock_search.return_value)
 
     def test_override_authenticate_access_ldap_user(self):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
@@ -1531,7 +1521,7 @@ class LDAPTest(TestCase):
         user = backend.authenticate(None, username="alice", password="password")
         self.assertEqual(user.ldap_user.foo, "bar")
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_dn_not_cached(self, mock):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
@@ -1546,7 +1536,7 @@ class LDAPTest(TestCase):
         # DN is not cached.
         self.assertIsNone(cache.get("django_auth_ldap.user_dn.alice"))
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_dn_cached(self, mock):
         self._init_settings(
             USER_SEARCH=LDAPSearch(

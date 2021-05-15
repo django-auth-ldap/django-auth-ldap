@@ -249,10 +249,7 @@ class LDAPBackend:
         return username
 
 
-class _LDAPConnectionMixIn:
-    _connection = None
-    _connection_bound = False
-
+class _LDAPBase:
     def __init__(self, backend):
         self.backend = backend
 
@@ -264,12 +261,14 @@ class _LDAPConnectionMixIn:
     def settings(self):
         return self.backend.settings
 
-    @property
-    def connection(self):
-        if not self._connection_bound:
-            self._bind()
 
-        return self._get_connection()
+class LDAPConnection(_LDAPBase):
+    _connection = None
+    _connection_bound = False
+
+    def __init__(self, backend, request):
+        self._request = request
+        super().__init__(backend)
 
     def _bind(self):
         """
@@ -321,8 +320,28 @@ class _LDAPConnectionMixIn:
 
         return self._connection
 
+    @property
+    def connection(self):
+        if not self._connection_bound:
+            self._bind()
 
-class _LDAPUser(_LDAPConnectionMixIn):
+        return self._get_connection()
+
+    def __getstate__(self):
+        """
+        self.backend is the only thing we need and want to pickle.
+        """
+        return {
+            k: v
+            for k, v in self.__dict__.items()
+            if k
+            in [
+                "backend",
+            ]
+        }
+
+
+class _LDAPUser(_LDAPBase):
     """
     Represents an LDAP user and ultimately fields all requests that the
     backend receives. This class exists for two reasons. First, it's
@@ -356,9 +375,9 @@ class _LDAPUser(_LDAPConnectionMixIn):
         ignored.
         """
         super().__init__(backend)
+        self._connection = LDAPConnection(backend, request)
 
         self._username = username
-        self._request = request
 
         if user is not None:
             self._set_authenticated_user(user)
@@ -380,7 +399,6 @@ class _LDAPUser(_LDAPConnectionMixIn):
 
         # The connection couldn't be copied even if we wanted to
         obj._connection = self._connection
-        obj._connection_bound = self._connection_bound
 
         return obj
 
@@ -392,7 +410,7 @@ class _LDAPUser(_LDAPConnectionMixIn):
         return {
             k: v
             for k, v in self.__dict__.items()
-            if k in ["backend", "_username", "_user"]
+            if k in ["backend", "_username", "_user", "_connection"]
         }
 
     def _set_authenticated_user(self, user):
@@ -500,6 +518,15 @@ class _LDAPUser(_LDAPConnectionMixIn):
 
         return user
 
+    def _bind(self):
+        self._connection._bind()
+
+    def _bind_as(self, bind_dn, bind_password, sticky=False):
+        return self._connection._bind_as(bind_dn, bind_password, sticky)
+
+    def _get_connection(self):
+        return self._connection._get_connection()
+
     #
     # Public properties (callbacks). These are all lazy for performance reasons.
     #
@@ -525,6 +552,10 @@ class _LDAPUser(_LDAPConnectionMixIn):
     @property
     def group_names(self):
         return self._get_groups().get_group_names()
+
+    @property
+    def connection(self):
+        return self._connection.connection
 
     #
     # Authentication

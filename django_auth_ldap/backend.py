@@ -155,7 +155,7 @@ class LDAPBackend:
             return None
 
         if password or self.settings.PERMIT_EMPTY_PASSWORD:
-            ldap_user = self.get_ldapuser(self, username=username.strip(), request=request)
+            ldap_user = self.get_ldapuser()(self, username=username.strip(), request=request)
             user = self.authenticate_ldap_user(ldap_user, password)
         else:
             logger.debug("Rejecting empty password for {}".format(username))
@@ -168,7 +168,7 @@ class LDAPBackend:
 
         try:
             user = self.get_user_model().objects.get(pk=user_id)
-            self.get_ldapuser(self, user=user)  # This sets user.ldap_user
+            self.get_ldapuser()(self, user=user)  # This sets user.ldap_user
         except ObjectDoesNotExist:
             pass
 
@@ -189,7 +189,7 @@ class LDAPBackend:
 
     def get_group_permissions(self, user, obj=None):
         if not hasattr(user, "ldap_user") and self.settings.AUTHORIZE_ALL_USERS:
-            self.get_ldapuser(self, user=user)  # This sets user.ldap_user
+            self.get_ldapuser()(self, user=user)  # This sets user.ldap_user
 
         if hasattr(user, "ldap_user"):
             permissions = user.ldap_user.get_group_permissions()
@@ -203,7 +203,7 @@ class LDAPBackend:
     #
 
     def populate_user(self, username):
-        ldap_user = self.get_ldapuser(self, username=username)
+        ldap_user = self.get_ldapuser()(self, username=username)
         return ldap_user.populate_user()
 
     #

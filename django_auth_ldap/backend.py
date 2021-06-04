@@ -155,7 +155,11 @@ class LDAPBackend:
             return None
 
         if password or self.settings.PERMIT_EMPTY_PASSWORD:
-            ldap_user = self.get_ldapuser()(self, username=username.strip(), request=request)
+            ldap_user = self.get_ldapuser()(
+                self,
+                username=username.strip(),
+                request=request
+            )
             user = self.authenticate_ldap_user(ldap_user, password)
         else:
             logger.debug("Rejecting empty password for {}".format(username))

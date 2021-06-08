@@ -35,7 +35,7 @@ import ldap
 import slapdtest
 from django.contrib.auth import authenticate, get_backends
 from django.contrib.auth.models import Group, Permission, User
-from django.core.cache import caches
+from django.core.cache import cache, caches
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -150,8 +150,8 @@ class LDAPTest(TestCase):
 
     def setUp(self):
         super().setUp()
-        for cache in caches.values():
-            cache.clear()
+        for c in caches.all():
+            c.clear()
 
     def test_options(self):
         self._init_settings(

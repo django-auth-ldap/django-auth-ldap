@@ -341,19 +341,6 @@ Values may be strings for simple group membership tests or
 cases.
 
 
-.. setting:: AUTH_LDAP_USER_SEARCH
-
-AUTH_LDAP_USER_SEARCH
-~~~~~~~~~~~~~~~~~~~~~
-
-Default: ``None``
-
-An :class:`~django_auth_ldap.config.LDAPSearch` object that will locate a user
-in the directory. The filter parameter should contain the placeholder
-``%(user)s`` for the username. It must return exactly one result for
-authentication to succeed.
-
-
 .. setting:: AUTH_LDAP_CACHE
 
 AUTH_LDAP_CACHE
@@ -379,6 +366,19 @@ should match a name in the Django cache settings.
         },
     }
     AUTH_LDAP_CACHE = 'ldap-cache'
+
+
+.. setting:: AUTH_LDAP_USER_SEARCH
+
+AUTH_LDAP_USER_SEARCH
+~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+An :class:`~django_auth_ldap.config.LDAPSearch` object that will locate a user
+in the directory. The filter parameter should contain the placeholder
+``%(user)s`` for the username. It must return exactly one result for
+authentication to succeed.
 
 
 Module Properties

@@ -335,10 +335,6 @@ class _LDAPUser:
         user.ldap_user = self
         user.ldap_username = self._username
 
-    @cached_property
-    def cache(self):
-        return caches[getattr(self.settings, "AUTH_LDAP_CACHE", "default")]
-
     @property
     def ldap(self):
         return self.backend.ldap
@@ -892,10 +888,6 @@ class _LDAPUserGroups:
         self._group_names = None
 
         self._init_group_settings()
-
-    @cached_property
-    def cache(self):
-        return caches[getattr(self.settings, "AUTH_LDAP_CACHE", "default")]
 
     def _init_group_settings(self):
         """

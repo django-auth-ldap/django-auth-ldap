@@ -333,6 +333,33 @@ Values may be strings for simple group membership tests or
 cases.
 
 
+.. setting:: AUTH_LDAP_CACHE
+
+AUTH_LDAP_CACHE
+~~~~~~~~~~~~~~~
+
+Default: ``default``
+
+The Django cache framework can store and manage multiple caches, each with
+their own unique name. By default, the default cache is used. Setting this
+value tells django-auth-ldap to use a different cache than the default. It
+should match a name in the Django cache settings.
+
+.. code-block:: python
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/1'
+        },
+        'ldap-cache': {
+            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            'LOCATION': 'unix:/tmp/memcached.sock',
+        },
+    }
+    AUTH_LDAP_CACHE = 'ldap-cache'
+
+
 .. setting:: AUTH_LDAP_USER_SEARCH
 
 AUTH_LDAP_USER_SEARCH

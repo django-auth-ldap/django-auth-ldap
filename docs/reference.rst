@@ -362,9 +362,9 @@ AUTH_LDAP_CACHE
 Default: ``default``
 
 The Django cache framework can store and manage multiple caches, each with
-their own unique name. By default the default cache is used. Setting this value
-tells django-auth-ldap to use a different cache than the default. It should
-match a name in the Django cache settings.
+their own unique name. By default, the default cache is used. Setting this
+value tells django-auth-ldap to use a different cache than the default. It
+should match a name in the Django cache settings.
 
 .. code-block:: python
 

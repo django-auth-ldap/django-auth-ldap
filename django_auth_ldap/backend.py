@@ -371,7 +371,7 @@ class _LDAPUser:
                 type(self.backend),
                 context="authenticate",
                 user=self._user,
-                exception=e
+                exception=e,
             )
             if len(results) == 0:
                 logger.warning(

@@ -249,7 +249,122 @@ class LDAPBackend:
         return username
 
 
-class _LDAPUser:
+class _LDAPConnectionMixIn:
+    _connection = None
+    _connection_bound = False
+
+    def __init__(self, backend):
+        self.backend = backend
+
+    @property
+    def ldap(self):
+        return self.backend.ldap
+
+    @property
+    def settings(self):
+        return self.backend.settings
+
+    @property
+    def connection(self):
+        if not self._connection_bound:
+            self._bind()
+
+        return self._get_connection()
+
+    def _bind(self):
+        """
+        Binds to the LDAP server with AUTH_LDAP_BIND_DN and
+        AUTH_LDAP_BIND_PASSWORD.
+        """
+        self._bind_as(self.settings.BIND_DN, self.settings.BIND_PASSWORD, sticky=True)
+
+    def _bind_as(self, bind_dn, bind_password, sticky=False):
+        """
+        Binds to the LDAP server with the given credentials. This does not trap
+        exceptions.
+
+        If sticky is True, then we will consider the connection to be bound for
+        the life of this object. If False, then the caller only wishes to test
+        the credentials, after which the connection will be considered unbound.
+        """
+        self._get_connection().simple_bind_s(bind_dn, bind_password)
+
+        self._connection_bound = sticky
+
+    def _get_connection(self):
+        """
+        Returns our cached LDAPObject, which may or may not be bound.
+        """
+        if self._connection is None:
+            uri = self.settings.SERVER_URI
+            if callable(uri):
+                if func_supports_parameter(uri, "request"):
+                    uri = uri(self._request)
+                else:
+                    warnings.warn(
+                        "Update AUTH_LDAP_SERVER_URI callable %s.%s to accept "
+                        "a positional `request` argument. Support for callables "
+                        "accepting no arguments will be removed in a future "
+                        "version." % (uri.__module__, uri.__name__),
+                        DeprecationWarning,
+                    )
+                    uri = uri()
+
+            self._connection = self.backend.ldap.initialize(uri, bytes_mode=False)
+
+            for opt, value in self.settings.CONNECTION_OPTIONS.items():
+                self._connection.set_option(opt, value)
+
+            if self.settings.START_TLS:
+                logger.debug("Initiating TLS")
+                self._connection.start_tls_s()
+
+        return self._connection
+
+
+class LDAPReverseEmailSearch(_LDAPConnectionMixIn):
+    def __init__(self, backend, email):
+        super().__init__(backend)
+
+        self._email = email
+        self._ldap_users = []
+
+    def search_for_users(self, should_populate=False):
+        search = self.settings.REVERSE_EMAIL_SEARCH
+        if search is None:
+            raise ImproperlyConfigured(
+                "AUTH_LDAP_REVERSE_EMAIL_SEARCH must be an LDAPSearch instance."
+            )
+        USERNAME_ATTR = self.settings.USERNAME_ATTR
+        if USERNAME_ATTR is None:
+            raise ImproperlyConfigured(
+                "AUTH_LDAP_USERNAME_ATTR must be specified to search by email."
+            )
+
+        results = search.execute(self.connection, {"email": self._email})
+        if not results:
+            return None
+
+        for result in results:
+            user_dn, user_attrs = result
+            username = user_attrs[USERNAME_ATTR][0]
+            ldap_user = _LDAPUser(self.backend, username=username)
+            ldap_user._user_dn = user_dn
+            ldap_user._user_attrs = user_attrs
+            if should_populate:
+                ldap_user.populate_user()
+
+            self._ldap_users.append(ldap_user)
+
+        if should_populate:
+            # Return populated Django Users if populating was requested.
+            return [ldap_user._user for ldap_user in self._ldap_users]
+        else:
+            # Otherwise, just return the found _LDAPUsers.
+            return self._ldap_users
+
+
+class _LDAPUser(_LDAPConnectionMixIn):
     """
     Represents an LDAP user and ultimately fields all requests that the
     backend receives. This class exists for two reasons. First, it's
@@ -271,8 +386,6 @@ class _LDAPUser:
     _user_attrs = None
     _groups = None
     _group_permissions = None
-    _connection = None
-    _connection_bound = False
 
     #
     # Initialization
@@ -284,7 +397,8 @@ class _LDAPUser:
         authenticated User object. If a user is given, the username will be
         ignored.
         """
-        self.backend = backend
+        super().__init__(backend)
+
         self._username = username
         self._request = request
 
@@ -329,14 +443,6 @@ class _LDAPUser:
 
         user.ldap_user = self
         user.ldap_username = self._username
-
-    @property
-    def ldap(self):
-        return self.backend.ldap
-
-    @property
-    def settings(self):
-        return self.backend.settings
 
     #
     # Entry points
@@ -461,13 +567,6 @@ class _LDAPUser:
     @property
     def group_names(self):
         return self._get_groups().get_group_names()
-
-    @property
-    def connection(self):
-        if not self._connection_bound:
-            self._bind()
-
-        return self._get_connection()
 
     #
     # Authentication
@@ -813,60 +912,6 @@ class _LDAPUser:
 
         return self._groups
 
-    #
-    # LDAP connection
-    #
-
-    def _bind(self):
-        """
-        Binds to the LDAP server with AUTH_LDAP_BIND_DN and
-        AUTH_LDAP_BIND_PASSWORD.
-        """
-        self._bind_as(self.settings.BIND_DN, self.settings.BIND_PASSWORD, sticky=True)
-
-    def _bind_as(self, bind_dn, bind_password, sticky=False):
-        """
-        Binds to the LDAP server with the given credentials. This does not trap
-        exceptions.
-
-        If sticky is True, then we will consider the connection to be bound for
-        the life of this object. If False, then the caller only wishes to test
-        the credentials, after which the connection will be considered unbound.
-        """
-        self._get_connection().simple_bind_s(bind_dn, bind_password)
-
-        self._connection_bound = sticky
-
-    def _get_connection(self):
-        """
-        Returns our cached LDAPObject, which may or may not be bound.
-        """
-        if self._connection is None:
-            uri = self.settings.SERVER_URI
-            if callable(uri):
-                if func_supports_parameter(uri, "request"):
-                    uri = uri(self._request)
-                else:
-                    warnings.warn(
-                        "Update AUTH_LDAP_SERVER_URI callable %s.%s to accept "
-                        "a positional `request` argument. Support for callables "
-                        "accepting no arguments will be removed in a future "
-                        "version." % (uri.__module__, uri.__name__),
-                        DeprecationWarning,
-                    )
-                    uri = uri()
-
-            self._connection = self.backend.ldap.initialize(uri, bytes_mode=False)
-
-            for opt, value in self.settings.CONNECTION_OPTIONS.items():
-                self._connection.set_option(opt, value)
-
-            if self.settings.START_TLS:
-                logger.debug("Initiating TLS")
-                self._connection.start_tls_s()
-
-        return self._connection
-
 
 class _LDAPUserGroups:
     """
@@ -1025,6 +1070,8 @@ class LDAPSettings:
         "USER_DN_TEMPLATE": None,
         "USER_FLAGS_BY_GROUP": {},
         "USER_SEARCH": None,
+        "REVERSE_EMAIL_SEARCH": None,
+        "USERNAME_ATTR": None,
     }
 
     def __init__(self, prefix="AUTH_LDAP_", defaults={}):

@@ -1,3 +1,8 @@
+UNRELEASED
+----------
+
+- Dropped support for Django 3.0.
+
 2.4.0 - 2021-04-06
 ------------------
 

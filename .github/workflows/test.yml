@@ -19,7 +19,6 @@ jobs:
           - 3.9
         tox-environment:
           - django22
-          - django30
           - django31
           - django32
         include:

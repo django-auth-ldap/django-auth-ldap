@@ -416,7 +416,7 @@ class LDAPTest(TestCase):
         self.assertIsNotNone(user)
         self.assertEqual(User.objects.count(), user_count + 1)
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_search_bind_escaped(self, mock):
         """Search for a username that requires escaping."""
         self._init_settings(
@@ -589,7 +589,7 @@ class LDAPTest(TestCase):
         with self.assertRaisesMessage(Exception, "Oops..."):
             backend.populate_user("alice")
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_populate_with_attrlist(self, mock):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
@@ -1133,7 +1133,7 @@ class LDAPTest(TestCase):
 
         self.assertEqual(backend.get_group_permissions(alice), set())
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_group_cache(self, mock):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
@@ -1507,17 +1507,24 @@ class LDAPTest(TestCase):
         self.assertIs(backend.has_perm(alice, "auth.add_user"), True)
         self.assertIs(backend.has_module_perms(alice, "auth"), True)
 
-    @mock.patch("ldap.ldapobject.SimpleLDAPObject.search_s")
-    def test_search_attrlist(self, mock_search):
+    def test_search_attrlist(self):
         backend = get_backend()
         connection = backend.ldap.initialize(self.server.ldap_uri, bytes_mode=False)
         search = LDAPSearch(
             "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=alice)", ["*", "+"]
         )
-        search.execute(connection)
-        mock_search.assert_called_once_with(
-            "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=alice)", ["*", "+"]
-        )
+
+        with mock.patch("ldap.ldapobject.SimpleLDAPObject.search") as mock_search:
+            with mock.patch("ldap.ldapobject.SimpleLDAPObject.result") as mock_result:
+                mock_search.return_value = 123
+                mock_result.return_value = (ldap.RES_SEARCH_RESULT, [])
+
+                search.execute(connection)
+
+                mock_search.assert_called_once_with(
+                    "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=alice)", ["*", "+"]
+                )
+                mock_result.assert_called_once_with(mock_search.return_value)
 
     def test_override_authenticate_access_ldap_user(self):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
@@ -1531,7 +1538,7 @@ class LDAPTest(TestCase):
         user = backend.authenticate(None, username="alice", password="password")
         self.assertEqual(user.ldap_user.foo, "bar")
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_dn_not_cached(self, mock):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
@@ -1546,7 +1553,7 @@ class LDAPTest(TestCase):
         # DN is not cached.
         self.assertIsNone(cache.get("django_auth_ldap.user_dn.alice"))
 
-    @spy_ldap("search_s")
+    @spy_ldap("search")
     def test_dn_cached(self, mock):
         self._init_settings(
             USER_SEARCH=LDAPSearch(
@@ -1559,29 +1566,6 @@ class LDAPTest(TestCase):
             self.assertIsNotNone(user)
         # Should have executed only once.
         self.assertEqual(mock.call_count, 1)
-        # DN is cached.
-        self.assertEqual(
-            cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"
-        )
-
-    def test_deprecated_cache_groups(self):
-        self._init_settings(
-            USER_SEARCH=LDAPSearch(
-                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
-            ),
-            CACHE_GROUPS=True,
-        )
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            user = authenticate(username="alice", password="password")
-        self.assertIsNotNone(user)
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, DeprecationWarning)
-        self.assertEqual(
-            str(w[0].message),
-            "Found deprecated setting AUTH_LDAP_CACHE_GROUP. Use "
-            "AUTH_LDAP_CACHE_TIMEOUT instead.",
-        )
         # DN is cached.
         self.assertEqual(
             cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"

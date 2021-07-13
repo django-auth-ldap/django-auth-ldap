@@ -83,14 +83,6 @@ The value determines the amount of time, in seconds, a user's group memberships
 and distinguished name are cached. The value ``0``, the default, disables
 caching entirely.
 
-.. versionchanged:: 1.6.0
-
-    Previously caching was controlled by the settings `AUTH_LDAP_CACHE_GROUPS`
-    and `AUTH_LDAP_GROUP_CACHE_TIMEOUT`. If `AUTH_LDAP_CACHE_GROUPS` is set,
-    the `AUTH_LDAP_CACHE_TIMEOUT` value is derievd from these deprecated
-    settings.
-
-
 .. setting:: AUTH_LDAP_CONNECTION_OPTIONS
 
 AUTH_LDAP_CONNECTION_OPTIONS

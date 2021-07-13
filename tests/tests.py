@@ -27,7 +27,6 @@ import functools
 import logging
 import os
 import pickle
-import warnings
 from copy import deepcopy
 from unittest import mock
 
@@ -177,29 +176,6 @@ class LDAPTest(TestCase):
         self.assertEqual(user.username, "alice")
         self.assertEqual(User.objects.count(), user_count + 1)
         cb_mock.assert_called_with(request)
-
-    def test_deprecated_callable_server_uri(self):
-        self._init_settings(
-            SERVER_URI=lambda: self.server.ldap_uri,
-            USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
-        )
-        user_count = User.objects.count()
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            user = authenticate(username="alice", password="password")
-
-        self.assertIs(user.has_usable_password(), False)
-        self.assertEqual(user.username, "alice")
-        self.assertEqual(User.objects.count(), user_count + 1)
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, DeprecationWarning)
-        self.assertEqual(
-            str(w[0].message),
-            "Update AUTH_LDAP_SERVER_URI callable tests.tests.<lambda> to "
-            "accept a positional `request` argument. Support for callables "
-            "accepting no arguments will be removed in a future version.",
-        )
 
     def test_simple_bind(self):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
@@ -1559,29 +1535,6 @@ class LDAPTest(TestCase):
             self.assertIsNotNone(user)
         # Should have executed only once.
         self.assertEqual(mock.call_count, 1)
-        # DN is cached.
-        self.assertEqual(
-            cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"
-        )
-
-    def test_deprecated_cache_groups(self):
-        self._init_settings(
-            USER_SEARCH=LDAPSearch(
-                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
-            ),
-            CACHE_GROUPS=True,
-        )
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            user = authenticate(username="alice", password="password")
-        self.assertIsNotNone(user)
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, DeprecationWarning)
-        self.assertEqual(
-            str(w[0].message),
-            "Found deprecated setting AUTH_LDAP_CACHE_GROUP. Use "
-            "AUTH_LDAP_CACHE_TIMEOUT instead.",
-        )
         # DN is cached.
         self.assertEqual(
             cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"

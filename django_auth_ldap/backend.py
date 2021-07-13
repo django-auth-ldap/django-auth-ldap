@@ -59,7 +59,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
-from django.utils.inspect import func_supports_parameter
 
 from django_auth_ldap.config import (
     ConfigurationWarning,
@@ -844,17 +843,7 @@ class _LDAPUser:
         if self._connection is None:
             uri = self.settings.SERVER_URI
             if callable(uri):
-                if func_supports_parameter(uri, "request"):
-                    uri = uri(self._request)
-                else:
-                    warnings.warn(
-                        "Update AUTH_LDAP_SERVER_URI callable %s.%s to accept "
-                        "a positional `request` argument. Support for callables "
-                        "accepting no arguments will be removed in a future "
-                        "version." % (uri.__module__, uri.__name__),
-                        DeprecationWarning,
-                    )
-                    uri = uri()
+                uri = uri(self._request)
 
             self._connection = self.backend.ldap.initialize(uri, bytes_mode=False)
 
@@ -1039,23 +1028,6 @@ class LDAPSettings:
         for name, default in defaults.items():
             value = getattr(django.conf.settings, prefix + name, default)
             setattr(self, name, value)
-
-        # Compatibility with old caching settings.
-        if getattr(
-            django.conf.settings,
-            self._name("CACHE_GROUPS"),
-            defaults.get("CACHE_GROUPS"),
-        ):
-            warnings.warn(
-                "Found deprecated setting AUTH_LDAP_CACHE_GROUP. Use "
-                "AUTH_LDAP_CACHE_TIMEOUT instead.",
-                DeprecationWarning,
-            )
-            self.CACHE_TIMEOUT = getattr(
-                django.conf.settings,
-                self._name("GROUP_CACHE_TIMEOUT"),
-                defaults.get("GROUP_CACHE_TIMEOUT", 3600),
-            )
 
     def _name(self, suffix):
         return self._prefix + suffix

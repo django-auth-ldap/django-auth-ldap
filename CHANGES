@@ -1,6 +1,8 @@
 UNRELEASED
 ----------
 
+- Dropped deprecated setting ``AUTH_LDAP_CACHE_GROUPS``.
+- Callables passed to ``AUTH_LDAP_SERVER_URI`` must now take a ``request`` positional argument.
 - Dropped support for Django 3.0.
 
 2.4.0 - 2021-04-06

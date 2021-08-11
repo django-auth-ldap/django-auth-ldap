@@ -620,11 +620,13 @@ class LDAPTest(TestCase):
 
         with catch_signal(ldap_error) as handler:
             handler.side_effect = handle_ldap_error
+            request = RequestFactory().get("/")
             with self.assertRaises(ldap.LDAPError):
-                authenticate(username="alice", password="password")
+                authenticate(request=request, username="alice", password="password")
         handler.assert_called_once()
         _args, kwargs = handler.call_args
         self.assertEqual(kwargs["context"], "authenticate")
+        self.assertEqual(kwargs["request"], request)
 
     def test_populate_signal_ldap_error(self):
         self._init_settings(

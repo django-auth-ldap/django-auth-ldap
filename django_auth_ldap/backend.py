@@ -361,6 +361,7 @@ class _LDAPUser:
                 type(self.backend),
                 context="authenticate",
                 user=self._user,
+                request=self._request,
                 exception=e,
             )
             if len(results) == 0:
@@ -392,6 +393,7 @@ class _LDAPUser:
                         type(self.backend),
                         context="get_group_permissions",
                         user=self._user,
+                        request=self._request,
                         exception=e,
                     )
                     if len(results) == 0:
@@ -421,6 +423,7 @@ class _LDAPUser:
                 type(self.backend),
                 context="populate_user",
                 user=self._user,
+                request=self._request,
                 exception=e,
             )
             if len(results) == 0:

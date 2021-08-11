@@ -552,12 +552,14 @@ Backend
 
 
     This is a Django signal that is sent when we receive an
-    :exc:`ldap.LDAPError` exception. The signal has three keyword arguments:
+    :exc:`ldap.LDAPError` exception. The signal has four keyword arguments:
 
     - ``context``: one of ``'authenticate'``, ``'get_group_permissions'``, or
       ``'populate_user'``, indicating which API was being called when the
       exception was caught.
     - ``user``: the Django user being processed (if available).
+    - ``request``: the Django request object associated with the
+      authentication attempt (if available).
     - ``exception``: the :exc:`~ldap.LDAPError` object itself.
 
     The sender is the :class:`~django_auth_ldap.backend.LDAPBackend` class (or

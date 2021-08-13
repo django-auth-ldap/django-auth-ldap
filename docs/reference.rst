@@ -113,11 +113,17 @@ AUTH_LDAP_FIND_GROUP_PERMS
 
 Default: ``False``
 
-If ``True``, :class:`~django_auth_ldap.backend.LDAPBackend` will furnish group
-permissions based on the LDAP groups the authenticated user belongs to.
-:setting:`AUTH_LDAP_GROUP_SEARCH` and :setting:`AUTH_LDAP_GROUP_TYPE` must also be
-set.
+If ``True``, :class:`~django_auth_ldap.backend.LDAPBackend` looks up Django
+:class:`~django.contrib.auth.models.Group`\ s matching LDAP group names, and
+assigns user permissions based on the Django
+:class:`~django.contrib.auth.models.Group` permissions.
 
+:setting:`AUTH_LDAP_GROUP_SEARCH` and :setting:`AUTH_LDAP_GROUP_TYPE` must also
+be set.
+
+.. important:: Users will not be added to the Django
+   :class:`~django.contrib.auth.models.Group`. The LDAP groups remain the
+   source of truth for group membership.
 
 .. setting:: AUTH_LDAP_GLOBAL_OPTIONS
 
@@ -166,8 +172,9 @@ AUTH_LDAP_MIRROR_GROUPS
 
 Default: ``None``
 
-If ``True``, :class:`~django_auth_ldap.backend.LDAPBackend` will mirror a user's
-LDAP group membership in the Django database. Any time a user authenticates, we
+If ``True``, :class:`~django_auth_ldap.backend.LDAPBackend` will mirror a
+user's LDAP group membership in the Django database. Any time a user
+authenticates through the :class:`~django_auth_ldap.backend.LDAPBackend`, we
 will create all of their LDAP groups as Django groups and update their Django
 group membership to exactly match their LDAP group membership. If the LDAP
 server has nested groups, the Django database will end up with a flattened
@@ -176,6 +183,10 @@ representation.
 This can also be a list or other collection of group names, in which case we'll
 only mirror those groups and leave the rest alone. This is ignored if
 :setting:`AUTH_LDAP_MIRROR_GROUPS_EXCEPT` is set.
+
+.. note:: Users authenticating through another authentication backend, such as
+   :class:`~django.contrib.auth.backends.ModelBackend` will **not** have their
+   group membership and permissions refreshed from the LDAP server.
 
 
 .. setting:: AUTH_LDAP_MIRROR_GROUPS_EXCEPT

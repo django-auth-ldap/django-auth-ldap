@@ -59,7 +59,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.cache import caches
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
-from django.utils.inspect import func_supports_parameter
 from django.utils.functional import cached_property
 
 from django_auth_ldap.config import (

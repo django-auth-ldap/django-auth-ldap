@@ -342,6 +342,10 @@ class _LDAPUser:
     def settings(self):
         return self.backend.settings
 
+    @cached_property
+    def cache(self):
+        return caches[getattr(self.settings, "AUTH_LDAP_CACHE", "default")]
+
     #
     # Entry points
     #
@@ -877,6 +881,10 @@ class _LDAPUserGroups:
         self._group_names = None
 
         self._init_group_settings()
+
+    @cached_property
+    def cache(self):
+        return caches[getattr(self.settings, "AUTH_LDAP_CACHE", "default")]
 
     def _init_group_settings(self):
         """

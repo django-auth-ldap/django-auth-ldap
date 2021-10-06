@@ -38,9 +38,10 @@ models, but it does assume that a database is present.
             "django.contrib.auth.backends.ModelBackend",
         ]
 
-    Django will check each authentication backend in order, so you are free
-    to reorder these if checking `ModelBackend` first is more applicable to
-    your application.
+    Django will check each authentication backend in order, so you are free to
+    reorder these if checking
+    :class:`~django.contrib.auth.backends.ModelBackend` first is more
+    applicable to your application.
 
 .. _`python-ldap`: https://pypi.org/project/python-ldap/
 .. _`OpenLDAP`: https://www.openldap.org/

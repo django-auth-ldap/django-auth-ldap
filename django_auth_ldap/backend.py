@@ -25,12 +25,7 @@
 """
 LDAP authentication backend
 
-Complete documentation can be found in docs/howto/auth-ldap.txt (or the thing it
-compiles to).
-
-Use of this backend requires the python-ldap module. To support unit tests, we
-import ldap in a single centralized place (config._LDAPConfig) so that the test
-harness can insert a mock object.
+Documentation: https://django-auth-ldap.readthedocs.io/
 
 A few notes on naming conventions. If an identifier ends in _dn, it is a string
 representation of a distinguished name. If it ends in _info, it is a 2-tuple

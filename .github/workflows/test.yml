@@ -24,6 +24,12 @@ jobs:
           - django32
         include:
           - python-version: 3.8
+            tox-environment: django40
+          - python-version: 3.9
+            tox-environment: django40
+          - python-version: '3.10'
+            tox-environment: django40
+          - python-version: 3.8
             tox-environment: djangomain
           - python-version: 3.9
             tox-environment: djangomain

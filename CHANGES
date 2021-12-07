@@ -7,6 +7,7 @@ Breaking changes
 - The signal ``ldap_error`` now has an additional ``request`` keyword argument.
 
 - Added support for Python 3.10.
+- Added support for Django 4.0.
 
 3.0.0 — 2021-07-19
 ------------------

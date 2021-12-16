@@ -132,15 +132,15 @@ class LDAPTest(TestCase):
         cls.server = slapdtest.SlapdObject()
         cls.server.suffix = "o=test"
         cls.server.openldap_schema_files = [
-            "core.schema",
-            "cosine.schema",
-            "inetorgperson.schema",
-            "nis.schema",
+            "core.ldif",
+            "cosine.ldif",
+            "inetorgperson.ldif",
+            "nis.ldif",
         ]
         cls.server.start()
         with open(os.path.join(here, "tests.ldif")) as fp:
             ldif = fp.read()
-        cls.server.ldapadd(ldif)
+        cls.server.slapadd(ldif)
 
     @classmethod
     def tearDownClass(cls):

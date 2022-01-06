@@ -195,6 +195,6 @@ intersphinx_mapping = {
         "https://docs.djangoproject.com/en/stable/",
         "https://docs.djangoproject.com/en/stable/_objects/",
     ),
-    "pythonldap": ("https://python-ldap.readthedocs.io/en/latest/", None),
-    "tox": ("https://tox.readthedocs.io/en/latest/", None),
+    "pythonldap": ("https://www.python-ldap.org/en/latest/", None),
+    "tox": ("https://tox.wiki/en/latest/", None),
 }

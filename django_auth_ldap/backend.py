@@ -55,12 +55,7 @@ from django.contrib.auth.models import Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 
-from django_auth_ldap.config import (
-    ConfigurationWarning,
-    LDAPGroupQuery,
-    LDAPSearch,
-    _LDAPConfig,
-)
+from .config import ConfigurationWarning, LDAPGroupQuery, LDAPSearch, _LDAPConfig
 
 logger = _LDAPConfig.get_logger()
 

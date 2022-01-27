@@ -144,7 +144,7 @@ class LDAPSearch:
 
         try:
             filterstr = self.filterstr % filterargs
-            logger.error(
+            logger.debug(
                 "Invoking search_s('{}', {}, '{}')".format(
                     self.base_dn, self.scope, filterstr
                 )

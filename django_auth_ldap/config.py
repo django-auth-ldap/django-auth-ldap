@@ -153,9 +153,11 @@ class LDAPSearch:
         except ldap.LDAPError as e:
             results = []
             logger.error(
-                "search_s('{}', {}, '{}') raised {}".format(
-                    self.base_dn, self.scope, filterstr, pprint.pformat(e)
-                )
+                "search_s('%s', %s, '%s') raised %s",
+                self.base_dn,
+                self.scope,
+                filterstr,
+                pprint.pformat(e),
             )
 
         return self._process_results(results)
@@ -180,9 +182,11 @@ class LDAPSearch:
         except ldap.LDAPError as e:
             msgid = None
             logger.error(
-                "search('{}', {}, '{}') raised {}".format(
-                    self.base_dn, self.scope, filterstr, pprint.pformat(e)
-                )
+                "search('%s', %s, '%s') raised %s",
+                self.base_dn,
+                self.scope,
+                filterstr,
+                pprint.pformat(e),
             )
 
         return msgid
@@ -197,7 +201,7 @@ class LDAPSearch:
                 results = []
         except ldap.LDAPError as e:
             results = []
-            logger.error("result({}) raised {}".format(msgid, pprint.pformat(e)))
+            logger.error("result(%s) raised %s", msgid, pprint.pformat(e))
 
         return self._process_results(results)
 
@@ -237,13 +241,12 @@ class LDAPSearch:
 
         result_dns = [result[0] for result in results]
         logger.debug(
-            "search_s('{}', {}, '{}') returned {} objects: {}".format(
-                self.base_dn,
-                self.scope,
-                self.filterstr,
-                len(result_dns),
-                "; ".join(result_dns),
-            )
+            "search_s('%s', %s, '%s') returned %d objects: %s",
+            self.base_dn,
+            self.scope,
+            self.filterstr,
+            len(result_dns),
+            "; ".join(result_dns),
         )
 
         return results

@@ -141,7 +141,7 @@ class LDAPBackend:
             ldap_user = _LDAPUser(self, username=username.strip(), request=request)
             user = self.authenticate_ldap_user(ldap_user, password)
         else:
-            logger.debug("Rejecting empty password for {}".format(username))
+            logger.debug("Rejecting empty password for %s", username)
             user = None
 
         return user
@@ -345,7 +345,7 @@ class _LDAPUser:
 
             user = self._user
         except self.AuthenticationFailed as e:
-            logger.debug("Authentication failed for {}: {}".format(self._username, e))
+            logger.debug("Authentication failed for %s: %s", self._username, e)
         except ldap.LDAPError as e:
             results = ldap_error.send(
                 type(self.backend),
@@ -356,12 +356,12 @@ class _LDAPUser:
             )
             if len(results) == 0:
                 logger.warning(
-                    "Caught LDAPError while authenticating {}: {}".format(
-                        self._username, pprint.pformat(e)
-                    )
+                    "Caught LDAPError while authenticating %s: %s",
+                    self._username,
+                    pprint.pformat(e),
                 )
         except Exception as e:
-            logger.warning("{} while authenticating {}".format(e, self._username))
+            logger.warning("%s while authenticating %s", e, self._username)
             raise
 
         return user
@@ -388,9 +388,8 @@ class _LDAPUser:
                     )
                     if len(results) == 0:
                         logger.warning(
-                            "Caught LDAPError loading group permissions: {}".format(
-                                pprint.pformat(e)
-                            )
+                            "Caught LDAPError loading group permissions: %s",
+                            pprint.pformat(e),
                         )
 
         return self._group_permissions
@@ -418,12 +417,12 @@ class _LDAPUser:
             )
             if len(results) == 0:
                 logger.warning(
-                    "Caught LDAPError while authenticating {}: {}".format(
-                        self._username, pprint.pformat(e)
-                    )
+                    "Caught LDAPError while authenticating %s: %s",
+                    self._username,
+                    pprint.pformat(e),
                 )
         except Exception as e:
-            logger.warning("{} while authenticating {}".format(e, self._username))
+            logger.warning("%s while authenticating %s", e, self._username)
             raise
 
         return user
@@ -607,12 +606,12 @@ class _LDAPUser:
                     "user does not satisfy AUTH_LDAP_NO_NEW_USERS"
                 )
 
-            logger.debug("Creating Django user {}".format(username))
+            logger.debug("Creating Django user %s", username)
             self._user.set_unusable_password()
             save_user = True
 
         if should_populate:
-            logger.debug("Populating Django user {}".format(username))
+            logger.debug("Populating Django user %s", username)
             self._populate_user()
             save_user = True
 
@@ -643,9 +642,7 @@ class _LDAPUser:
                 # TypeError occurs when self.attrs is None as we were unable to
                 # load this user's attributes.
                 logger.warning(
-                    "{} does not have a value for the attribute {}".format(
-                        self.dn, attr
-                    )
+                    "%s does not have a value for the attribute %s", self.dn, attr
                 )
             else:
                 setattr(self._user, field, value)
@@ -921,11 +918,8 @@ class _LDAPUserGroups:
         if is_member is None:
             is_member = group_dn in self.get_group_dns()
 
-        logger.debug(
-            "{} is{}a member of {}".format(
-                self._ldap_user.dn, is_member and " " or " not ", group_dn
-            )
-        )
+        membership = "" if is_member else " not"
+        logger.debug(f"%s is{membership} a member of %s", self._ldap_user.dn, group_dn)
 
         return is_member
 

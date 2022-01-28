@@ -181,11 +181,19 @@ class LDAPTest(TestCase):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
         user_count = User.objects.count()
 
-        user = authenticate(username="alice", password="password")
-
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            user = authenticate(username="alice", password="password")
         self.assertIs(user.has_usable_password(), False)
         self.assertEqual(user.username, "alice")
         self.assertEqual(User.objects.count(), user_count + 1)
+        self.assertEqual(
+            [(log.msg, log.args) for log in logs.records],
+            [
+                ("Binding as %s", ("uid=alice,ou=people,o=test",)),
+                ("Creating Django user %s", ("alice",)),
+                ("Populating Django user %s", ("alice",)),
+            ],
+        )
 
     def test_default_settings(self):
         class MyBackend(LDAPBackend):
@@ -316,10 +324,19 @@ class LDAPTest(TestCase):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
         user_count = User.objects.count()
 
-        user = authenticate(username="evil_alice", password="password")
-
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            user = authenticate(username="evil_alice", password="password")
         self.assertIsNone(user)
         self.assertEqual(User.objects.count(), user_count)
+
+        log1, log2 = logs.records
+        self.assertEqual(log1.msg, "Binding as %s")
+        self.assertEqual(log1.args, ("uid=evil_alice,ou=people,o=test",))
+        self.assertEqual(log2.levelname, "DEBUG")
+        self.assertEqual(log2.msg, "Authentication failed for %s: %s")
+        username, exc = log2.args
+        self.assertEqual(username, "evil_alice")
+        self.assertEqual(exc.args, ("user DN/password rejected by LDAP server.",))
 
     def test_simple_bind_bad_password(self):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
@@ -342,18 +359,33 @@ class LDAPTest(TestCase):
         self.assertEqual(User.objects.count(), user_count)
 
     def test_existing_user_insensitive(self):
+        base_dn = "ou=people,o=test"
+        filters = "(uid=%(user)s)"
         self._init_settings(
-            USER_SEARCH=LDAPSearch(
-                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
-            )
+            USER_SEARCH=LDAPSearch(base_dn, ldap.SCOPE_SUBTREE, filters)
         )
         User.objects.create(username="alice")
 
-        user = authenticate(username="Alice", password="password")
-
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            user = authenticate(username="Alice", password="password")
         self.assertIsNotNone(user)
         self.assertEqual(user.username, "alice")
         self.assertEqual(User.objects.count(), 1)
+
+        dn = "uid=alice,ou=people,o=test"
+        self.assertEqual(
+            [(log.msg, log.args) for log in logs.records],
+            [
+                ("Binding as %s", ("",)),
+                ("Invoking search_s('%s', %s, '%s')", (base_dn, 2, "(uid=Alice)")),
+                (
+                    "search_s('%s', %s, '%s') returned %d objects: %s",
+                    (base_dn, 2, filters, 1, dn),
+                ),
+                ("Binding as %s", (dn,)),
+                ("Populating Django user %s", ("Alice",)),
+            ],
+        )
 
     def test_convert_username(self):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
@@ -526,11 +558,37 @@ class LDAPTest(TestCase):
             },
         )
 
-        user = authenticate(username="alice", password="password")
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            user = authenticate(username="alice", password="password")
         self.assertEqual(user.username, "alice")
         self.assertEqual(user.first_name, "Alice")
         self.assertEqual(user.last_name, "Adams")
         self.assertEqual(user.email, "")
+        dn = "uid=alice,ou=people,o=test"
+        self.assertEqual(
+            [(log.levelname, log.msg, log.args) for log in logs.records],
+            [
+                ("DEBUG", "Binding as %s", (dn,)),
+                ("DEBUG", "Creating Django user %s", ("alice",)),
+                ("DEBUG", "Populating Django user %s", ("alice",)),
+                ("DEBUG", "Binding as %s", ("",)),
+                (
+                    "DEBUG",
+                    "Invoking search_s('%s', %s, '%s')",
+                    (dn, 0, "(objectClass=*)"),
+                ),
+                (
+                    "DEBUG",
+                    "search_s('%s', %s, '%s') returned %d objects: %s",
+                    (dn, 0, "(objectClass=*)", 1, dn),
+                ),
+                (
+                    "WARNING",
+                    "%s does not have a value for the attribute %s",
+                    (dn, "mail"),
+                ),
+            ],
+        )
 
     @mock.patch.object(LDAPSearch, "execute", return_value=None)
     def test_populate_user_with_bad_search(self, mock_execute):
@@ -697,7 +755,21 @@ class LDAPTest(TestCase):
         )
         alice = authenticate(username="alice", password="password")
         query = LDAPGroupQuery("cn=alice_gon,ou=query_groups,o=test")
-        self.assertIs(query.resolve(alice.ldap_user), True)
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            self.assertIs(query.resolve(alice.ldap_user), True)
+        self.assertEqual(
+            [(log.msg, log.args) for log in logs.records],
+            [
+                ("Binding as %s", ("",)),
+                (
+                    "%s is a member of %s",
+                    (
+                        "uid=alice,ou=people,o=test",
+                        "cn=alice_gon,ou=query_groups,o=test",
+                    ),
+                ),
+            ],
+        )
 
     def test_group_query_utf8(self):
         self._init_settings(
@@ -1407,10 +1479,13 @@ class LDAPTest(TestCase):
         with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
             authenticate(username="alice", password="password")
         mock.assert_called_once()
-        log1, log2 = logs.output
-        self.assertEqual(log1, "DEBUG:django_auth_ldap:Initiating TLS")
+        log1, log2, log3 = logs.output
+        self.assertEqual(
+            log1, "DEBUG:django_auth_ldap:Binding as uid=alice,ou=people,o=test"
+        )
+        self.assertEqual(log2, "DEBUG:django_auth_ldap:Initiating TLS")
         self.assertTrue(
-            log2.startswith(
+            log3.startswith(
                 "WARNING:django_auth_ldap:Caught LDAPError while authenticating alice: "
             )
         )
@@ -1441,10 +1516,16 @@ class LDAPTest(TestCase):
     def test_deny_empty_password(self, mock):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
 
-        alice = authenticate(username="alice", password="")
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            alice = authenticate(username="alice", password="")
 
         self.assertIsNone(alice)
         mock.assert_not_called()
+
+        self.assertEqual(
+            [(log.levelname, log.msg, log.args) for log in logs.records],
+            [("DEBUG", "Rejecting empty password for %s", ("alice",))],
+        )
 
     @spy_ldap("simple_bind_s")
     def test_permit_empty_password(self, mock):

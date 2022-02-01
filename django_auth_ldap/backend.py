@@ -825,7 +825,7 @@ class _LDAPUser:
         the life of this object. If False, then the caller only wishes to test
         the credentials, after which the connection will be considered unbound.
         """
-        logger.debug(f"Binding as {bind_dn}")
+        logger.debug("Binding as %s", bind_dn)
         self._get_connection().simple_bind_s(bind_dn, bind_password)
 
         self._connection_bound = sticky

@@ -72,6 +72,56 @@ Default: ``''`` (Empty string)
 The password to use with :setting:`AUTH_LDAP_BIND_DN`.
 
 
+.. setting:: AUTH_LDAP_BIND_SASL_MECHANISM
+
+AUTH_LDAP_BIND_SASL_MECHANISM
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+The `SASL Mechanism` to use when binding to the LDAP server with SASL. This
+option is ignored when authenticating a dn/password (i.e., for user login).
+
+This library has been tested/validated with the following, though other mechanisms
+may be available depending on your server:
+- EXTERNAL (for TLS, Socket and others)
+- GSSAPI (for Kerberos)
+
+Check what mechanisms are available using ldapsearch:
+
+.. code-block:: sh
+
+    $ ldapsearch <connection options> -s "base" -b "" supportedSASLMechanisms
+    ...
+    #
+    dn:
+    supportedSASLMechanisms: DIGEST-MD5
+    supportedSASLMechanisms: EXTERNAL
+    ...
+
+
+.. setting:: AUTH_LDAP_BIND_SASL_CB_VALUE
+
+AUTH_LDAP_BIND_SASL_CB_VALUE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``None``
+
+The sasl cb value to use with :setting:`AUTH_LDAP_BIND_SASL_MECHANISM`,
+if required.
+
+The keys for this dict, if defined, should match those expected by the sasl
+library (as called by `python-ldap`)
+
+- :data:`ldap.sasl.CB_USER`
+- :data:`ldap.sasl.CB_PASS`
+- :data:`ldap.sasl.CB_AUTHNAME`
+- :data:`ldap.sasl.CB_LANGUAGE`
+- :data:`ldap.sasl.CB_ECHOPROMPT`
+- :data:`ldap.sasl.CB_NOECHOPROMPT`
+- :data:`ldap.sasl.CB_GETREALM`
+
+
 .. setting:: AUTH_LDAP_CACHE_TIMEOUT
 
 AUTH_LDAP_CACHE_TIMEOUT
@@ -648,3 +698,6 @@ Backend
         If this is not symmetrical to
         :meth:`~django_auth_ldap.backend.LDAPBackend.ldap_to_django_username`,
         the behavior is undefined.
+
+.. _`python-ldap`: https://pypi.org/project/python-ldap/
+.. _`SASL Mechanism`: https://www.iana.org/assignments/sasl-mechanisms/sasl-mechanisms.xhtml

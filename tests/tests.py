@@ -486,6 +486,109 @@ class LDAPTest(TestCase):
 
         self.assertIsNone(user)
 
+    def test_search_bind_with_sasl_external_credentials(self):
+        self._init_settings(
+            BIND_SASL_MECHANISM="EXTERNAL",
+            CONNECTION_OPTIONS={
+                ldap.OPT_X_TLS_CACERTFILE: self.server.cafile,
+                ldap.OPT_X_TLS_CERTFILE: self.server.clientcert,
+                ldap.OPT_X_TLS_KEYFILE: self.server.clientkey,
+                ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_HARD,
+                ldap.OPT_X_TLS_NEWCTX: 0,
+            },
+            START_TLS=True,
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+            ),
+        )
+        backend = get_backend()
+
+        # user asserted by some other middleware
+        user = User.objects.create(username="alice")
+        user = backend.get_user(user.pk)
+
+        self.assertEqual(user.ldap_user.dn, "uid=alice,ou=people,o=test")
+        self.assertEqual(
+            dict(user.ldap_user.attrs),
+            {
+                "objectClass": [
+                    "person",
+                    "organizationalPerson",
+                    "inetOrgPerson",
+                    "posixAccount",
+                ],
+                "cn": ["alice"],
+                "uid": ["alice"],
+                "userPassword": ["password"],
+                "uidNumber": ["1000"],
+                "gidNumber": ["1000"],
+                "givenName": ["Alice"],
+                "sn": ["Adams"],
+                "homeDirectory": ["/home/alice"],
+            },
+        )
+
+    def test_search_bind_with_bad_sasl_external_credentials(self):
+        self._init_settings(
+            BIND_SASL_MECHANISM="EXTERNAL",
+            CONNECTION_OPTIONS={
+                ldap.OPT_X_TLS_CACERTFILE: self.server.cafile,
+                ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_HARD,
+                ldap.OPT_X_TLS_NEWCTX: 0,
+            },
+            START_TLS=True,
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+            ),
+        )
+        backend = get_backend()
+
+        # user asserted by some other middleware
+        user = User.objects.create(username="alice")
+        user = backend.get_user(user.pk)
+
+        with self.assertRaisesMessage(ldap.LDAPError, "SASL"):
+            _ = user.ldap_user.dn
+
+    def test_search_bind_with_sasl_external_ldapi(self):
+        self._init_settings(
+            SERVER_URI=self.server.ldapi_uri,
+            BIND_SASL_MECHANISM="EXTERNAL",
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+            ),
+        )
+        backend = get_backend()
+
+        # user asserted by some other middleware
+        user = User.objects.create(username="alice")
+        user = backend.get_user(user.pk)
+
+        self.assertIsNotNone(user)
+        self.assertIsNotNone(user.ldap_user)
+        self.assertEqual(user.ldap_user.dn, "uid=alice,ou=people,o=test")
+        self.assertTrue(user.ldap_user._connection_bound)
+
+    def test_search_bind_with_sasl_external_ldapi_invalid(self):
+        self._init_settings(
+            BIND_SASL_CB_VALUE={
+                ldap.sasl.CB_USER: "invalid_user",
+            },
+            SERVER_URI=self.server.ldapi_uri,
+            BIND_SASL_MECHANISM="EXTERNAL",
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+            ),
+        )
+        backend = get_backend()
+
+        # user asserted by some other middleware
+        user = User.objects.create(username="alice")
+        user = backend.get_user(user.pk)
+
+        with self.assertRaisesMessage(ldap.LDAPError, "SASL"):
+            _ = user.ldap_user.dn
+
     def test_unicode_user(self):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",

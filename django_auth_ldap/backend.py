@@ -812,9 +812,36 @@ class _LDAPUser:
     def _bind(self):
         """
         Binds to the LDAP server with AUTH_LDAP_BIND_DN and
-        AUTH_LDAP_BIND_PASSWORD.
+        AUTH_LDAP_BIND_PASSWORD or AUTH_LDAP_BIND_SASL_MECHANISM
+        and AUTH_LDAP_BIND_SASL_CB_VALUE, if defined.
         """
-        self._bind_as(self.settings.BIND_DN, self.settings.BIND_PASSWORD, sticky=True)
+        if self.settings.BIND_SASL_MECHANISM:
+            self._bind_sasl(
+                self.settings.BIND_SASL_CB_VALUE,
+                self.settings.BIND_SASL_MECHANISM,
+                sticky=True,
+            )
+        else:
+            self._bind_as(
+                self.settings.BIND_DN, self.settings.BIND_PASSWORD, sticky=True
+            )
+
+    def _bind_sasl(self, cb_value_dict, sasl_mech, sticky=False):
+        """
+        Binds to the LDAP server with SASL.
+        """
+        # <github>/python-ldap/blob/<version>/Modules/LDAPObject.c#L580
+
+        if not cb_value_dict and sasl_mech in ("GSSAPI", "EXTERNAL"):
+            self._get_connection().sasl_non_interactive_bind_s(sasl_mech)
+        else:
+            # <github>/python-ldap/blob/<version>/Lib/ldap/sasl.py#L41
+            sasl_auth = ldap.sasl.sasl(cb_value_dict, sasl_mech)
+            # The bind_dn argument will be passed to the c library; however,
+            # normally it is not needed and should be an empty string.
+            self._get_connection().sasl_interactive_bind_s("", sasl_auth)
+
+        self._connection_bound = sticky
 
     def _bind_as(self, bind_dn, bind_password, sticky=False):
         """
@@ -825,6 +852,17 @@ class _LDAPUser:
         the life of this object. If False, then the caller only wishes to test
         the credentials, after which the connection will be considered unbound.
         """
+
+        if self.settings.BIND_SASL_MECHANISM and self._connection:
+            # Since an existing connection is likely to have used sasl
+            # and thus be unusable for simple binds, reset it first
+            try:
+                # disconnect
+                self._connection.unbind_s()
+            except BaseException as e:
+                logger.warn("Error unbinding connection %s", e)
+            self._connection = None
+
         self._get_connection().simple_bind_s(bind_dn, bind_password)
 
         self._connection_bound = sticky
@@ -988,6 +1026,8 @@ class LDAPSettings:
         "BIND_AS_AUTHENTICATING_USER": False,
         "BIND_DN": "",
         "BIND_PASSWORD": "",
+        "BIND_SASL_CB_VALUE": "",
+        "BIND_SASL_MECHANISM": None,
         "CONNECTION_OPTIONS": {},
         "DENY_GROUP": None,
         "FIND_GROUP_PERMS": False,

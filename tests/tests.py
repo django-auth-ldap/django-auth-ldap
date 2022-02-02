@@ -1404,8 +1404,16 @@ class LDAPTest(TestCase):
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test", START_TLS=True
         )
 
-        authenticate(username="alice", password="password")
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            authenticate(username="alice", password="password")
         mock.assert_called_once()
+        log1, log2 = logs.output
+        self.assertEqual(log1, "DEBUG:django_auth_ldap:Initiating TLS")
+        self.assertTrue(
+            log2.startswith(
+                "WARNING:django_auth_ldap:Caught LDAPError while authenticating alice: "
+            )
+        )
 
     def test_null_search_results(self):
         """

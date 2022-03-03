@@ -12,7 +12,7 @@ groups, and permissions.
 * Repository: https://github.com/django-auth-ldap/django-auth-ldap
 * License: BSD 2-Clause
 
-This version is supported on Python 3.6+; and Django 2.2+. It requires
+This version is supported on Python 3.7+; and Django 2.2+. It requires
 `python-ldap`_ >= 3.1.
 
 .. toctree::

@@ -536,6 +536,13 @@ class _LDAPUser:
         else:
             user_dn = None
 
+        if self.settings.BIND_AS_AUTHENTICATING_USER:
+            # Reset self._user_attrs: This will retrigger receiving it once
+            # propely authenticated. This is necessary because the
+            # authenticated user may receive more attributes than the
+            # anonymous user.
+            self._user_attrs = None
+
         return user_dn
 
     def _check_requirements(self):

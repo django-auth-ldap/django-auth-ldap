@@ -732,6 +732,23 @@ class LDAPTest(TestCase):
         self.assertIsNotNone(alice)
         self.assertIsNone(bob)
 
+    def test_require_group_with_nonexistent_group(self):
+        self._init_settings(
+            USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
+            GROUP_SEARCH=LDAPSearch(
+                "ou=groups,o=test", ldap.SCOPE_SUBTREE, "(objectClass=groupOfNames)"
+            ),
+            GROUP_TYPE=MemberDNGroupType(member_attr="member"),
+            REQUIRE_GROUP=LDAPGroupQuery("cn=nonexistent,ou=groups,o=test")
+            | LDAPGroupQuery("cn=active_gon,ou=groups,o=test"),
+        )
+
+        alice = authenticate(username="alice", password="password")
+        bob = authenticate(username="bob", password="password")
+
+        self.assertIsNotNone(alice)
+        self.assertIsNone(bob)
+
     def test_no_new_users(self):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test", NO_NEW_USERS=True

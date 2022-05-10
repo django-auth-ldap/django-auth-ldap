@@ -398,6 +398,13 @@ class LDAPGroupType:
         return name
 
 
+ALLOWED_LDAP_MEMBERSHIP_EXCEPTIONS = (
+    ldap.UNDEFINED_TYPE,  # Attribute does not exist in LDAP schema.
+    ldap.NO_SUCH_ATTRIBUTE,  # Attribute does not exist in the entry.
+    ldap.NO_SUCH_OBJECT,  # Group does not exist.
+)
+
+
 class PosixGroupType(LDAPGroupType):
     """
     An LDAPGroupType subclass that handles groups of class posixGroup.
@@ -443,7 +450,7 @@ class PosixGroupType(LDAPGroupType):
                 is_member = ldap_user.connection.compare_s(
                     group_dn, "memberUid", user_uid.encode()
                 )
-            except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
+            except ALLOWED_LDAP_MEMBERSHIP_EXCEPTIONS:
                 is_member = False
 
             if not is_member:
@@ -452,7 +459,7 @@ class PosixGroupType(LDAPGroupType):
                     is_member = ldap_user.connection.compare_s(
                         group_dn, "gidNumber", user_gid.encode()
                     )
-                except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
+                except ALLOWED_LDAP_MEMBERSHIP_EXCEPTIONS:
                     is_member = False
         except (KeyError, IndexError):
             is_member = False
@@ -488,7 +495,7 @@ class MemberDNGroupType(LDAPGroupType):
             result = ldap_user.connection.compare_s(
                 group_dn, self.member_attr, ldap_user.dn.encode()
             )
-        except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
+        except ALLOWED_LDAP_MEMBERSHIP_EXCEPTIONS:
             result = 0
 
         return result

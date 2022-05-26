@@ -369,7 +369,8 @@ class _LDAPUser:
     def get_group_permissions(self):
         """
         If allowed by the configuration, this returns the set of permissions
-        defined by the user's LDAP group memberships.
+        defined by the user's LDAP group memberships and the user attribute
+        filters.
         """
         if self._group_permissions is None:
             self._group_permissions = set()
@@ -391,6 +392,15 @@ class _LDAPUser:
                             "Caught LDAPError loading group permissions: %s",
                             pprint.pformat(e),
                         )
+
+            if self.settings.USER_ATTR_FILTERS_TO_GROUPNAME:
+                group_names = list()
+                for func in self.settings.USER_ATTR_FILTERS_TO_GROUPNAME:
+                    group_names.extend(func(self.attrs))
+                perms = self._load_django_group_permissions(group_names)
+                self._group_permissions.update(
+                    {"{}.{}".format(ct, name) for ct, name in perms}
+                )
 
         return self._group_permissions
 
@@ -647,6 +657,18 @@ class _LDAPUser:
             else:
                 setattr(self._user, field, value)
 
+        for field, fun in self.settings.USER_ATTR_FILTER_MAP.items():
+            try:
+                value = fun(self.attrs)
+            except LookupError:
+                logger.warning(
+                    "{} does not have a value for the function for {}".format(
+                        self.dn, field
+                    )
+                )
+            else:
+                setattr(self._user, field, value)
+
     def _populate_user_from_group_memberships(self):
         for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.items():
             try:
@@ -785,12 +807,16 @@ class _LDAPUser:
         Django group permissions.
         """
         group_names = self._get_groups().get_group_names()
+        self._group_permissions = self._load_django_group_permissions(group_names)
 
+    def _load_django_group_permissions(self, group_names):
+        """
+        Loads permissions from Django groups.
+        """
         perms = Permission.objects.filter(group__name__in=group_names)
         perms = perms.values_list("content_type__app_label", "codename")
         perms = perms.order_by()
-
-        self._group_permissions = {"{}.{}".format(ct, name) for ct, name in perms}
+        return {"{}.{}".format(ct, name) for ct, name in perms}
 
     def _get_groups(self):
         """
@@ -942,7 +968,6 @@ class _LDAPUserGroups:
             self._group_infos = self._group_type.user_groups(
                 self._ldap_user, self._group_search
             )
-
         return self._group_infos
 
     def _load_cached_attr(self, attr_name):
@@ -999,6 +1024,8 @@ class LDAPSettings:
         "USER_QUERY_FIELD": None,
         "USER_ATTRLIST": None,
         "USER_ATTR_MAP": {},
+        "USER_ATTR_FILTER_MAP": {},
+        "USER_ATTR_FILTERS_TO_GROUPNAME": [],
         "USER_DN_TEMPLATE": None,
         "USER_FLAGS_BY_GROUP": {},
         "USER_SEARCH": None,

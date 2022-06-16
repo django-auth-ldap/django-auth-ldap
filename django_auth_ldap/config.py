@@ -56,7 +56,7 @@ class LDAPSettings:
         "AUTHORIZE_ALL_USERS": False,
         "BIND_AS_AUTHENTICATING_USER": False,
         "BIND_DN": "",
-        "BIND_DN_TEMPLATE": "%(user)s",
+        "BIND_DN_TEMPLATE": None,
         "BIND_PASSWORD": "",
         "CONNECTION_OPTIONS": {},
         "DENY_GROUP": None,

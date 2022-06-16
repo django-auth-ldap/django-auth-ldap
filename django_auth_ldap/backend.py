@@ -465,8 +465,8 @@ class _LDAPUser:
             self._bind()
         else:
             if not self._connection_bound:
-                bind_dn = self.settings.BIND_DN_TEMPLATE % {'user': self._username}
-                logger.debug('Bind DN: %s', bind_dn)
+                bind_dn = self.settings.BIND_DN_TEMPLATE % {"user": self._username}
+                logger.debug("Bind DN: %s", bind_dn)
                 self._bind_as(bind_dn, self.password, sticky=True)
 
         return self._get_connection()

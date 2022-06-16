@@ -461,13 +461,13 @@ class _LDAPUser:
 
     @property
     def connection(self):
-        if not self.settings.BIND_AS_AUTHENTICATING_USER:
-            self._bind()
-        else:
-            if not self._connection_bound:
+        if not self._connection_bound:
+            if self.settings.BIND_AS_AUTHENTICATING_USER and self.settings.BIND_DN_TEMPLATE:
                 bind_dn = self.settings.BIND_DN_TEMPLATE % {"user": self._username}
                 logger.debug("Bind DN: %s", bind_dn)
                 self._bind_as(bind_dn, self.password, sticky=True)
+            else:
+                self._bind()
 
         return self._get_connection()
 

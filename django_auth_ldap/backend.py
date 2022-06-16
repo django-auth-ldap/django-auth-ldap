@@ -461,8 +461,13 @@ class _LDAPUser:
 
     @property
     def connection(self):
-        if not self._connection_bound:
+        if not self.settings.BIND_AS_AUTHENTICATING_USER:
             self._bind()
+        else:
+            if not self._connection_bound:
+                bind_dn = self.settings.BIND_DN_TEMPLATE % {'user': self._username}
+                logger.debug('Bind DN: %s', bind_dn)
+                self._bind_as(bind_dn, self.password, sticky=True)
 
         return self._get_connection()
 
@@ -475,6 +480,7 @@ class _LDAPUser:
         Binds to the LDAP server with the user's DN and password. Raises
         AuthenticationFailed on failure.
         """
+        self.password = password
         if self.dn is None:
             raise self.AuthenticationFailed("failed to map the username to a DN.")
 

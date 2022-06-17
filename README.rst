@@ -119,6 +119,13 @@ settings and arguments are included for completeness.
         'first_name': 'givenName',
         'last_name': 'sn',
         'email': 'mail',
+        # The name of the nested dictionary must match the name 
+        # of the extended model's reverse relation.
+        'ldap': {
+            'title': 'title',
+            'cn': 'cn',
+            'dn': 'distinguishedName',
+        }
     }
 
     AUTH_LDAP_USER_FLAGS_BY_GROUP = {

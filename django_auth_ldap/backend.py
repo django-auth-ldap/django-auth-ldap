@@ -617,6 +617,9 @@ class _LDAPUser:
             save_user = True
 
         if should_populate:
+            if self.settings.USER_ATTR_MAP:
+                logger.debug("Prepopulating Django user %s", username)
+                self._pre_populate()
             logger.debug("Populating Django user %s", username)
             self._populate_user()
             save_user = True
@@ -640,18 +643,46 @@ class _LDAPUser:
         self._populate_user_from_attributes()
         self._populate_user_from_group_memberships()
 
-    def _populate_user_from_attributes(self):
+    def _pre_populate(self):
+        related = []
         for field, attr in self.settings.USER_ATTR_MAP.items():
-            try:
-                value = self.attrs[attr][0]
-            except (TypeError, LookupError):
-                # TypeError occurs when self.attrs is None as we were unable to
-                # load this user's attributes.
-                logger.warning(
-                    "%s does not have a value for the attribute %s", self.dn, attr
-                )
+            if type(attr) == dict:
+                related.append(field)
+
+        for related_object in self._user._meta.related_objects:
+            if related_object.name in related and not hasattr(self._user, related_object.name):
+
+                related_model = related_object.field.model
+                remote_field = related_object.remote_field.attname
+                target_field = related_object.target_field.attname
+
+                instance = related_model(**{
+                    remote_field:
+                        getattr(self._user, target_field)
+                })
+
+                setattr(self._user, related_object.name, instance)
+
+    def _populate_user_from_attributes(self, isntance = None, items = None):
+        if isntance is None:
+            isntance = self._user
+        if items is None:
+            items = self.settings.USER_ATTR_MAP.items()
+
+        for field, attr in items:
+            if type(attr) == dict:
+                self._populate_user_from_attributes(getattr(isntance, field), attr.items())
             else:
-                setattr(self._user, field, value)
+                try:
+                    value = self.attrs[attr][0]
+                except (TypeError, LookupError):
+                    # TypeError occurs when self.attrs is None as we were unable to
+                    # load this user's attributes.
+                    logger.warning(
+                        "%s does not have a value for the attribute %s", self.dn, attr
+                    )
+                else:
+                    setattr(isntance, field, value)
 
     def _populate_user_from_group_memberships(self):
         for field, group_dns in self.settings.USER_FLAGS_BY_GROUP.items():

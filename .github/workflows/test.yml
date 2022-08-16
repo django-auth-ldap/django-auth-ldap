@@ -17,18 +17,12 @@ jobs:
           - 3.9
           - '3.10'
         tox-environment:
-          - django22
           - django32
           - django40
+          - djangomain
         include:
           - python-version: 3.7
-            tox-environment: django22
-          - python-version: 3.7
             tox-environment: django32
-          - python-version: 3.9
-            tox-environment: djangomain
-          - python-version: '3.10'
-            tox-environment: djangomain
 
     env:
       TOXENV: ${{ matrix.tox-environment }}

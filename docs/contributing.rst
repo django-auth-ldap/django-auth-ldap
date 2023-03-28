@@ -28,7 +28,7 @@ from the root of the project:
 This includes some static analysis to detect potential runtime errors and style
 issues.
 
-To limit to a single environment, use :option:`tox.-e`:
+To limit to a single environment, use :ref:`tox-run--e`:
 
 .. code-block:: console
 

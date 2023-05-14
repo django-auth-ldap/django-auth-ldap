@@ -34,7 +34,7 @@ import ldap
 import slapdtest
 from django.contrib.auth import authenticate, get_backends
 from django.contrib.auth.models import Group, Permission, User
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -1647,6 +1647,32 @@ class LDAPTest(TestCase):
         self.assertEqual(
             cache.get("django_auth_ldap.user_dn.alice"), "uid=alice,ou=people,o=test"
         )
+
+    @spy_ldap("search_s")
+    def test_alternate_cache(self, mock):
+        """AUTH_LDAP_CACHE setting determines which cache is used."""
+        self._init_settings(
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+            ),
+            CACHE_TIMEOUT=60,
+            AUTH_LDAP_CACHE="ldap",
+        )
+        for _ in range(2):
+            user = authenticate(username="alice", password="password")
+            self.assertIsNotNone(user)
+
+        default_cache = caches["default"]
+        ldap_cache = caches["ldap"]
+
+        # DN is cached in ldap cache.
+        self.assertEqual(
+            ldap_cache.get("django_auth_ldap.user_dn.alice"),
+            "uid=alice,ou=people,o=test",
+        )
+
+        # DN is not cached in the default cache.
+        self.assertNone(default_cache.get("django_auth_ldap.user_dn.alice", None))
 
     #
     # Utilities

@@ -52,8 +52,9 @@ import django.dispatch
 import ldap
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.core.cache import cache
+from django.core.cache import caches
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
+from django.utils.functional import cached_property
 
 from .config import (
     ConfigurationWarning,
@@ -106,6 +107,10 @@ class LDAPBackend:
         return {
             k: v for k, v in self.__dict__.items() if k not in ["_settings", "_ldap"]
         }
+
+    @cached_property
+    def cache(self):
+        return caches[getattr(self.settings, "AUTH_LDAP_CACHE", "default")]
 
     @property
     def settings(self):
@@ -333,6 +338,10 @@ class _LDAPUser:
     def settings(self):
         return self.backend.settings
 
+    @cached_property
+    def cache(self):
+        return caches[getattr(self.settings, "AUTH_LDAP_CACHE", "default")]
+
     #
     # Entry points
     #
@@ -357,7 +366,6 @@ class _LDAPUser:
                 type(self.backend),
                 context="authenticate",
                 user=self._user,
-                request=self._request,
                 exception=e,
             )
             if len(results) == 0:
@@ -389,7 +397,6 @@ class _LDAPUser:
                         type(self.backend),
                         context="get_group_permissions",
                         user=self._user,
-                        request=self._request,
                         exception=e,
                     )
                     if len(results) == 0:
@@ -418,7 +425,6 @@ class _LDAPUser:
                 type(self.backend),
                 context="populate_user",
                 user=self._user,
-                request=self._request,
                 exception=e,
             )
             if len(results) == 0:
@@ -511,7 +517,7 @@ class _LDAPUser:
                 cache_key = valid_cache_key(
                     "django_auth_ldap.user_dn.{}".format(self._username)
                 )
-                self._user_dn = cache.get_or_set(
+                self._user_dn = self.cache.get_or_set(
                     cache_key, self._search_for_user_dn, self.settings.CACHE_TIMEOUT
                 )
             else:
@@ -870,6 +876,10 @@ class _LDAPUserGroups:
 
         self._init_group_settings()
 
+    @cached_property
+    def cache(self):
+        return caches[getattr(self.settings, "AUTH_LDAP_CACHE", "default")]
+
     def _init_group_settings(self):
         """
         Loads the settings we need to deal with groups.
@@ -954,14 +964,14 @@ class _LDAPUserGroups:
     def _load_cached_attr(self, attr_name):
         if self.settings.CACHE_TIMEOUT > 0:
             key = self._cache_key(attr_name)
-            value = cache.get(key)
+            value = self.cache.get(key)
             setattr(self, attr_name, value)
 
     def _cache_attr(self, attr_name):
         if self.settings.CACHE_TIMEOUT > 0:
             key = self._cache_key(attr_name)
             value = getattr(self, attr_name, None)
-            cache.set(key, value, self.settings.CACHE_TIMEOUT)
+            self.cache.set(key, value, self.settings.CACHE_TIMEOUT)
 
     def _cache_key(self, attr_name):
         """

@@ -23,8 +23,6 @@ jobs:
           - django42
         include:
           # Django 3.2
-          - python-version: 3.7
-            tox-environment: django32
           - python-version: 3.8
             tox-environment: django32
           - python-version: 3.9

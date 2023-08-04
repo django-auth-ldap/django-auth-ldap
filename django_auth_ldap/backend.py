@@ -484,6 +484,12 @@ class _LDAPUser:
             self._bind_as(self.dn, password, sticky=sticky)
         except ldap.INVALID_CREDENTIALS:
             raise self.AuthenticationFailed("user DN/password rejected by LDAP server.")
+        if (
+            self._using_simple_bind_mode()
+            and sticky
+            and self.settings.REFRESH_DN_ON_BIND
+        ):
+            self._user_dn = self._search_for_user_dn()
 
     def _load_user_attrs(self):
         if self.dn is not None:
@@ -507,15 +513,7 @@ class _LDAPUser:
         if self._using_simple_bind_mode():
             self._user_dn = self._construct_simple_user_dn()
         else:
-            if self.settings.CACHE_TIMEOUT > 0:
-                cache_key = valid_cache_key(
-                    "django_auth_ldap.user_dn.{}".format(self._username)
-                )
-                self._user_dn = cache.get_or_set(
-                    cache_key, self._search_for_user_dn, self.settings.CACHE_TIMEOUT
-                )
-            else:
-                self._user_dn = self._search_for_user_dn()
+            self._user_dn = self._search_for_user_dn()
 
     def _using_simple_bind_mode(self):
         return self.settings.USER_DN_TEMPLATE is not None
@@ -530,19 +528,30 @@ class _LDAPUser:
         Searches the directory for a user matching AUTH_LDAP_USER_SEARCH.
         Populates self._user_dn and self._user_attrs.
         """
-        search = self.settings.USER_SEARCH
-        if search is None:
-            raise ImproperlyConfigured(
-                "AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance."
+
+        def _search_for_user():
+            search = self.settings.USER_SEARCH
+            if search is None:
+                raise ImproperlyConfigured(
+                    "AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance."
+                )
+
+            results = search.execute(self.connection, {"user": self._username})
+            if results is not None and len(results) == 1:
+                (user_dn, self._user_attrs) = next(iter(results))
+            else:
+                user_dn = None
+
+            return user_dn
+
+        if self.settings.CACHE_TIMEOUT > 0:
+            cache_key = valid_cache_key(
+                "django_auth_ldap.user_dn.{}".format(self._username)
             )
-
-        results = search.execute(self.connection, {"user": self._username})
-        if results is not None and len(results) == 1:
-            (user_dn, self._user_attrs) = next(iter(results))
-        else:
-            user_dn = None
-
-        return user_dn
+            return cache.get_or_set(
+                cache_key, _search_for_user, self.settings.CACHE_TIMEOUT
+            )
+        return _search_for_user()
 
     def _check_requirements(self):
         """

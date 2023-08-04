@@ -44,6 +44,22 @@ requests where the user is authenticated. Thus, the downside to this setting is
 that LDAP results may vary based on whether the user was authenticated earlier
 in the Django view, which could be surprising to code not directly concerned
 with authentication.
+Remember to set :setting:`AUTH_LDAP_USER_DN_TEMPLATE` to avoid initial connection
+to LDAP with default bind credentials.
+
+
+.. setting:: AUTH_LDAP_REFRESH_DN_ON_BIND
+
+AUTH_LDAP_REFRESH_DN_ON_BIND
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+If ``True`` and :setting:`AUTH_LDAP_BIND_AS_AUTHENTICATING_USER` is ``True`` and
+:setting:`AUTH_LDAP_USER_DN_TEMPLATE` is set, after performing bind login it refresh
+the DN attribute of the user. This is meant for such cases in which users authenticates
+via `userPrincipalName` and in which `distinguishedName` is not inferrable by that
+attribute.
 
 
 .. setting:: AUTH_LDAP_BIND_DN

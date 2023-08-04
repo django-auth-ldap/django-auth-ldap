@@ -74,6 +74,24 @@ gidNumber: 50
 sn: nobody
 homeDirectory: /home/nobody
 
+dn: cn=charlie_cooper,ou=people,o=test
+userPrincipalName: charlie@people.test
+objectClass: person
+objectClass: user
+objectClass: organizationalPerson
+objectClass: posixAccount
+cn: charlie_cooper
+uid: charlie
+userPassword: password
+uidNumber: 1004
+gidNumber: 50
+givenName: Charlie
+sn: Cooper
+instanceType: test
+nTSecurityDescriptor: test
+objectCategory: test
+homeDirectory: /home/bob
+
 dn: uid=nonposix,ou=people,o=test
 objectClass: person
 objectClass: organizationalPerson

@@ -55,6 +55,7 @@ class LDAPSettings:
         "ALWAYS_UPDATE_USER": True,
         "AUTHORIZE_ALL_USERS": False,
         "BIND_AS_AUTHENTICATING_USER": False,
+        "REFRESH_DN_ON_BIND": False,
         "BIND_DN": "",
         "BIND_PASSWORD": "",
         "CONNECTION_OPTIONS": {},

@@ -22,7 +22,7 @@ jobs:
           sudo apt-get install apparmor-utils
           sudo aa-disable /usr/sbin/slapd
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4

@@ -18,7 +18,7 @@ jobs:
           - 3.9
           - '3.10'
           - '3.11'
-          - '3.12-dev'
+          - '3.12'
         tox-environment:
           - django41
           - django42
@@ -34,6 +34,8 @@ jobs:
           - python-version: '3.10'
             tox-environment: djangomain
           - python-version: '3.11'
+            tox-environment: djangomain
+          - python-version: '3.12'
             tox-environment: djangomain
 
     env:

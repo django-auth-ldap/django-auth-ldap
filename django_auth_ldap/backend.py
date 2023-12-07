@@ -55,7 +55,13 @@ from django.contrib.auth.models import Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 
-from .config import ConfigurationWarning, LDAPGroupQuery, LDAPSearch, _LDAPConfig
+from .config import (
+    ConfigurationWarning,
+    LDAPGroupQuery,
+    LDAPSearch,
+    LDAPSettings,
+    _LDAPConfig,
+)
 
 logger = _LDAPConfig.get_logger()
 
@@ -478,6 +484,12 @@ class _LDAPUser:
             self._bind_as(self.dn, password, sticky=sticky)
         except ldap.INVALID_CREDENTIALS:
             raise self.AuthenticationFailed("user DN/password rejected by LDAP server.")
+        if (
+            self._using_simple_bind_mode()
+            and sticky
+            and self.settings.REFRESH_DN_ON_BIND
+        ):
+            self._user_dn = self._search_for_user_dn()
 
     def _load_user_attrs(self):
         if self.dn is not None:
@@ -501,15 +513,7 @@ class _LDAPUser:
         if self._using_simple_bind_mode():
             self._user_dn = self._construct_simple_user_dn()
         else:
-            if self.settings.CACHE_TIMEOUT > 0:
-                cache_key = valid_cache_key(
-                    "django_auth_ldap.user_dn.{}".format(self._username)
-                )
-                self._user_dn = cache.get_or_set(
-                    cache_key, self._search_for_user_dn, self.settings.CACHE_TIMEOUT
-                )
-            else:
-                self._user_dn = self._search_for_user_dn()
+            self._user_dn = self._search_for_user_dn()
 
     def _using_simple_bind_mode(self):
         return self.settings.USER_DN_TEMPLATE is not None
@@ -524,26 +528,37 @@ class _LDAPUser:
         Searches the directory for a user matching AUTH_LDAP_USER_SEARCH.
         Populates self._user_dn and self._user_attrs.
         """
-        search = self.settings.USER_SEARCH
-        if search is None:
-            raise ImproperlyConfigured(
-                "AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance."
+
+        def _search_for_user():
+            search = self.settings.USER_SEARCH
+            if search is None:
+                raise ImproperlyConfigured(
+                    "AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance."
+                )
+
+            results = search.execute(self.connection, {"user": self._username})
+            if results is not None and len(results) == 1:
+                (user_dn, self._user_attrs) = next(iter(results))
+            else:
+                user_dn = None
+
+            if self.settings.BIND_AS_AUTHENTICATING_USER:
+                # Reset self._user_attrs: This will retrigger receiving it once
+                # propely authenticated. This is necessary because the
+                # authenticated user may receive more attributes than the
+                # anonymous user.
+                self._user_attrs = None
+
+            return user_dn
+          
+        if self.settings.CACHE_TIMEOUT > 0:
+            cache_key = valid_cache_key(
+                "django_auth_ldap.user_dn.{}".format(self._username)
             )
-
-        results = search.execute(self.connection, {"user": self._username})
-        if results is not None and len(results) == 1:
-            (user_dn, self._user_attrs) = next(iter(results))
-        else:
-            user_dn = None
-
-        if self.settings.BIND_AS_AUTHENTICATING_USER:
-            # Reset self._user_attrs: This will retrigger receiving it once
-            # propely authenticated. This is necessary because the
-            # authenticated user may receive more attributes than the
-            # anonymous user.
-            self._user_attrs = None
-
-        return user_dn
+            return cache.get_or_set(
+                cache_key, _search_for_user, self.settings.CACHE_TIMEOUT
+            )
+        return _search_for_user()
 
     def _check_requirements(self):
         """
@@ -973,59 +988,6 @@ class _LDAPUserGroups:
         return valid_cache_key(
             "auth_ldap.{}.{}.{}".format(type(self).__name__, attr_name, dn)
         )
-
-
-class LDAPSettings:
-    """
-    This is a simple class to take the place of the global settings object. An
-    instance will contain all of our settings as attributes, with default values
-    if they are not specified by the configuration.
-    """
-
-    _prefix = "AUTH_LDAP_"
-
-    defaults = {
-        "ALWAYS_UPDATE_USER": True,
-        "AUTHORIZE_ALL_USERS": False,
-        "BIND_AS_AUTHENTICATING_USER": False,
-        "BIND_DN": "",
-        "BIND_PASSWORD": "",
-        "CONNECTION_OPTIONS": {},
-        "DENY_GROUP": None,
-        "FIND_GROUP_PERMS": False,
-        "CACHE_TIMEOUT": 0,
-        "GROUP_SEARCH": None,
-        "GROUP_TYPE": None,
-        "MIRROR_GROUPS": None,
-        "MIRROR_GROUPS_EXCEPT": None,
-        "PERMIT_EMPTY_PASSWORD": False,
-        "REQUIRE_GROUP": None,
-        "NO_NEW_USERS": False,
-        "SERVER_URI": "ldap://localhost",
-        "START_TLS": False,
-        "USER_QUERY_FIELD": None,
-        "USER_ATTRLIST": None,
-        "USER_ATTR_MAP": {},
-        "USER_DN_TEMPLATE": None,
-        "USER_FLAGS_BY_GROUP": {},
-        "USER_SEARCH": None,
-    }
-
-    def __init__(self, prefix="AUTH_LDAP_", defaults={}):
-        """
-        Loads our settings from django.conf.settings, applying defaults for any
-        that are omitted.
-        """
-        self._prefix = prefix
-
-        defaults = dict(self.defaults, **defaults)
-
-        for name, default in defaults.items():
-            value = getattr(django.conf.settings, prefix + name, default)
-            setattr(self, name, value)
-
-    def _name(self, suffix):
-        return self._prefix + suffix
 
 
 def valid_cache_key(key):

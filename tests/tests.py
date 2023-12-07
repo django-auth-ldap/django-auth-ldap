@@ -136,6 +136,7 @@ class LDAPTest(TestCase):
             "cosine.ldif",
             "inetorgperson.ldif",
             "nis.ldif",
+            "msuser.ldif",
         ]
         cls.server.start()
         with open(os.path.join(here, "tests.ldif")) as fp:
@@ -653,6 +654,33 @@ class LDAPTest(TestCase):
         self.assertEqual(user.first_name, "Alice")
         self.assertEqual(user.last_name, "Adams")
 
+    def test_bind_as_user_with_dn_refetch(self):
+        self._init_settings(
+            USER_DN_TEMPLATE="%(user)s@people.test",
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+            ),
+            USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
+            BIND_AS_AUTHENTICATING_USER=True,
+            REFRESH_DN_ON_BIND=True,
+        )
+
+        # need override to mimic Microsoft AD bind
+        # since openldap does not accepts UPN for login
+        def _bind_as(_self, bind_dn, bind_password, sticky=False):
+            _self._get_connection().simple_bind_s(
+                "cn=charlie_cooper,ou=people,o=test", bind_password
+            )
+            _self._connection_bound = sticky
+
+        with mock.patch("django_auth_ldap.backend._LDAPUser._bind_as", _bind_as):
+            user = authenticate(username="charlie", password="password")
+
+        self.assertEqual(user.username, "charlie")
+        self.assertEqual(user.first_name, "Charlie")
+        self.assertEqual(user.last_name, "Cooper")
+        self.assertEqual(user.ldap_user.dn, "cn=charlie_cooper,ou=people,o=test")
+
     def test_signal_populate_user(self):
         self._init_settings(USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test")
         with catch_signal(populate_user) as handler:
@@ -724,6 +752,23 @@ class LDAPTest(TestCase):
             ),
             GROUP_TYPE=MemberDNGroupType(member_attr="member"),
             REQUIRE_GROUP="cn=active_gon,ou=groups,o=test",
+        )
+
+        alice = authenticate(username="alice", password="password")
+        bob = authenticate(username="bob", password="password")
+
+        self.assertIsNotNone(alice)
+        self.assertIsNone(bob)
+
+    def test_require_group_with_nonexistent_group(self):
+        self._init_settings(
+            USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
+            GROUP_SEARCH=LDAPSearch(
+                "ou=groups,o=test", ldap.SCOPE_SUBTREE, "(objectClass=groupOfNames)"
+            ),
+            GROUP_TYPE=MemberDNGroupType(member_attr="member"),
+            REQUIRE_GROUP=LDAPGroupQuery("cn=nonexistent,ou=groups,o=test")
+            | LDAPGroupQuery("cn=active_gon,ou=groups,o=test"),
         )
 
         alice = authenticate(username="alice", password="password")

@@ -1,10 +1,61 @@
+[project]
+name = "django-auth-ldap"
+requires-python = ">=3.8"
+description = "Django LDAP authentication backend"
+readme = "README.rst"
+authors = [
+    { name="Peter Sagerson", email="psagers@ignorare.net"},
+]
+maintainers = [
+    { name="François Freitag", email="mail@franek.fr" },
+]
+license = { text="BSD" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.1",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration :: Authentication/Directory :: LDAP",
+]
+dynamic = ["version"]
+
+dependencies = [
+    "Django>=3.2",
+    "python-ldap>=3.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/django-auth-ldap/django-auth-ldap"
+Documentation = "https://django-auth-ldap.readthedocs.io/"
+Source = "https://github.com/django-auth-ldap/django-auth-ldap"
+Tracker = "https://github.com/django-auth-ldap/django-auth-ldap/issues"
+Changelog = "https://github.com/django-auth-ldap/django-auth-ldap/releases/"
+
+[tool.isort]
+profile = "black"
+
 [build-system]
 requires = [
     "setuptools>=42",
-    "wheel",
     "setuptools_scm[toml]>=3.4",
 ]
-build-backend = "setuptools.build_meta:__legacy__"
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 write_to = "django_auth_ldap/version.py"

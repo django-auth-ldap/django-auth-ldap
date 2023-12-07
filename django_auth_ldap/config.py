@@ -34,11 +34,66 @@ import pprint
 
 import ldap
 import ldap.filter
+from django.conf import settings
 from django.utils.tree import Node
 
 
 class ConfigurationWarning(UserWarning):
     pass
+
+
+class LDAPSettings:
+    """
+    This is a simple class to take the place of the global settings object. An
+    instance will contain all of our settings as attributes, with default values
+    if they are not specified by the configuration.
+    """
+
+    _prefix = "AUTH_LDAP_"
+
+    defaults = {
+        "ALWAYS_UPDATE_USER": True,
+        "AUTHORIZE_ALL_USERS": False,
+        "BIND_AS_AUTHENTICATING_USER": False,
+        "REFRESH_DN_ON_BIND": False,
+        "BIND_DN": "",
+        "BIND_PASSWORD": "",
+        "CONNECTION_OPTIONS": {},
+        "DENY_GROUP": None,
+        "FIND_GROUP_PERMS": False,
+        "CACHE_TIMEOUT": 0,
+        "GROUP_SEARCH": None,
+        "GROUP_TYPE": None,
+        "MIRROR_GROUPS": None,
+        "MIRROR_GROUPS_EXCEPT": None,
+        "PERMIT_EMPTY_PASSWORD": False,
+        "REQUIRE_GROUP": None,
+        "NO_NEW_USERS": False,
+        "SERVER_URI": "ldap://localhost",
+        "START_TLS": False,
+        "USER_QUERY_FIELD": None,
+        "USER_ATTRLIST": None,
+        "USER_ATTR_MAP": {},
+        "USER_DN_TEMPLATE": None,
+        "USER_FLAGS_BY_GROUP": {},
+        "USER_SEARCH": None,
+    }
+
+    def __init__(self, prefix="AUTH_LDAP_", defaults={}):
+        """
+        Loads our settings from django.conf.settings, applying defaults for any
+        that are omitted.
+        """
+        self._prefix = prefix
+
+        defaults = dict(self.defaults, **defaults)
+
+        for name, default in defaults.items():
+            value = getattr(settings, prefix + name, default)
+            setattr(self, name, value)
+
+    def _name(self, suffix):
+        return self._prefix + suffix
 
 
 class _LDAPConfig:
@@ -398,6 +453,13 @@ class LDAPGroupType:
         return name
 
 
+ALLOWED_LDAP_MEMBERSHIP_EXCEPTIONS = (
+    ldap.UNDEFINED_TYPE,  # Attribute does not exist in LDAP schema.
+    ldap.NO_SUCH_ATTRIBUTE,  # Attribute does not exist in the entry.
+    ldap.NO_SUCH_OBJECT,  # Group does not exist.
+)
+
+
 class PosixGroupType(LDAPGroupType):
     """
     An LDAPGroupType subclass that handles groups of class posixGroup.
@@ -443,7 +505,7 @@ class PosixGroupType(LDAPGroupType):
                 is_member = ldap_user.connection.compare_s(
                     group_dn, "memberUid", user_uid.encode()
                 )
-            except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
+            except ALLOWED_LDAP_MEMBERSHIP_EXCEPTIONS:
                 is_member = False
 
             if not is_member:
@@ -452,7 +514,7 @@ class PosixGroupType(LDAPGroupType):
                     is_member = ldap_user.connection.compare_s(
                         group_dn, "gidNumber", user_gid.encode()
                     )
-                except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
+                except ALLOWED_LDAP_MEMBERSHIP_EXCEPTIONS:
                     is_member = False
         except (KeyError, IndexError):
             is_member = False
@@ -488,7 +550,7 @@ class MemberDNGroupType(LDAPGroupType):
             result = ldap_user.connection.compare_s(
                 group_dn, self.member_attr, ldap_user.dn.encode()
             )
-        except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
+        except ALLOWED_LDAP_MEMBERSHIP_EXCEPTIONS:
             result = 0
 
         return result

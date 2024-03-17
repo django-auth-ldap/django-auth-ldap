@@ -14,14 +14,12 @@ jobs:
       matrix:
         # https://docs.djangoproject.com/en/dev/faq/install/#what-python-version-can-i-use-with-django
         python-version:
-          - 3.8
-          - 3.9
           - '3.10'
           - '3.11'
           - '3.12'
         tox-environment:
-          - django41
           - django42
+          - django50
         include:
           # Django 3.2
           - python-version: 3.8

@@ -57,6 +57,7 @@ class LDAPSettings:
         "BIND_AS_AUTHENTICATING_USER": False,
         "REFRESH_DN_ON_BIND": False,
         "BIND_DN": "",
+        "BIND_DN_TEMPLATE": "",
         "BIND_PASSWORD": "",
         "CONNECTION_OPTIONS": {},
         "DENY_GROUP": None,

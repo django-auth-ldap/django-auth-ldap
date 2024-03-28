@@ -275,6 +275,17 @@ class LDAPTest(TestCase):
         user = deepcopy(user)
 
     @_override_settings(AUTH_USER_MODEL="tests.TestUser")
+    def test_auth_custom_field(self):
+        self._init_settings(
+            USER_DN_TEMPLATE="cn=%(user)s,ou=people,o=test",
+            USER_ATTR_MAP={"identifier": "cn"},
+        )
+        charlie = TestUser.objects.create(identifier="charlie_cooper", uid_number=1004)
+        user = authenticate(identifier="charlie_cooper", password="password")
+        self.assertIsInstance(user, TestUser)
+        self.assertEqual(user.identifier, charlie.identifier)
+
+    @_override_settings(AUTH_USER_MODEL="tests.TestUser")
     def test_auth_custom_user(self):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",

@@ -140,6 +140,7 @@ class LDAPBackend:
     #
 
     def authenticate(self, request, username=None, password=None, **kwargs):
+        username = kwargs.get(self.get_user_model().USERNAME_FIELD, username)
         if username is None:
             return None
 

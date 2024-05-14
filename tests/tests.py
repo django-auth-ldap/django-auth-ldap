@@ -52,6 +52,7 @@ from django_auth_ldap.config import (
 )
 
 from .models import TestUser
+from .parameters_data import param_list_with_anon, param_list_non_anon
 
 
 def get_backend():
@@ -1714,3 +1715,143 @@ class LDAPTest(TestCase):
 
         active_nis = Group.objects.create(name="active_nis")
         active_nis.permissions.add(*permissions)
+
+    def test_systematic_config_options(self):
+        for sub_test, bind_dn, bind_pw, bind_aau, bind_dn_tmpl, user_dn_tmpl, user_search, is_user in param_list_with_anon:
+            with self.subTest(sub_test=sub_test, bind_dn=bind_dn, bind_pw=bind_pw, bind_aau=bind_aau,
+                    bind_dn_tmpl=bind_dn_tmpl, user_dn_tmpl=user_dn_tmpl, user_search=user_search, is_user=is_user):
+                self._init_settings(
+                    BIND_DN=bind_dn,
+                    BIND_PASSWORD=bind_pw,
+                    BIND_AS_AUTHENTICATING_USER=bind_aau,
+                    BIND_DN_TEMPLATE=bind_dn_tmpl,
+                    USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
+                    USER_SEARCH=user_search,
+                    USER_DN_TEMPLATE=user_dn_tmpl,
+                )
+                user = None
+                try:
+                    user = authenticate(username="alice", password="password")
+                except:
+                    pass
+
+                if is_user:
+                    self.assertIsNotNone(user)
+                    self.assertEqual(user.username, "alice")
+                    self.assertEqual(user.first_name, "Alice")
+                    self.assertEqual(user.last_name, "Adams")
+                else:
+                    self.assertIsNone(user)
+
+
+
+class CustomSlapdObject(slapdtest.SlapdObject):
+    # a template string for generating simple slapd.d file
+    slapd_conf_template = r"""dn: cn=config
+objectClass: olcGlobal
+cn: config
+olcServerID: %(serverid)s
+olcLogLevel: %(loglevel)s
+olcAllows: bind_v2
+olcDisallows: bind_anon
+olcAuthzRegexp: {0}"gidnumber=%(root_gid)s\+uidnumber=%(root_uid)s,cn=peercred,cn=external,cn=auth" "%(rootdn)s"
+olcAuthzRegexp: {1}"C=DE, O=python-ldap, OU=slapd-test, CN=([A-Za-z]+)" "ldap://ou=people,dc=local???($1)"
+olcTLSCACertificateFile: %(cafile)s
+olcTLSCertificateFile: %(servercert)s
+olcTLSCertificateKeyFile: %(serverkey)s
+olcTLSVerifyClient: try
+
+dn: cn=module,cn=config
+objectClass: olcModuleList
+cn: module
+olcModuleLoad: back_%(database)s
+
+dn: olcDatabase=%(database)s,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcMdbConfig
+olcDatabase: %(database)s
+olcSuffix: %(suffix)s
+olcRootDN: %(rootdn)s
+olcRootPW: %(rootpw)s
+olcDbDirectory: %(directory)s
+olcRequires: authc
+"""
+
+
+class LDAPTestNoAnon(TestCase):
+    @classmethod
+    def configure_logger(cls):
+        logger = logging.getLogger("django_auth_ldap")
+        formatter = logging.Formatter("LDAP auth - %(levelname)s - %(message)s")
+        handler = logging.StreamHandler()
+
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+        logger.setLevel(logging.CRITICAL)
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.configure_logger()
+
+        here = os.path.dirname(__file__)
+        cls.server = CustomSlapdObject()
+        cls.server.suffix = "o=test"
+        cls.server.openldap_schema_files = [
+            "core.ldif",
+            "cosine.ldif",
+            "inetorgperson.ldif",
+            "nis.ldif",
+        ]
+        cls.server.start()
+        with open(os.path.join(here, "tests.ldif")) as fp:
+            ldif = fp.read()
+        cls.server.slapadd(ldif)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.stop()
+        super().tearDownClass()
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
+    def _init_settings(self, **kwargs):
+        kwargs.setdefault("SERVER_URI", self.server.ldap_uri)
+        settings = {}
+        for key, value in kwargs.items():
+            settings["AUTH_LDAP_%s" % key] = value
+        cm = override_settings(**settings)
+        cm.enable()
+        self.addCleanup(cm.disable)
+
+    def test_systematic_config_options(self):
+        for sub_test, bind_dn, bind_pw, bind_aau, bind_dn_tmpl, user_dn_tmpl, user_search, is_user in param_list_non_anon:
+            with self.subTest(sub_test=sub_test, bind_dn=bind_dn, bind_pw=bind_pw, bind_aau=bind_aau,
+                    bind_dn_tmpl=bind_dn_tmpl, user_dn_tmpl=user_dn_tmpl, user_search=user_search, is_user=is_user):
+                self._init_settings(
+                    BIND_DN=bind_dn,
+                    BIND_PASSWORD=bind_pw,
+                    BIND_AS_AUTHENTICATING_USER=bind_aau,
+                    BIND_DN_TEMPLATE=bind_dn_tmpl,
+                    USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
+                    USER_SEARCH=user_search,
+                    USER_DN_TEMPLATE=user_dn_tmpl,
+                )
+                user = None
+                try:
+                    user = authenticate(username="alice", password="password")
+                except:
+                    pass
+
+                if is_user:
+                    self.assertIsNotNone(user)
+                    self.assertEqual(user.username, "alice")
+                    self.assertEqual(user.first_name, "Alice")
+                    self.assertEqual(user.last_name, "Adams")
+                else:
+                    self.assertIsNone(user)
+

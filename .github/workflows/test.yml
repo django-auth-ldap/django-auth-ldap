@@ -21,13 +21,6 @@ jobs:
           - django42
           - django50
         include:
-          # Django 3.2
-          - python-version: 3.8
-            tox-environment: django32
-          - python-version: 3.9
-            tox-environment: django32
-          - python-version: '3.10'
-            tox-environment: django32
           # Django 5.0
           - python-version: '3.10'
             tox-environment: django50

@@ -20,6 +20,7 @@ jobs:
         tox-environment:
           - django42
           - django50
+          - django51
           - djangomain
 
     env:

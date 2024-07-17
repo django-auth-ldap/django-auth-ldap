@@ -46,8 +46,15 @@ Source = "https://github.com/django-auth-ldap/django-auth-ldap"
 Tracker = "https://github.com/django-auth-ldap/django-auth-ldap/issues"
 Changelog = "https://github.com/django-auth-ldap/django-auth-ldap/releases/"
 
-[tool.isort]
-profile = "black"
+[tool.ruff.lint]
+# See prefixes in https://beta.ruff.rs/docs/rules/
+select = [
+    "F",   # pyflakes
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "I",   # isort
+    "C4",  # flake8-comprehension
+]
 
 [build-system]
 requires = [

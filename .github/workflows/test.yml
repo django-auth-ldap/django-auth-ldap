@@ -22,6 +22,11 @@ jobs:
           - django50
           - django51
           - djangomain
+        include:
+          - python-version: 3.8
+            tox-environment: django42
+          - python-version: 3.9
+            tox-environment: django42
 
     env:
       TOXENV: ${{ matrix.tox-environment }}

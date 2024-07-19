@@ -14,23 +14,12 @@ jobs:
       matrix:
         # https://docs.djangoproject.com/en/dev/faq/install/#what-python-version-can-i-use-with-django
         python-version:
+          - '3.8'
+          - '3.9'
           - '3.10'
           - '3.11'
           - '3.12'
           - '3.13-dev'
-        tox-environment:
-          - django42
-          - django50
-          - django51
-          - djangomain
-        include:
-          - python-version: 3.8
-            tox-environment: django42
-          - python-version: 3.9
-            tox-environment: django42
-
-    env:
-      TOXENV: ${{ matrix.tox-environment }}
 
     steps:
       - name: Install LDAP libs
@@ -50,7 +39,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: python -m pip install tox
+        run: python -m pip install tox-gh
 
       - name: Run tests
         run: tox

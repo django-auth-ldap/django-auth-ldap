@@ -95,7 +95,11 @@ def _report_error(sender, context, user, request, exception):
     )
     if len(results) == 0:
         description = _error_context_descriptions.get(context, "from unknown context")
-        logger.warning("Caught LDAPError %s: %s", description, pprint.pformat(exception))
+        logger.warning(
+            "Caught LDAPError %s: %s",
+            description,
+            pprint.pformat(exception)
+        )
 
 
 

@@ -197,23 +197,13 @@ class LDAPSearch:
         if escape:
             filterargs = self._escape_filterargs(filterargs)
 
-        try:
-            filterstr = self.filterstr % filterargs
-            logger.debug(
-                "Invoking search_s('%s', %s, '%s')", self.base_dn, self.scope, filterstr
-            )
-            results = connection.search_s(
-                self.base_dn, self.scope, filterstr, self.attrlist
-            )
-        except ldap.LDAPError as e:
-            results = []
-            logger.error(
-                "search_s('%s', %s, '%s') raised %s",
-                self.base_dn,
-                self.scope,
-                filterstr,
-                pprint.pformat(e),
-            )
+        filterstr = self.filterstr % filterargs
+        logger.debug(
+            "Invoking search_s('%s', %s, '%s')", self.base_dn, self.scope, filterstr
+        )
+        results = connection.search_s(
+            self.base_dn, self.scope, filterstr, self.attrlist
+        )
 
         return self._process_results(results)
 

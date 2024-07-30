@@ -720,7 +720,9 @@ class LDAPTest(TestCase):
             request = RequestFactory().get("/")
             with self.assertRaises(ldap.LDAPError):
                 authenticate(request=request, username="alice", password="password")
-        handler.assert_called_once()
+        assert handler.mock_calls[0].kwargs['context'] == 'search_for_user_dn'
+        assert handler.mock_calls[1].kwargs['context'] == 'authenticate'
+        assert handler.call_count == 2
         _args, kwargs = handler.call_args
         self.assertEqual(kwargs["context"], "authenticate")
         self.assertEqual(kwargs["request"], request)

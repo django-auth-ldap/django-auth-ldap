@@ -78,6 +78,27 @@ populate_user = django.dispatch.Signal()
 ldap_error = django.dispatch.Signal()
 
 
+_error_context_descriptions = {
+    'get_group_permissions': 'loading group permissions',
+    'search_for_user_dn': 'looking up user',
+    'mirror_groups': 'updating mirrored groups',
+}
+
+
+def _report_error(sender, context, user, request, exception):
+    results = ldap_error.send(
+        sender,
+        context=context,
+        user=user,
+        request=request,
+        exception=exception,
+    )
+    if len(results) == 0:
+        description = _error_context_descriptions.get(context, "from unknown context")
+        logger.warning("Caught LDAPError %s: %s", description, pprint.pformat(exception))
+
+
+
 class LDAPBackend:
     """
     The main backend class. This implements the auth backend API, although it
@@ -386,18 +407,13 @@ class _LDAPUser:
                     if self.dn is not None:
                         self._load_group_permissions()
                 except ldap.LDAPError as e:
-                    results = ldap_error.send(
+                    _report_error(
                         type(self.backend),
-                        context="get_group_permissions",
-                        user=self._user,
-                        request=self._request,
-                        exception=e,
+                        "get_group_permissions",
+                        self._user,
+                        self._request,
+                        e
                     )
-                    if len(results) == 0:
-                        logger.warning(
-                            "Caught LDAPError loading group permissions: %s",
-                            pprint.pformat(e),
-                        )
 
         return self._group_permissions
 
@@ -537,11 +553,20 @@ class _LDAPUser:
                     "AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance."
                 )
 
-            results = search.execute(self.connection, {"user": self._username})
-            if results is not None and len(results) == 1:
-                (user_dn, self._user_attrs) = next(iter(results))
-            else:
-                user_dn = None
+            user_dn = None
+
+            try:
+                results = search.execute(self.connection, {"user": self._username})
+                if results is not None and len(results) == 1:
+                    (user_dn, self._user_attrs) = next(iter(results))
+            except ldap.LDAPError as e:
+                _report_error(
+                    type(self.backend),
+                    "search_for_user_dn",
+                    self._user,
+                    self._request,
+                    e
+                )
 
             return user_dn
 
@@ -756,7 +781,19 @@ class _LDAPUser:
         Mirrors the user's LDAP groups in the Django database and updates the
         user's membership.
         """
-        target_group_names = frozenset(self._get_groups().get_group_names())
+        try:
+            target_group_names = frozenset(self._get_groups().get_group_names())
+        except ldap.LDAPError as e:
+            _report_error(
+                type(self.backend),
+                context="mirror_groups",
+                user=self._user,
+                request=self._request,
+                exception=e,
+            )
+            # Error fetching user's groups - skip updating.
+            return
+
         current_group_names = frozenset(
             self._user.groups.values_list("name", flat=True).iterator()
         )

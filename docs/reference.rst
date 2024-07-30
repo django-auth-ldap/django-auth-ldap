@@ -577,20 +577,23 @@ Backend
 
 .. data:: ldap_error
 
-
     This is a Django signal that is sent when we receive an
     :exc:`ldap.LDAPError` exception. The signal has four keyword arguments:
 
     - ``context``: one of ``'authenticate'``, ``'get_group_permissions'``, or
-      ``'populate_user'``, indicating which API was being called when the
-      exception was caught.
-    - ``user``: the Django user being processed (if available).
+      ``'populate_user'``, ``'search_for_user_dn'`` or ``'mirror_groups'``,
+      indicating which API was being called when the exception was caught.
+    - ``user``: the Django user being processed (if available) or ``None``.
     - ``request``: the Django request object associated with the
-      authentication attempt (if available).
+      authentication attempt (if available) or ``None``.
     - ``exception``: the :exc:`~ldap.LDAPError` object itself.
 
     The sender is the :class:`~django_auth_ldap.backend.LDAPBackend` class (or
     subclass).
+
+    By default, LDAP errors are be handled by ``django_auth_ldap`` by failing
+    the authentication. If instead you wish to propagate the error to up
+    application code, then raise an exception from the signal handler.
 
 .. class:: LDAPBackend
 

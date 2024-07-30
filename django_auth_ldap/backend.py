@@ -78,6 +78,31 @@ populate_user = django.dispatch.Signal()
 ldap_error = django.dispatch.Signal()
 
 
+_error_context_descriptions = {
+    "authenticate": "while authenticating",
+    "populate_user": "populating user info",
+    "get_group_permissions": "loading group permissions",
+    "search_for_user_dn": "looking up user",
+    "mirror_groups": "updating mirrored groups",
+}
+
+
+def _report_error(sender, context, user, request, exception):
+    description = _error_context_descriptions.get(context, "from unknown context")
+    logger.warning(
+        "Caught LDAPError %s: %s",
+        description,
+        pprint.pformat(exception)
+    )
+    ldap_error.send(
+        sender,
+        context=context,
+        user=user,
+        request=request,
+        exception=exception,
+    )
+
+
 class LDAPBackend:
     """
     The main backend class. This implements the auth backend API, although it
@@ -354,19 +379,13 @@ class _LDAPUser:
         except self.AuthenticationFailed as e:
             logger.debug("Authentication failed for %s: %s", self._username, e)
         except ldap.LDAPError as e:
-            results = ldap_error.send(
+            _report_error(
                 type(self.backend),
-                context="authenticate",
-                user=self._user,
-                request=self._request,
-                exception=e,
+                "authenticate",
+                self._user,
+                self._request,
+                e
             )
-            if len(results) == 0:
-                logger.warning(
-                    "Caught LDAPError while authenticating %s: %s",
-                    self._username,
-                    pprint.pformat(e),
-                )
         except Exception as e:
             logger.warning("%s while authenticating %s", e, self._username)
             raise
@@ -386,18 +405,13 @@ class _LDAPUser:
                     if self.dn is not None:
                         self._load_group_permissions()
                 except ldap.LDAPError as e:
-                    results = ldap_error.send(
+                    _report_error(
                         type(self.backend),
-                        context="get_group_permissions",
-                        user=self._user,
-                        request=self._request,
-                        exception=e,
+                        "get_group_permissions",
+                        self._user,
+                        self._request,
+                        e
                     )
-                    if len(results) == 0:
-                        logger.warning(
-                            "Caught LDAPError loading group permissions: %s",
-                            pprint.pformat(e),
-                        )
 
         return self._group_permissions
 
@@ -414,20 +428,17 @@ class _LDAPUser:
                 self._get_or_create_user(force_populate=True)
 
             user = self._user
+        except self.AuthenticationFailed as e:
+            # Mirroring groups can raise AuthenticationFailed
+            logger.debug("Failed to populate user %s: %s", self._username, e)
         except ldap.LDAPError as e:
-            results = ldap_error.send(
+            _report_error(
                 type(self.backend),
-                context="populate_user",
-                user=self._user,
-                request=self._request,
-                exception=e,
+                "populate_user",
+                self._user,
+                self._request,
+                e
             )
-            if len(results) == 0:
-                logger.warning(
-                    "Caught LDAPError while authenticating %s: %s",
-                    self._username,
-                    pprint.pformat(e),
-                )
         except Exception as e:
             logger.warning("%s while authenticating %s", e, self._username)
             raise
@@ -537,11 +548,21 @@ class _LDAPUser:
                     "AUTH_LDAP_USER_SEARCH must be an LDAPSearch instance."
                 )
 
-            results = search.execute(self.connection, {"user": self._username})
-            if results is not None and len(results) == 1:
-                (user_dn, self._user_attrs) = next(iter(results))
+            user_dn = None
+
+            try:
+                results = search.execute(self.connection, {"user": self._username})
+            except ldap.LDAPError as e:
+                _report_error(
+                    type(self.backend),
+                    "search_for_user_dn",
+                    self._user,
+                    self._request,
+                    e
+                )
             else:
-                user_dn = None
+                if results is not None and len(results) == 1:
+                    (user_dn, self._user_attrs) = next(iter(results))
 
             return user_dn
 
@@ -756,7 +777,19 @@ class _LDAPUser:
         Mirrors the user's LDAP groups in the Django database and updates the
         user's membership.
         """
-        target_group_names = frozenset(self._get_groups().get_group_names())
+        try:
+            target_group_names = frozenset(self._get_groups().get_group_names())
+        except ldap.LDAPError as e:
+            _report_error(
+                type(self.backend),
+                context="mirror_groups",
+                user=self._user,
+                request=self._request,
+                exception=e,
+            )
+            # Prevent user from logging in since their groups are out of sync
+            raise self.AuthenticationFailed("Error mirroring user groups")
+
         current_group_names = frozenset(
             self._user.groups.values_list("name", flat=True).iterator()
         )

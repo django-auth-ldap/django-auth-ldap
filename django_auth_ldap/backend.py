@@ -79,6 +79,8 @@ ldap_error = django.dispatch.Signal()
 
 
 _error_context_descriptions = {
+    "authenticate": "while authenticating",
+    "populate_user": "populating user info",
     "get_group_permissions": "loading group permissions",
     "search_for_user_dn": "looking up user",
     "mirror_groups": "updating mirrored groups",
@@ -377,19 +379,13 @@ class _LDAPUser:
         except self.AuthenticationFailed as e:
             logger.debug("Authentication failed for %s: %s", self._username, e)
         except ldap.LDAPError as e:
-            results = ldap_error.send(
+            _report_error(
                 type(self.backend),
-                context="authenticate",
-                user=self._user,
-                request=self._request,
-                exception=e,
+                "authenticate",
+                self._user,
+                self._request,
+                e
             )
-            if len(results) == 0:
-                logger.warning(
-                    "Caught LDAPError while authenticating %s: %s",
-                    self._username,
-                    pprint.pformat(e),
-                )
         except Exception as e:
             logger.warning("%s while authenticating %s", e, self._username)
             raise
@@ -433,19 +429,13 @@ class _LDAPUser:
 
             user = self._user
         except ldap.LDAPError as e:
-            results = ldap_error.send(
+            _report_error(
                 type(self.backend),
-                context="populate_user",
-                user=self._user,
-                request=self._request,
-                exception=e,
+                "populate_user",
+                self._user,
+                self._request,
+                e
             )
-            if len(results) == 0:
-                logger.warning(
-                    "Caught LDAPError while authenticating %s: %s",
-                    self._username,
-                    pprint.pformat(e),
-                )
         except Exception as e:
             logger.warning("%s while authenticating %s", e, self._username)
             raise

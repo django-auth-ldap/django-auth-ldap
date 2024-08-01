@@ -1544,7 +1544,7 @@ class LDAPTest(TestCase):
         self.assertEqual(log2, "DEBUG:django_auth_ldap:Initiating TLS")
         self.assertTrue(
             log3.startswith(
-                "WARNING:django_auth_ldap:Caught LDAPError while authenticating alice: "
+                "WARNING:django_auth_ldap:Caught LDAPError while authenticating: "
             )
         )
 

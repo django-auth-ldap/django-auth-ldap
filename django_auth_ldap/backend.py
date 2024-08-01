@@ -79,27 +79,26 @@ ldap_error = django.dispatch.Signal()
 
 
 _error_context_descriptions = {
-    'get_group_permissions': 'loading group permissions',
-    'search_for_user_dn': 'looking up user',
-    'mirror_groups': 'updating mirrored groups',
+    "get_group_permissions": "loading group permissions",
+    "search_for_user_dn": "looking up user",
+    "mirror_groups": "updating mirrored groups",
 }
 
 
 def _report_error(sender, context, user, request, exception):
-    results = ldap_error.send(
-        sender,
-        context=context,
-        user=user,
-        request=request,
-        exception=exception,
-    )
     description = _error_context_descriptions.get(context, "from unknown context")
     logger.warning(
         "Caught LDAPError %s: %s",
         description,
         pprint.pformat(exception)
     )
-
+    ldap_error.send(
+        sender,
+        context=context,
+        user=user,
+        request=request,
+        exception=exception,
+    )
 
 
 class LDAPBackend:

@@ -93,13 +93,12 @@ def _report_error(sender, context, user, request, exception):
         request=request,
         exception=exception,
     )
-    if len(results) == 0:
-        description = _error_context_descriptions.get(context, "from unknown context")
-        logger.warning(
-            "Caught LDAPError %s: %s",
-            description,
-            pprint.pformat(exception)
-        )
+    description = _error_context_descriptions.get(context, "from unknown context")
+    logger.warning(
+        "Caught LDAPError %s: %s",
+        description,
+        pprint.pformat(exception)
+    )
 
 
 
@@ -561,8 +560,6 @@ class _LDAPUser:
 
             try:
                 results = search.execute(self.connection, {"user": self._username})
-                if results is not None and len(results) == 1:
-                    (user_dn, self._user_attrs) = next(iter(results))
             except ldap.LDAPError as e:
                 _report_error(
                     type(self.backend),
@@ -571,6 +568,9 @@ class _LDAPUser:
                     self._request,
                     e
                 )
+            else:
+                if results is not None and len(results) == 1:
+                    (user_dn, self._user_attrs) = next(iter(results))
 
             return user_dn
 

@@ -27,15 +27,19 @@ import functools
 import logging
 import os
 import pickle
+import unittest
 from copy import deepcopy
 from unittest import mock
+from unittest.mock import ANY
 
 import ldap
 import slapdtest
+from _ldap import LDAPError
 from django.contrib.auth import authenticate, get_backends
 from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
+from django.http import HttpRequest
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
@@ -52,6 +56,10 @@ from django_auth_ldap.config import (
 )
 
 from .models import TestUser
+
+# TODO CLEANUP!
+unittest.util._MAX_LENGTH=1000
+
 
 
 def get_backend():
@@ -602,6 +610,31 @@ class LDAPTest(TestCase):
             ],
         )
 
+    def test_populate_user_ldap_error(self):
+        self._init_settings(
+            USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
+            USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
+            SERVER_URI="0.0.0.1:0"  # This will cause a network error
+        )
+
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            with catch_signal(ldap_error) as handler:
+                LDAPBackend().populate_user('alice')
+
+        handler.assert_called_once_with(
+            signal=ANY,
+            sender=LDAPBackend,
+            context="populate_user",
+            user=None,
+            request=None,
+            exception=ANY,
+        )
+        self.assertEqual(
+            logs.output[-1],
+            "WARNING:django_auth_ldap:Caught LDAPError populating user info: "
+            "LDAPError(0, 'Error')"
+        )
+
     @mock.patch.object(LDAPSearch, "execute", return_value=None)
     def test_populate_user_with_bad_search(self, mock_execute):
         self._init_settings(
@@ -726,6 +759,39 @@ class LDAPTest(TestCase):
         _args, kwargs = handler.call_args
         self.assertEqual(kwargs["context"], "authenticate")
         self.assertEqual(kwargs["request"], request)
+
+    def test_search_for_user_dn_error(self):
+        self._init_settings(
+            USER_DN_TEMPLATE=None,
+            USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=*)"),
+            USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
+            SERVER_URI="0.0.0.1:0"  # This will cause a network error
+        )
+
+        request = RequestFactory().get("/")
+
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            with catch_signal(ldap_error) as handler:
+                authenticate(request=request, username="alice", password="password")
+
+        handler.assert_called_once_with(
+            signal=ANY,
+            sender=LDAPBackend,
+            context="search_for_user_dn",
+            user=None,
+            request=request,
+            exception=ANY,
+        )
+        self.assertEqual(
+            logs.output[-2],
+            "WARNING:django_auth_ldap:Caught LDAPError looking up user: "
+            "LDAPError(0, 'Error')"
+        )
+        self.assertEqual(
+            logs.output[-1],
+            "DEBUG:django_auth_ldap:Authentication failed for alice: failed "
+            "to map the username to a DN.",
+        )
 
     def test_populate_signal_ldap_error(self):
         self._init_settings(
@@ -1421,6 +1487,45 @@ class LDAPTest(TestCase):
 
         self.assertEqual(
             set(alice.groups.values_list("name", flat=True)), {"mirror1", "mirror3"}
+        )
+
+    def test_group_mirroring_error(self):
+        self._init_settings(
+            USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
+            GROUP_SEARCH=LDAPSearch(
+                "ou=groups,o=test", ldap.SCOPE_SUBTREE, "(objectClass=posixGroup)"
+            ),
+            GROUP_TYPE=PosixGroupType(),
+            MIRROR_GROUPS=True,
+        )
+
+        grp = Group.objects.create(name="test_group")
+        user = User.objects.create(username="alice")
+        user.groups.add(grp)
+
+        with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
+            with catch_signal(ldap_error) as handler:
+                with mock.patch(
+                        "django_auth_ldap.backend._LDAPUserGroups.get_group_names",
+                        side_effect=LDAPError(0, "Error")
+                ):
+                    alice = authenticate(username="alice", password="password")
+
+        # When here's an error populating groups, keep old user groups intact.
+        self.assertEqual(set(alice.groups.all()), {grp})
+
+        handler.assert_called_once_with(
+            signal=ANY,
+            sender=LDAPBackend,
+            context="mirror_groups",
+            user=alice,
+            request=None,
+            exception=ANY,
+        )
+        self.assertEqual(
+            logs.output[-1],
+            "WARNING:django_auth_ldap:Caught LDAPError updating mirrored groups: "
+            "LDAPError(0, 'Error')"
         )
 
     def test_authorize_external_users(self):

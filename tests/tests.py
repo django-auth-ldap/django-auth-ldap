@@ -27,7 +27,6 @@ import functools
 import logging
 import os
 import pickle
-import unittest
 from copy import deepcopy
 from unittest import mock
 from unittest.mock import ANY
@@ -39,7 +38,6 @@ from django.contrib.auth import authenticate, get_backends
 from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpRequest
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
@@ -56,10 +54,6 @@ from django_auth_ldap.config import (
 )
 
 from .models import TestUser
-
-# TODO CLEANUP!
-unittest.util._MAX_LENGTH=1000
-
 
 
 def get_backend():
@@ -614,7 +608,7 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
             USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
-            SERVER_URI="0.0.0.1:0"  # This will cause a network error
+            SERVER_URI="ldap://0.0.0.0:0",  # This will cause a network error
         )
 
         with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
@@ -632,7 +626,8 @@ class LDAPTest(TestCase):
         self.assertEqual(
             logs.output[-1],
             "WARNING:django_auth_ldap:Caught LDAPError populating user info: "
-            "LDAPError(0, 'Error')"
+            "SERVER_DOWN({'result': -1, 'desc': \"Can't contact LDAP server\", "
+            "'errno': 107, 'ctrls': [], 'info': 'Transport endpoint is not connected'})"
         )
 
     @mock.patch.object(LDAPSearch, "execute", return_value=None)
@@ -765,7 +760,7 @@ class LDAPTest(TestCase):
             USER_DN_TEMPLATE=None,
             USER_SEARCH=LDAPSearch("ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=*)"),
             USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
-            SERVER_URI="0.0.0.1:0"  # This will cause a network error
+            SERVER_URI="<invalid>",  # This will cause a network error
         )
 
         request = RequestFactory().get("/")
@@ -1506,12 +1501,12 @@ class LDAPTest(TestCase):
         with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
             with catch_signal(ldap_error) as handler:
                 with mock.patch(
-                        "django_auth_ldap.backend._LDAPUserGroups.get_group_names",
-                        side_effect=LDAPError(0, "Error")
+                    "django_auth_ldap.backend._LDAPUserGroups.get_group_names",
+                    side_effect=LDAPError(0, "Error")
                 ):
                     alice = authenticate(username="alice", password="password")
 
-        # When here's an error populating groups, keep old user groups intact.
+        # When there's an error populating groups, preserve old user groups.
         self.assertEqual(set(alice.groups.all()), {grp})
 
         handler.assert_called_once_with(

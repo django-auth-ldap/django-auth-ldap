@@ -608,7 +608,7 @@ class LDAPTest(TestCase):
         self._init_settings(
             USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
             USER_ATTR_MAP={"first_name": "givenName", "last_name": "sn"},
-            SERVER_URI="ldap://0.0.0.0:0",  # This will cause a network error
+            SERVER_URI="<invalid>",  # This will cause a network error
         )
 
         with self.assertLogs("django_auth_ldap", level=logging.DEBUG) as logs:
@@ -626,8 +626,7 @@ class LDAPTest(TestCase):
         self.assertEqual(
             logs.output[-1],
             "WARNING:django_auth_ldap:Caught LDAPError populating user info: "
-            "SERVER_DOWN({'result': -1, 'desc': \"Can't contact LDAP server\", "
-            "'errno': 107, 'ctrls': [], 'info': 'Transport endpoint is not connected'})"
+            "LDAPError(0, 'Error')"
         )
 
     @mock.patch.object(LDAPSearch, "execute", return_value=None)

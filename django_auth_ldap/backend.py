@@ -543,8 +543,15 @@ class _LDAPUser:
             else:
                 user_dn = None
 
-            return user_dn
+            if self.settings.BIND_AS_AUTHENTICATING_USER:
+                # Reset self._user_attrs: This will retrigger receiving it once
+                # propely authenticated. This is necessary because the
+                # authenticated user may receive more attributes than the
+                # anonymous user.
+                self._user_attrs = None
 
+            return user_dn
+          
         if self.settings.CACHE_TIMEOUT > 0:
             cache_key = valid_cache_key(
                 "django_auth_ldap.user_dn.{}".format(self._username)

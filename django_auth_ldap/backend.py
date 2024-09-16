@@ -87,22 +87,6 @@ _error_context_descriptions = {
 }
 
 
-def _report_error(sender, context, user, request, exception):
-    description = _error_context_descriptions.get(context, "from unknown context")
-    logger.warning(
-        "Caught LDAPError %s: %s",
-        description,
-        pprint.pformat(exception)
-    )
-    ldap_error.send(
-        sender,
-        context=context,
-        user=user,
-        request=request,
-        exception=exception,
-    )
-
-
 class LDAPBackend:
     """
     The main backend class. This implements the auth backend API, although it
@@ -359,6 +343,21 @@ class _LDAPUser:
     def settings(self):
         return self.backend.settings
 
+    def _report_error(self, context, exception):
+        description = _error_context_descriptions.get(context, "from unknown context")
+        logger.warning(
+            "Caught LDAPError %s: %s",
+            description,
+            pprint.pformat(exception)
+        )
+        ldap_error.send(
+            type(self.backend),
+            context=context,
+            user=self._user,
+            request=self._request,
+            exception=exception,
+        )
+
     #
     # Entry points
     #
@@ -379,13 +378,7 @@ class _LDAPUser:
         except self.AuthenticationFailed as e:
             logger.debug("Authentication failed for %s: %s", self._username, e)
         except ldap.LDAPError as e:
-            _report_error(
-                type(self.backend),
-                "authenticate",
-                self._user,
-                self._request,
-                e
-            )
+            self._report_error("authenticate", e)
         except Exception as e:
             logger.warning("%s while authenticating %s", e, self._username)
             raise
@@ -405,13 +398,7 @@ class _LDAPUser:
                     if self.dn is not None:
                         self._load_group_permissions()
                 except ldap.LDAPError as e:
-                    _report_error(
-                        type(self.backend),
-                        "get_group_permissions",
-                        self._user,
-                        self._request,
-                        e
-                    )
+                    self._report_error("get_group_permissions", e)
 
         return self._group_permissions
 
@@ -432,13 +419,7 @@ class _LDAPUser:
             # Mirroring groups can raise AuthenticationFailed
             logger.debug("Failed to populate user %s: %s", self._username, e)
         except ldap.LDAPError as e:
-            _report_error(
-                type(self.backend),
-                "populate_user",
-                self._user,
-                self._request,
-                e
-            )
+            self._report_error("populate_user", e)
         except Exception as e:
             logger.warning("%s while authenticating %s", e, self._username)
             raise
@@ -553,13 +534,7 @@ class _LDAPUser:
             try:
                 results = search.execute(self.connection, {"user": self._username})
             except ldap.LDAPError as e:
-                _report_error(
-                    type(self.backend),
-                    "search_for_user_dn",
-                    self._user,
-                    self._request,
-                    e
-                )
+                self._report_error("search_for_user_dn", e)
             else:
                 if results is not None and len(results) == 1:
                     (user_dn, self._user_attrs) = next(iter(results))
@@ -780,13 +755,7 @@ class _LDAPUser:
         try:
             target_group_names = frozenset(self._get_groups().get_group_names())
         except ldap.LDAPError as e:
-            _report_error(
-                type(self.backend),
-                context="mirror_groups",
-                user=self._user,
-                request=self._request,
-                exception=e,
-            )
+            self._report_error("mirror_groups", e)
             # Prevent user from logging in since their groups are out of sync
             raise self.AuthenticationFailed("Error mirroring user groups")
 

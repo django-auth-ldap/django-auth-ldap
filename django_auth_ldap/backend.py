@@ -344,6 +344,9 @@ class _LDAPUser:
         return self.backend.settings
 
     def _report_error(self, context, exception):
+        if self.settings.RAISE_LDAP_ERRORS:
+            raise exception
+
         description = _error_context_descriptions.get(context, "from unknown context")
         logger.warning(
             "Caught LDAPError %s: %s",

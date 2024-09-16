@@ -67,6 +67,7 @@ class LDAPSettings:
         "MIRROR_GROUPS": None,
         "MIRROR_GROUPS_EXCEPT": None,
         "PERMIT_EMPTY_PASSWORD": False,
+        "RAISE_LDAP_ERRORS": False,
         "REQUIRE_GROUP": None,
         "NO_NEW_USERS": False,
         "SERVER_URI": "ldap://localhost",

@@ -48,6 +48,18 @@ Remember to set :setting:`AUTH_LDAP_USER_DN_TEMPLATE` to avoid initial connectio
 to LDAP with default bind credentials.
 
 
+.. setting:: AUTH_LDAP_RAISE_LDAP_ERRORS
+
+AUTH_LDAP_RAISE_LDAP_ERRORS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+If ``False`` (the default), any :exc:`~ldap.LDAPError` will be swallowed and
+logged as a warning. Also see :data:`django_auth_ldap.backend.ldap_error` for a
+more flexible option.
+
+
 .. setting:: AUTH_LDAP_REFRESH_DN_ON_BIND
 
 AUTH_LDAP_REFRESH_DN_ON_BIND

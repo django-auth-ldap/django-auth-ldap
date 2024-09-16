@@ -753,6 +753,26 @@ class LDAPTest(TestCase):
         self.assertEqual(kwargs["context"], "authenticate")
         self.assertEqual(kwargs["request"], request)
 
+    def test_auth_raise_ldap_error(self):
+        self._init_settings(
+            BIND_DN="uid=bob,ou=people,o=test",
+            BIND_PASSWORD="bogus",
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+            ),
+            RAISE_LDAP_ERRORS=True,
+        )
+
+        request = RequestFactory().get("/")
+        with self.assertRaises(ldap.LDAPError):
+            authenticate(request=request, username="alice", password="password")
+        assert handler.mock_calls[0].kwargs['context'] == 'search_for_user_dn'
+        assert handler.mock_calls[1].kwargs['context'] == 'authenticate'
+        assert handler.call_count == 2
+        _args, kwargs = handler.call_args
+        self.assertEqual(kwargs["context"], "authenticate")
+        self.assertEqual(kwargs["request"], request)
+
     def test_search_for_user_dn_error(self):
         self._init_settings(
             USER_DN_TEMPLATE=None,

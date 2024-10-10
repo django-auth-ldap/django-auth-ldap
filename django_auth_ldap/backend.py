@@ -51,7 +51,6 @@ import django.conf
 import django.dispatch
 import ldap
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group, Permission
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 
@@ -777,6 +776,8 @@ class _LDAPUser:
         Mirrors the user's LDAP groups in the Django database and updates the
         user's membership.
         """
+        from django.contrib.auth.models import Group
+
         try:
             target_group_names = frozenset(self._get_groups().get_group_names())
         except ldap.LDAPError as e:
@@ -833,6 +834,8 @@ class _LDAPUser:
         Populates self._group_permissions based on LDAP group membership and
         Django group permissions.
         """
+        from django.contrib.auth.models import Permission
+
         group_names = self._get_groups().get_group_names()
 
         perms = Permission.objects.filter(group__name__in=group_names)

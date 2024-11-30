@@ -46,6 +46,7 @@ import pprint
 import re
 import warnings
 from functools import reduce
+from datetime import datetime, timedelta as delta_sec
 
 import django.conf
 import django.dispatch
@@ -634,7 +635,7 @@ class _LDAPUser:
         self._user.ldap_user = self
         self._user.ldap_username = self._username
 
-        should_populate = force_populate or self.settings.ALWAYS_UPDATE_USER or built
+        should_populate = force_populate or self._always_update_user_throttled or built
 
         if built:
             if self.settings.NO_NEW_USERS:
@@ -662,6 +663,23 @@ class _LDAPUser:
         if self.settings.MIRROR_GROUPS or self.settings.MIRROR_GROUPS_EXCEPT:
             self._normalize_mirror_settings()
             self._mirror_groups()
+
+    @property
+    def _always_update_user_throttled(self):
+        """
+        Returns self.settings.ALWAYS_UPDATE_USER if ALWAYS_UPDATE_USER_THROTTLE_SEC == 0.
+        Otherwise, returns whether the required interval since last_login has elapsed.
+        """
+        if self.settings.ALWAYS_UPDATE_USER_THROTTLE_SEC > 0 and self.settings.ALWAYS_UPDATE_USER:
+            last_login = self._user.last_login
+            tz = last_login.tzinfo
+            throttle_interval_end = last_login + throttle_interval
+            if datetime.now(tz=tz) >= throttle_interval_end:
+                return True
+            else:
+                logger.info(f"Throttling user updates until {throttle_interval_end} due to ALWAYS_UPDATE_USER_THROTTLE_SEC")
+        else:
+            return self.settings.ALWAYS_UPDATE_USER
 
     def _populate_user(self):
         """

@@ -1343,7 +1343,36 @@ class LDAPTest(TestCase):
 
         alice = authenticate(username="alice", password="password")
 
-        self.assertEqual(Group.objects.count(), 3)
+        self.assertEqual(
+            set(Group.objects.all().values_list("name", flat=True)),
+            {
+                "active_px",
+                "staff_px",
+                "superuser_px",
+            },
+        )
+        self.assertEqual(set(alice.groups.all()), set(Group.objects.all()))
+
+    def test_group_mirroring_custom_grouptype(self):
+        self._init_settings(
+            USER_DN_TEMPLATE="uid=%(user)s,ou=people,o=test",
+            GROUP_SEARCH=LDAPSearch(
+                "ou=groups,o=test", ldap.SCOPE_SUBTREE, "(objectClass=posixGroup)"
+            ),
+            GROUP_TYPE=CustomGroupType(),
+            MIRROR_GROUPS=True,
+        )
+
+        self.assertEqual(Group.objects.count(), 0)
+
+        alice = authenticate(username="alice", password="password")
+        self.assertEqual(
+            set(Group.objects.all().values_list("name", flat=True)),
+            {
+                "active_px",
+                "staff_px",
+            },
+        )
         self.assertEqual(set(alice.groups.all()), set(Group.objects.all()))
 
     def test_nested_group_mirroring(self):
@@ -1821,3 +1850,12 @@ class LDAPTest(TestCase):
 
         active_nis = Group.objects.create(name="active_nis")
         active_nis.permissions.add(*permissions)
+
+
+class CustomGroupType(PosixGroupType):
+    def group_name_from_info(self, group_info):
+        name = super().group_name_from_info(group_info)
+        if name.startswith("superuser"):
+            name = None
+
+        return name

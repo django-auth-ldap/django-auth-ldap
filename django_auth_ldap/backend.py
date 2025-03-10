@@ -779,7 +779,9 @@ class _LDAPUser:
         from django.contrib.auth.models import Group
 
         try:
-            target_group_names = frozenset(self._get_groups().get_group_names())
+            target_group_names = frozenset(
+                filter(None, self._get_groups().get_group_names())
+            )
         except ldap.LDAPError as e:
             _report_error(
                 type(self.backend),

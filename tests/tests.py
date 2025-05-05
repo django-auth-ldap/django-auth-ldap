@@ -582,8 +582,8 @@ class LDAPTest(TestCase):
             [(log.levelname, log.msg, log.args) for log in logs.records],
             [
                 ("DEBUG", "Binding as %s", (dn,)),
-                ("DEBUG", "Creating Django user %s", ("alice",)),
-                ("DEBUG", "Populating Django user %s", ("alice",)),
+                ("INFO", "Creating Django user %s", ("alice",)),
+                ("INFO", "Populating Django user %s", ("alice",)),
                 ("DEBUG", "Binding as %s", ("",)),
                 (
                     "DEBUG",

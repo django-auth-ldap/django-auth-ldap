@@ -1343,15 +1343,12 @@ class LDAPTest(TestCase):
 
         alice = authenticate(username="alice", password="password")
 
+        groups = set(Group.objects.all())
         self.assertEqual(
-            set(Group.objects.all().values_list("name", flat=True)),
-            {
-                "active_px",
-                "staff_px",
-                "superuser_px",
-            },
+            {g.name for g in groups},
+            {"active_px", "staff_px", "superuser_px"},
         )
-        self.assertEqual(set(alice.groups.all()), set(Group.objects.all()))
+        self.assertEqual(set(alice.groups.all()), groups)
 
     def test_group_mirroring_custom_grouptype(self):
         self._init_settings(
@@ -1366,14 +1363,12 @@ class LDAPTest(TestCase):
         self.assertEqual(Group.objects.count(), 0)
 
         alice = authenticate(username="alice", password="password")
+        groups = set(Group.objects.all())
         self.assertEqual(
-            set(Group.objects.all().values_list("name", flat=True)),
-            {
-                "active_px",
-                "staff_px",
-            },
+            {g.name for g in groups},
+            {"active_px", "staff_px"},
         )
-        self.assertEqual(set(alice.groups.all()), set(Group.objects.all()))
+        self.assertEqual(set(alice.groups.all()), groups)
 
     def test_nested_group_mirroring(self):
         self._init_settings(

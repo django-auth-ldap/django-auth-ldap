@@ -287,6 +287,8 @@ LDAP port. There are a number of configuration options that can be given to
 :data:`ldap.OPT_X_TLS_REQUIRE_CERT` can be set to :data:`ldap.OPT_X_TLS_NEVER`
 to disable certificate verification, perhaps to allow self-signed certificates.
 
+Note: Never use with LDAPS protocol! (Error: 'TLS or SSL already in effect')
+
 
 .. setting:: AUTH_LDAP_USER_QUERY_FIELD
 

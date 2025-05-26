@@ -596,7 +596,12 @@ class NestedMemberDNGroupType(LDAPGroupType):
         filterstr = "(|{})".format("".join(terms))
         search = group_search.search_with_additional_term_string(filterstr)
 
-        return search.execute(connection)
+        # If NO_SUCH_OBJECT is thrown, return empty result, this is required for user_groups to work
+        try:
+            return search.execute(connection)
+        except ldap.NO_SUCH_OBJECT:
+            pass
+        return []
 
 
 class GroupOfNamesType(MemberDNGroupType):

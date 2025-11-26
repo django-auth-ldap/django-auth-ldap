@@ -33,7 +33,7 @@ from unittest.mock import ANY
 
 import ldap
 import slapdtest
-from django.contrib.auth import authenticate, aauthenticate, get_backends
+from django.contrib.auth import aauthenticate, authenticate, get_backends
 from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured

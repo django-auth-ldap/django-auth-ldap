@@ -51,9 +51,9 @@ import django.conf
 import django.dispatch
 import ldap
 from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import BaseBackend
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
-from django.contrib.auth.backends import BaseBackend
 
 from .config import (
     ConfigurationWarning,

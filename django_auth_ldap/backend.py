@@ -53,6 +53,7 @@ import ldap
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
+from django.contrib.auth.backends import BaseBackend
 
 from .config import (
     ConfigurationWarning,
@@ -102,7 +103,7 @@ def _report_error(sender, context, user, request, exception):
     )
 
 
-class LDAPBackend:
+class LDAPBackend(BaseBackend):
     """
     The main backend class. This implements the auth backend API, although it
     actually delegates most of its work to _LDAPUser, which is defined next.
@@ -188,8 +189,8 @@ class LDAPBackend:
 
         return user
 
-    def has_perm(self, user, perm, obj=None):
-        return perm in self.get_all_permissions(user, obj)
+    def has_perm(self, user_obj, perm, obj=None):
+        return perm in self.get_all_permissions(user_obj, obj)
 
     def has_module_perms(self, user, app_label):
         for perm in self.get_all_permissions(user):

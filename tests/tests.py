@@ -33,7 +33,7 @@ from unittest.mock import ANY
 
 import ldap
 import slapdtest
-from django.contrib.auth import authenticate, get_backends
+from django.contrib.auth import authenticate, aauthenticate, get_backends
 from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
@@ -247,6 +247,26 @@ class LDAPTest(TestCase):
     def test_username_none(self):
         self._init_settings()
         user = authenticate(username=None, password="password")
+        self.assertIsNone(user)
+
+    async def test_async_authenticate(self):
+        """Test that async authentication works through aauthenticate."""
+
+        self._init_settings(
+            USER_SEARCH=LDAPSearch(
+                "ou=people,o=test", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+            )
+        )
+        user_count = await User.objects.acount()
+
+        # Test successful async authentication
+        user = await aauthenticate(username="alice", password="password")
+        self.assertIsNotNone(user)
+        self.assertEqual(user.username, "alice")
+        self.assertEqual(await User.objects.acount(), user_count + 1)
+
+        # Test failed async authentication
+        user = await aauthenticate(username="invalid", password="wrong")
         self.assertIsNone(user)
 
     @spy_ldap("simple_bind_s")

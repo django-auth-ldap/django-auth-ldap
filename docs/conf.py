@@ -13,8 +13,7 @@
 import contextlib
 import os
 import sys
-
-from pkg_resources import DistributionNotFound, get_distribution
+from importlib.metadata import PackageNotFoundError, version
 
 sys.path.insert(0, os.path.abspath("ext"))
 
@@ -37,16 +36,14 @@ def chdir(directory):
 
 
 try:
-    dist = get_distribution("django-auth-ldap")
-except DistributionNotFound:
+    release = version("django-auth-ldap")
+except PackageNotFoundError:
     # The project is not installed in readthedocs environment (requires LDAP
     # bindings). Read the version with setuptools_scm.
     import setuptools_scm
 
     with chdir(".."):
         release = setuptools_scm.get_version()
-else:
-    release = dist.version
 version = ".".join(release.split(".")[:2])
 
 

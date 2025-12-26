@@ -4,6 +4,9 @@ build:
   os: ubuntu-lts-latest
   tools:
     python: latest
+  jobs:
+    post_checkout:
+      - git fetch --unshallow || true
 python:
   install:
     - requirements: docs/requirements.txt

@@ -268,6 +268,9 @@ class LDAPBackend:
     def django_to_ldap_username(self, username):
         return username
 
+    def get_django_username_from_ldap_user(self, ldap_user):
+        return self.ldap_to_django_username(ldap_user._username)
+
 
 class _LDAPUser:
     """
@@ -628,7 +631,7 @@ class _LDAPUser:
         """
         save_user = False
 
-        username = self.backend.ldap_to_django_username(self._username)
+        username = self.backend.get_django_username_from_ldap_user(self)
 
         self._user, built = self.backend.get_or_build_user(username, self)
         self._user.ldap_user = self

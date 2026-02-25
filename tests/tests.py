@@ -424,6 +424,17 @@ class LDAPTest(TestCase):
         self.assertEqual(user2.ldap_user._username, "alice")
         self.assertEqual(user2.ldap_username, "alice")
 
+        class MyBackend2(LDAPBackend):
+            def get_django_username_from_ldap_user(self, ldap_user):
+                return "ldap_%s" % ldap_user.attrs["sn"][0]
+
+        backend = MyBackend2()
+        user = backend.authenticate(None, username="alice", password="password")
+
+        self.assertEqual(user.username, "ldap_adams")
+        self.assertEqual(user1.ldap_user._username, "alice")
+        self.assertEqual(user1.ldap_username, "alice")
+
     def test_search_bind(self):
         self._init_settings(
             USER_SEARCH=LDAPSearch(

@@ -53,6 +53,7 @@ class LDAPSettings:
 
     defaults = {
         "ALWAYS_UPDATE_USER": True,
+        "ALWAYS_UPDATE_USER_THROTTLE_SEC": 0,
         "AUTHORIZE_ALL_USERS": False,
         "BIND_AS_AUTHENTICATING_USER": False,
         "REFRESH_DN_ON_BIND": False,
